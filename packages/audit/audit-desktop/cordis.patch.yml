@@ -18,6 +18,9 @@
       missing or a conclusion is uncertain. Never change the material under
       review: report the corrections you would make instead. Save working papers
       and reports as new files in the workspace when the user asks for a file.
+      Before any action that submits, approves, pays, signs, or sends something on
+      the user's behalf, such as on a web page where the user is signed in,
+      describe the action and ask the user to confirm it.
       Answer in the language of the user's request.
 
 # ── the audit preset is the only preset ─────────────────────────────────────
@@ -61,6 +64,9 @@
                 missing or a conclusion is uncertain. Never change the material under
                 review: report the corrections you would make instead. Save working papers
                 and reports as new files in the workspace when the user asks for a file.
+                Before any action that submits, approves, pays, signs, or sends something on
+                the user's behalf, such as on a web page where the user is signed in,
+                describe the action and ask the user to confirm it.
                 Answer in the language of the user's request.
           - id: agent-instructions
             name: '@deepseek-ai/dsh-agent-instructions'
@@ -124,6 +130,23 @@
               searchTimeoutMs: 60000
           - id: present
             name: '@deepseek-ai/dsh-tool-present'
+
+# ── the Sidebar browser for the agent ───────────────────────────────────────
+
+# Desktop serves a loopback CDP endpoint over the Sidebar browser tabs and
+# names it in DSH_DESKTOP_BROWSER_CDP_ENDPOINT; `{sessionId}` gives each
+# Session its own endpoint, which exposes only that Session's Sidebar tabs.
+# Outside Desktop the variable is absent and both rows stay off.
+- insert:
+    - id: browser-use
+      name: '@deepseek-ai/dsh-browser-use'
+      disabled: !!js process.env.DSH_DESKTOP_BROWSER_CDP_ENDPOINT === undefined
+    - id: browser-use-playwright-mcp
+      name: '@deepseek-ai/dsh-experimental-browser-use-playwright-mcp'
+      disabled: !!js process.env.DSH_DESKTOP_BROWSER_CDP_ENDPOINT === undefined
+      config:
+        mode: attach
+        endpoint: !!js process.env.DSH_DESKTOP_BROWSER_CDP_ENDPOINT
 
 # ── no preset or plugin authoring ───────────────────────────────────────────
 

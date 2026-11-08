@@ -12,6 +12,8 @@ export interface DesktopTrayOptions {
   readonly open: () => void
   /** Request quit through the same confirmation as every other quit entry. */
   readonly quit: () => void
+  /** Clear the Sidebar browser's saved logins and site data after confirmation. */
+  readonly clearBrowsingData?: () => void
 }
 
 /** Tray icon present for the whole run, not only while the window is hidden. */
@@ -34,6 +36,9 @@ export class DesktopTray {
     tray.setToolTip(messages.aboutProduct)
     tray.setContextMenu(Menu.buildFromTemplate([
       { label: messages.openApplication, click: () => { this.options.open() } },
+      ...this.options.clearBrowsingData === undefined ? [] : [
+        { label: messages.clearBrowsingDataMenu, click: () => { this.options.clearBrowsingData?.() } },
+      ],
       { type: 'separator' },
       { label: messages.quitApplication, click: () => { this.options.quit() } },
     ]))

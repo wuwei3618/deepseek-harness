@@ -29,7 +29,10 @@ export interface BrowserMcpLaunchConfig {
 export interface BrowserMcpAttachConfig {
   /** Exclusively attach one live Session to the configured browser. */
   mode: 'attach'
-  /** HTTP(S) debugging URL or WS(S) browser debugging endpoint. */
+  /**
+   * HTTP(S) debugging URL or WS(S) browser debugging endpoint. A `{sessionId}` placeholder gives each live
+   * Session its own endpoint, with the URL-encoded Session id in its place, and no cross-Session reservation.
+   */
   endpoint: string
   /** Per-call timeout override in milliseconds; omission uses the MCP client default. */
   toolCallTimeoutMs?: number
@@ -80,6 +83,8 @@ export interface SessionMcpOptions {
   command: string
   /** Arguments passed directly without a shell. */
   args: string[]
+  /** Arguments appended after `args` for one live Session's server, such as a Session-specific endpoint. */
+  agentArgs?: (agent: Agent) => readonly string[]
   /** Explicit overrides merged into the MCP client's scrubbed child environment. */
   env?: Record<string, string>
   /** Per-call timeout override; omission retains the MCP client default. */
@@ -149,7 +154,7 @@ export function mountSessionMcp(ctx: Context, options: SessionMcpOptions): void 
             transport: 'stdio',
             serverName: options.name,
             command: options.command,
-            args: options.args,
+            args: options.agentArgs === undefined ? options.args : [...options.args, ...options.agentArgs(agent)],
             ...options.env === undefined ? {} : { env: options.env },
             cwd: await workingDirectory.ensure(agent, signal),
             ...options.toolCallTimeoutMs === undefined ? {} : { toolCallTimeoutMs: options.toolCallTimeoutMs },

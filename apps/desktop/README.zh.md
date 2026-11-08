@@ -149,6 +149,8 @@ Electron 拥有 `$DSH_HOME/profiles/desktop`。其 `dependencies` 包含 pnpm �
 
 只有主应用窗口启用 `<webview>`。guest 挂载必须匹配主进程签发的租约和分区；guest 保持 sandbox、context isolation 和 Web security，不启用 Node integration 或 guest preload。Browser IPC 监听只为应用文档创建。[Sidebar Browser](../../packages/client/ui-sidebar-browser/README.zh.md) 说明存储分组和 guest 限制；Host 鉴权仍独立于 URL 过滤而必需。
 
+主进程在随机的 `127.0.0.1` 端口上为 agent 的浏览器工具提供 Chrome DevTools Protocol 端点，并通过 `DSH_DESKTOP_BROWSER_CDP_ENDPOINT` 传给 Host。端点路径带有每次启动生成的 256 位密钥和 URL 编码的 Session id，带 `Origin` 头的连接会被拒绝，所以网页无法连接。每个连接只能通过各 guest 自己的 debugger 列出、打开、关闭和操作其 Session 的 Sidebar Browser guest；应用窗口和其他 Session 的 guest 从不暴露。debugger 已被占用的 guest（例如打开了 DevTools）只供人使用。应用菜单和托盘中的「清除浏览器数据…」确认后清除所有 Sidebar 分区的 Cookie、存储、缓存和 HTTP 鉴权。端点会出现在 Playwright MCP 子进程的命令行中，同一操作系统账户的其他进程可以读到。
+
 `dsh-app://shell/` 无需联系 Host 即可提供打包的更新文档、脚本和样式。静态请求保留 GET/HEAD、路径范围和 MIME 处理；每个更新文档继续使用隔离 preload 和所属窗口的 IPC 校验。
 
 产品 UI 保留 Web 操作，包括通过共享认证 HTTP 路由执行的“打开方式…”。Desktop 使用 Web 的自动目录选择机制，并以共享 Web 模板的 bundle 列表初始化新 profile。

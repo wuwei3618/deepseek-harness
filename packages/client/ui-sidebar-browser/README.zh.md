@@ -70,6 +70,8 @@ Web 记录 toolbar 提交和 typed tab 打开。导航状态机把每个受控 r
 
 Desktop 主进程批准 guest 租约，并执行挂载、导航和权限策略。preload 只暴露限定范围的 Browser 操作。共享声明通过标准 `/types` 出口配合 `import type` 引入；Host 与 Client 使用独立 tsconfig 编译。Desktop Browser tab 声明 `keepMounted`，Sidebar 因而在切 tab、切 Session、收起与浮动期间保留其 DOM。
 
+每个 Desktop guest 属于其所在 Sidebar 的 DSH Session，Desktop CDP 桥只允许该 Session 的 agent 操作它。agent 打开页面时，主进程请求窗口在该 Session 的 Sidebar 中打开一个可见的 Browser tab；tab 通过导航参数把请求 id 带到它的 guest 租约，新 guest 即回应该请求。20 秒内没有 Sidebar 回应的请求会失败，例如该 Session 没有在窗口中打开时。
+
 页面刷新快捷键调用工具栏使用的同一重载操作。其 Tooltip 和 ARIA 组合随有效绑定更新。Desktop 通过所属窗口路由已批准 guest 中的有效快捷键；获焦 webview 必须仍持有该 guest 的租约。Web 保留浏览器专用组合。
 
 </details>
@@ -89,7 +91,7 @@ Desktop 主进程批准 guest 租约，并执行挂载、导航和权限策略�
 <a id="model-experience"></a>
 ## 模型体验
 
-无。Browser tab 是用户侧呈现状态，不注册工具、prompt section 或 Session event。
+无。Browser tab 是用户侧呈现状态，不注册工具、prompt section 或 Session event。在 Desktop 上，审计 agent 的 [Playwright MCP](../../experimental/browser-use-playwright-mcp/README.zh.md) 工具操作该 Session 的 tab，这些工具负责自己的模型可见结果。
 
 #### KV Cache 影响
 
@@ -107,7 +109,7 @@ Desktop 主进程批准 guest 租约，并执行挂载、导航和权限策略�
 - 出于安全原因，浏览器会隐藏很多 iframe 失败：DNS、TLS、mixed-content、CSP 与 `X-Frame-Options` 失败可能触发 `load`，也可能不提供可操作 event，而不是触发 `error`。加载失败 notice 只能作为 best-effort 提示。
 - 只要 tab 仍在 Sidebar 布局中，保存的标题和 URL 就会跨刷新与插件卸载保留。关闭 tab 会删除其检查点。重启恢复不恢复页面内存、未保存的表单或 Chromium history 栈。
 - 本地文件会被拒绝，并继续由 Document Preview 负责。
-- Desktop 按规范化的工作区 CWD 共享进程内存储分区；没有解析到 Workspace 的 Session 单独隔离。Cookie 与 Web storage 不跨应用重启保留。guest 权限、下载与原生 popup 均被拒绝；通过检查的 HTTP(S) popup 请求会打开 Sidebar tab。Host 地址过滤不是通用私网或 DNS-rebinding 防火墙。
+- Desktop 按规范化的工作区 CWD 共享存储分区并保存在磁盘上，所以 Cookie、Web storage 和登录状态跨应用重启保留；没有解析到 Workspace 的 Session 在内存中单独隔离。应用菜单和托盘中的「清除浏览器数据…」会清除所有 Sidebar 分区，包括之前启动留下的分区。保存的 Cookie 是应用用户数据目录中的普通文件。guest 权限、下载与原生 popup 均被拒绝；通过检查的 HTTP(S) popup 请求会打开 Sidebar tab。Host 地址过滤不是通用私网或 DNS-rebinding 防火墙。
 
 <a id="dev-note"></a>
 ### 开发备注

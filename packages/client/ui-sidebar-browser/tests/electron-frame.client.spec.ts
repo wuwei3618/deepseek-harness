@@ -18,7 +18,7 @@ it('clears a failed load when the main page retries without a toolbar command', 
   }
   const presentation = new ElectronWebviewPresentation({ mounted: () =>{  frame.attach() }, unmounted: () =>{  frame.detach() } })
   const frame = new ElectronWebViewImpl({ initial: undefined, persist: vi.fn(), openRequested: vi.fn() },
-    bridge, async () => 'cwd:/workspace', presentation)
+    bridge, 'session-1', async () => 'cwd:/workspace', presentation)
   const createElement = vi.spyOn(presentation, 'createElement').mockReturnValue(element)
   const host = document.createElement('div')
   host.id = 'electron-frame-retry'

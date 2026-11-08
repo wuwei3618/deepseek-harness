@@ -4,7 +4,11 @@ import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import type { Context } from '@deepseek-ai/cordis'
 import { BrowserMcpConfig, mountSessionMcp, validateBrowserMcpConfig } from '@deepseek-ai/dsh-experimental-browser-use-runtime/mcp'
+import type { Agent } from '@deepseek-ai/dsh-agent'
 import type {} from '@deepseek-ai/dsh-working-directory'
+
+/** Endpoint placeholder replaced by each live Session's id. */
+const SESSION_PLACEHOLDER = '{sessionId}'
 
 /** Cordis identity for the Playwright MCP browser provider. */
 export const name = 'experimental-browser-use-playwright-mcp'
@@ -33,8 +37,9 @@ export function apply(ctx: Context, config: Config): void {
     .filter(key => key.toUpperCase().startsWith('PLAYWRIGHT_MCP_'))
     .map(key => [key, '']))
   const args = [cli, '--browser', 'chromium']
+  const perSession = config.mode === 'attach' && config.endpoint.includes(SESSION_PLACEHOLDER)
   if (config.mode === 'attach') {
-    args.push('--cdp-endpoint', config.endpoint)
+    if (!perSession) args.push('--cdp-endpoint', config.endpoint)
   } else {
     args.push('--isolated')
     if (config.headless) args.push('--headless')
@@ -42,9 +47,12 @@ export function apply(ctx: Context, config: Config): void {
   }
   mountSessionMcp(ctx, {
     name: 'playwright-mcp',
-    exclusive: config.mode === 'attach',
+    exclusive: config.mode === 'attach' && !perSession,
     command: process.execPath,
     args,
+    ...config.mode === 'attach' && perSession ? {
+      agentArgs: (agent: Agent) => ['--cdp-endpoint', config.endpoint.replaceAll(SESSION_PLACEHOLDER, encodeURIComponent(agent.session.id))],
+    } : {},
     env,
     ...config.toolCallTimeoutMs === undefined ? {} : { toolCallTimeoutMs: config.toolCallTimeoutMs },
   })

@@ -80,7 +80,8 @@ class PresentationRuntime extends PtcRuntime {
   run(): Promise<never> { return Promise.reject(new Error('Unexpected PTC execution in a presentation test')) }
 }
 
-async function load(exclusive = false, mode?: string, toolCallTimeoutMs?: number, toolOrder?: string[]) {
+async function load(exclusive = false, mode?: string, toolCallTimeoutMs?: number, toolOrder?: string[],
+  agentArgs?: (agent: Agent) => readonly string[]) {
   const root = await mkdtemp(join(tmpdir(), 'dsh-browser-mcp-'))
   roots.push(root)
   const model = new FixtureModel()
@@ -90,7 +91,7 @@ async function load(exclusive = false, mode?: string, toolCallTimeoutMs?: number
     ['fs', LocalFileSystem], ['workingDirectory', WorkingDirectory],
     ['model', { inject: ['llm'], apply(ctx: Context) { ctx.effect(() => ctx.llm.registerAdapter(['fixture'], model)) } }],
     ['browser', { inject: ['browserUse', 'agents', 'tools', 'systemPrompt', 'workingDirectory'], apply(ctx: Context) {
-      mountSessionMcp(ctx, { name: 'browser-fixture', exclusive, command: process.execPath, args: [fixture, root, ...mode === undefined ? [] : [mode]], ...toolCallTimeoutMs === undefined ? {} : { toolCallTimeoutMs, env: {} } })
+      mountSessionMcp(ctx, { name: 'browser-fixture', exclusive, command: process.execPath, args: [fixture, root, ...mode === undefined ? [] : [mode]], ...agentArgs === undefined ? {} : { agentArgs }, ...toolCallTimeoutMs === undefined ? {} : { toolCallTimeoutMs, env: {} } })
     } }],
   ])
   const configPath = join(root, 'cordis.yml')
@@ -145,7 +146,7 @@ function registerIndependentTool(ctx: Context) {
 }
 
 async function events(root: string) {
-  return (await readFile(join(root, 'events.ndjson'), 'utf8')).trim().split('\n').map(line => JSON.parse(line) as { event: string; pid: number; name?: string; cwd?: string })
+  return (await readFile(join(root, 'events.ndjson'), 'utf8')).trim().split('\n').map(line => JSON.parse(line) as { event: string; pid: number; name?: string; cwd?: string; argv?: string[] })
 }
 
 it('requires a browser mode and validates launch and attachment settings', () => {
@@ -217,6 +218,16 @@ describe('Session MCP Loader composition', () => {
     for (const { pid } of closed.filter(event => event.event === 'start')) {
       expect(() => process.kill(pid, 0)).toThrow(expect.objectContaining({ code: 'ESRCH' }))
     }
+  })
+
+  it('appends each live Session\'s own arguments to its server command', async () => {
+    const { ctx, root } = await load(false, 'plain', undefined, undefined, agent => ['--session', agent.session.id])
+    const first = await ctx.agents.create({ sessionId: SessionId('first') })
+    const second = await ctx.agents.create({ sessionId: SessionId('second') })
+    await warm(ctx, first.agent)
+    await warm(ctx, second.agent)
+    const argv = (await events(root)).filter(event => event.event === 'start').map(event => event.argv?.slice(2))
+    expect(argv).toEqual(expect.arrayContaining([['--session', 'first'], ['--session', 'second']]))
   })
 
   it('keeps unrelated and child Sessions running without a busy attachment and admits a later owner', async () => {

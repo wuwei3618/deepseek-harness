@@ -70,6 +70,8 @@ Each tab's `BrowserController` owns address validation, commands and explicit re
 
 Desktop's main process approves guest leases and enforces attachment, navigation and permission policy. Preload exposes only scoped Browser operations. Shared declarations use the standard `/types` export with `import type`; the Host and Client compile through separate tsconfig files. Desktop Browser tabs declare `keepMounted`, so Sidebar preserves their DOM across tab changes, Session switches, collapse and floating.
 
+Each Desktop guest belongs to the DSH Session whose Sidebar holds it, and the Desktop CDP bridge lets only that Session's agent operate it. When the agent opens a page, the main process asks the window to open a visible Browser tab in that Session's Sidebar; the tab carries the request id through its navigation parameters to its guest lease, and the new guest answers that request. A request that no Sidebar answers within 20 seconds fails, for example while the Session is not open in the window.
+
 The page refresh shortcut calls the same reload operation as the toolbar. Its tooltip and ARIA key combination follow the effective binding. Desktop routes accepted shortcuts from an approved guest through its owning window; the focused webview must still carry that guest’s lease. Web leaves browser-reserved combinations unchanged.
 
 </details>
@@ -89,7 +91,7 @@ The page refresh shortcut calls the same reload operation as the toolbar. Its to
 <a id="model-experience"></a>
 ## Model Experience
 
-None, as Browser tabs are user-facing presentation state and register no tool, prompt section, or Session event.
+None, as Browser tabs are user-facing presentation state and register no tool, prompt section, or Session event. On Desktop, the audit agent's [Playwright MCP](../../experimental/browser-use-playwright-mcp/README.md) tools operate the Session's tabs; those tools own their model-visible results.
 
 #### KV Cache effect
 
@@ -107,7 +109,7 @@ The isolation policy deliberately gives up some browser compatibility:
 - Browsers conceal many iframe failures for security: DNS, TLS, mixed-content, CSP, and `X-Frame-Options` failures may emit `load` or no actionable event instead of `error`. The load-failure notice is best-effort.
 - Saved title and URL survive reloads and plugin unload while the tab remains in Sidebar's layout. Closing the tab removes its checkpoint. Restart restoration does not recover page memory, unsaved forms or Chromium's history stack.
 - Local files are rejected and remain owned by Document Preview.
-- Desktop shares process-local storage partitions by canonical workspace CWD; Sessions without a resolved Workspace are isolated separately. Cookies and Web storage do not survive application restart. Guest permissions, downloads and native popups are denied; approved HTTP(S) popup requests open Sidebar tabs. Host-address filtering is not a general private-network or DNS-rebinding firewall.
+- Desktop shares storage partitions by canonical workspace CWD and keeps them on disk, so cookies, Web storage and sign-ins survive application restart; Sessions without a resolved Workspace are isolated in memory. **Clear Browser Data…** in the application menu and the tray clears every Sidebar partition, including partitions of earlier launches. Persisted cookies are ordinary files in the application's user data directory. Guest permissions, downloads and native popups are denied; approved HTTP(S) popup requests open Sidebar tabs. Host-address filtering is not a general private-network or DNS-rebinding firewall.
 
 <a id="dev-note"></a>
 ### Dev Note

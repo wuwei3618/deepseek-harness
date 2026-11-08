@@ -202,6 +202,29 @@ describe('default product isolation', () => {
     expect(verifyDefaultProductIsolation(root).failures.join('\n')).toContain(experimental)
   })
 
+  it('accepts the Playwright MCP browser packages only from the audit Desktop bundle and its own dependencies', () => {
+    const playwright = '@deepseek-ai/dsh-experimental-browser-use-playwright-mcp'
+    const runtime = '@deepseek-ai/dsh-experimental-browser-use-runtime'
+    const root = fixture()
+    write(root, 'packages/experimental/browser-use-playwright-mcp/package.json', { name: playwright, dependencies: { [runtime]: 'workspace:*' } })
+    write(root, 'packages/experimental/browser-use-playwright-mcp/src/index.ts', `import '${runtime}'\n`)
+    write(root, 'packages/experimental/browser-use-runtime/package.json', { name: runtime, dependencies: { [experimental]: 'workspace:*' } })
+    write(root, 'packages/audit/audit-desktop/package.json', {
+      name: '@deepseek-ai/dsh-audit-desktop', dependencies: { [playwright]: 'workspace:*' }, dsh: { bundle: { patch: './cordis.patch.yml' } },
+    })
+    write(root, 'packages/audit/audit-desktop/cordis.patch.yml', [{ insert: [{ name: playwright }] }])
+    manifest(root, 'apps/cli/package.json', { dependencies: { [core]: 'workspace:^', '@deepseek-ai/dsh-audit-desktop': 'workspace:*' } })
+
+    expect(verifyDefaultProductIsolation(root).failures).toEqual([
+      `${runtime} dependencies -> ${experimental}: default product must not include experimental packages`,
+    ])
+    manifest(root, 'packages/experimental/browser-use-runtime/package.json', { dependencies: {} })
+    expect(verifyDefaultProductIsolation(root).failures).toEqual([])
+    write(root, patch, [{ insert: [{ name: core }, { name: playwright }] }])
+    expect(verifyDefaultProductIsolation(root).failures).toContain(
+      `${patch} -> ${playwright}: default product must not include experimental packages`)
+  })
+
   it('rejects experimental names absent from the inventory and paths with another package name', () => {
     const root = fixture()
     manifest(root, 'apps/cli/package.json', { dependencies: { '@deepseek-ai/dsh-experimental-missing': '*' } })

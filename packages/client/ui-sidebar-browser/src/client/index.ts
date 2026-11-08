@@ -12,7 +12,7 @@ import { createBrowserControllers } from './browser/BrowserController.ts'
 import type { BrowserInjected } from './browser/BrowserController.ts'
 import { createIframePage } from './pages.ts'
 import { createElectronPage } from './electron/pages.ts'
-import type { DesktopBrowserBridge } from '../types.ts'
+import type { DesktopBrowserAgentRequestId, DesktopBrowserBridge } from '../types.ts'
 import { browserWorkspace } from './electron/workspace.ts'
 import type { BrowserPageFactory } from './browser/BrowserPage.ts'
 import { BROWSER_ID, browserDefinition } from './definition.tsx'
@@ -31,8 +31,8 @@ export type { BrowserAddressFailure, BrowserAddressResult, BrowserTarget } from 
 
 declare module '@deepseek-ai/dsh-client-ui-sidebar-right/client' {
   interface SidebarRightTabParamsMap {
-    /** Optional initial Browser URL. */
-    browser: { readonly url?: string }
+    /** Optional initial Browser URL, and the agent page request the tab answers. */
+    browser: { readonly url?: string; readonly agentRequest?: DesktopBrowserAgentRequestId }
   }
 }
 
@@ -96,9 +96,18 @@ export function apply(ctx: Context): void {
   }
   if (desktop === undefined) installFrames(ctx, () => createIframePage)
   else ctx.inject(['workspaces'], (scope) => {
-    installFrames(scope, sessionId => options => createElectronPage(options, desktop,
+    installFrames(scope, sessionId => options => createElectronPage(options, desktop, sessionId,
       signal => browserWorkspace(scope.workspaces.list, sessionId, signal)))
   })
+  // The Session's agent asked for a page: open it as a visible tab in that Session's Sidebar.
+  const onAgentOpen = desktop?.onAgentOpenRequested
+  if (onAgentOpen !== undefined) {
+    ctx.effect(() => onAgentOpen((request) => {
+      ctx.sidebarRight.openTabIn(request.sessionId as BrowserBodyProps['sessionId'], 'browser', {
+        params: { ...request.url === undefined ? {} : { url: request.url }, agentRequest: request.id },
+      })
+    }), 'ui-sidebar-browser.agent-open')
+  }
   ctx.effect(() => ctx.slots.inject('sidebar.right.pane.tab.title', () => ctx.slots.register({
     name: 'sidebar.right.pane.tab.title', key: BROWSER_ID, store,
   }, BrowserTitle)), 'ui-sidebar-browser.title')
