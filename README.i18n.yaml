@@ -2,33 +2,30 @@
 # section, a hash of its English and Chinese blocks outside code blocks and generated regions.
 # After editing either side, bring the other along and re-record with:
 #   pnpm run verify-translation-pairing --write README.md
-/deepseek-harness:
-  en: f68c4f080ce55ff2
-  zh: 88a76d7f7f0b260e
-/deepseek-harness/developer-preview:
-  en: 4ef4d8a71ac143f0
-  zh: 1bfc3149ba8e5543
-/deepseek-harness/run:
-  en: 4e0248e4c6474fc6
-  zh: eb2fb8d78c7d6bc0
-/deepseek-harness/run/run-from-npm:
-  en: e22005cd42e6cbad
-  zh: 0f536f4208df1d60
-/deepseek-harness/run/run-from-source:
-  en: 819e3f7c144d0d64
-  zh: de815f040975dba7
-/deepseek-harness/community-and-support:
-  en: 20acf6451fdc869b
-  zh: d06246dd019ecef7
-/deepseek-harness/contributing:
-  en: cabc2d3e9f8898bd
-  zh: 83b6d238bae29ce3
-/deepseek-harness/development:
-  en: 803ca2b11b497bed
-  zh: 8b4071eb0e7783ef
-/deepseek-harness/citation:
-  en: 6704e9e5a8d49a91
-  zh: 85c9cdd8d56f8e9d
-/deepseek-harness/license:
-  en: 926995344fc1c72b
-  zh: c92fab5abf85932f
+/cscec8b-audit-agent:
+  en: 24a9eee6d796ade9
+  zh: 6a996e1871b4451e
+/cscec8b-audit-agent/before-you-use-it:
+  en: a270ab7d647c7e02
+  zh: 1b7939c8c82eccdf
+/cscec8b-audit-agent/run:
+  en: 825b6c0a70089bfa
+  zh: 78cae6d863597eaf
+/cscec8b-audit-agent/run/desktop-app:
+  en: 0913d766b6ca7272
+  zh: fbf54e247d41795e
+/cscec8b-audit-agent/run/command-line:
+  en: acf3509d028a66f6
+  zh: ce0fcb033eaeb488
+/cscec8b-audit-agent/run/run-from-source:
+  en: 669ec2b3871bb2ba
+  zh: bdbdeb48054cf902
+/cscec8b-audit-agent/run/package-the-desktop-app:
+  en: 114854789ec448e1
+  zh: c5745ff5c0624223
+/cscec8b-audit-agent/development:
+  en: faeb2be4790b90be
+  zh: 301433d1f7fb9174
+/cscec8b-audit-agent/license:
+  en: 19969a146877c4e4
+  zh: a68a29ccb9b4a9b6

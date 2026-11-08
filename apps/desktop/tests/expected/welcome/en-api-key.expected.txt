@@ -1,8 +1,8 @@
-DeepSeek Harness
-DeepSeek Harness
+CSCEC8B Audit Agent
+CSCEC8B Audit Agent
 Add an API key to get started
-Configure official DeepSeek models to start using Harness
+Configure official DeepSeek models to start using CSCEC8B Audit Agent
 Enter API key [password]
 Save and continue [disabled]
 Set up later
-Back to sign in
+Back

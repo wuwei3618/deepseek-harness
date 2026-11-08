@@ -1,77 +1,73 @@
-# DeepSeek Harness
+# CSCEC8B Audit Agent
 
 English | [中文](README.zh.md)
 
-DeepSeek Harness (`dsh`) is an open-source agent harness developed by [DeepSeek AI](https://deepseek.com).
+CSCEC8B Audit Agent (八局审计智能体) is the internal audit assistant of China Construction Eighth Engineering Division Corp., Ltd. It reads the working papers and source records in a local folder, analyzes them with the DeepSeek model service, and helps auditors draft findings, check figures and organize evidence.
 
-It is built on an **everything-is-a-plugin** architecture and powered by [Cordis](https://github.com/cordiverse/cordis), whose design is described in [_A Programming Paradigm for Spatiotemporal Composability_](https://arxiv.org/abs/2608.25512).
+It is built on [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness), an open-source agent harness developed by [DeepSeek AI](https://deepseek.com). Commands, packages and configuration directories keep the upstream `dsh` names.
 
-Documentation: [https://deepseek-harness.github.io/deepseek-harness/](https://deepseek-harness.github.io/deepseek-harness/)
+## Before you use it
 
-## Developer preview
-
-DeepSeek Harness is in _developer preview_ and iterating rapidly. **THERE WILL BE COMPATIBILITY-BREAKING CHANGES.**
+Conversations and the files you share with the agent are sent to the DeepSeek model service for analysis. Treat its conclusions as a starting point and verify them against working papers and source records before relying on them.
 
 Review the [safety notice](SAFETY.md) before running the project.
 
+<a id="run"></a>
+
 ## Run
 
-### Run from `npm`
+<a id="desktop-app"></a>
 
-Install `Node.js`, then run:
+### Desktop app
 
-```sh
-npx @deepseek-ai/dsh web
-```
+The desktop app runs on Windows and macOS. Install the package that your administrator distributes, open CSCEC8B Audit Agent, enter a DeepSeek API key on the welcome page, then choose a local folder as the workspace. Updates are distributed manually; automatic update is off.
 
-The command starts the Web UI at `http://127.0.0.1:3080` by default and opens it in the default browser for a local launch. An SSH launch only prints the host URL because the SSH client or editor owns the local forwarded address. Pass `--no-open` to run the server without opening a browser. See [Web UI guide](docs/user/guide/index.md).
+<a id="command-line"></a>
+
+### Command line
+
+The desktop app can install the `dsh` command from its application menu. Run `dsh --help` to list the available profiles and options; [CLI help](docs/cli-help.md) records the full output.
+
+<a id="run-from-source"></a>
 
 ### Run from source
 
 To run from a repository checkout:
 
 ```sh
-git clone https://github.com/deepseek-ai/deepseek-harness.git
+git clone https://github.com/wuwei3618/deepseek-harness.git
 cd deepseek-harness
 pnpm install
 pnpm run build
-pnpm dsh web
+pnpm run start:desktop
 ```
 
-`pnpm run build` prepares the repository artifacts. `pnpm dsh web` uses those built artifacts without rebuilding.
+`pnpm run build` prepares the repository artifacts. `pnpm run start:desktop` launches the desktop app from those artifacts without rebuilding.
 
-## Community and support
+<a id="package-the-desktop-app"></a>
 
-- Submit feedback or bug reports through [GitHub Discussions](https://github.com/deepseek-ai/deepseek-harness/discussions).
-- Add the [`dsh-plugin`](https://github.com/topics/dsh-plugin) topic to your plugin repository for discoverability.
-- Join <a href="https://discord.gg/4MrtZUhpxg">DeepSeek Harness Discord community</a>.
+### Package the desktop app
 
-## Contributing
+Build an unsigned internal package on the target platform:
 
-See [CONTRIBUTING.md](CONTRIBUTING.md).
+```sh
+pnpm run package:desktop:win:x64:unsigned
+pnpm run package:desktop:mac:arm64:unsigned
+pnpm run package:desktop:mac:x64:unsigned
+```
+
+The [desktop packaging guide](apps/desktop/packaging/README.md) lists the prerequisites and output locations.
 
 ## Development
 
-Start with the [development guide](docs/development.md) and [architecture documentation](docs/architecture.md).
+Start with the [development guide](docs/development.md) and [architecture documentation](docs/architecture.md). See [CONTRIBUTING.md](CONTRIBUTING.md) for the contribution workflow.
 
-`pnpm run dev:web` builds, serves, and rebuilds client bundles on source edits in one terminal, and `make help` lists the matching Make targets for Web and Desktop; the guide's application commands section owns the full table.
+`pnpm run dev:desktop` builds and launches the desktop app, and `make help` lists the matching Make targets; the guide's application commands section owns the full table.
 
 For agents, follow [AGENTS.md](AGENTS.md).
 
-## Citation
-
-```bibtex
-@misc{deepseek-harness2026,
-  title={DeepSeek Harness: Everything is a Plugin},
-  author={DeepSeek-AI},
-  year={2026},
-  publisher={GitHub},
-  howpublished={\url{https://github.com/deepseek-ai/deepseek-harness}},
-}
-```
-
 ## License
 
-[MIT](LICENSE)
+[MIT](LICENSE). The license keeps the DeepSeek copyright notice of the upstream project.
 
 Third-party dependencies and their licenses are disclosed in [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).

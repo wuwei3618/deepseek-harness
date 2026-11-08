@@ -10,6 +10,7 @@ import { cosOperation } from './cos-operation.ts'
 import type { DesktopObjectDigest, DesktopPublishTransport } from './desktop-publish.ts'
 import { DesktopCosOperationError } from './desktop-publication-failure.ts'
 import type { DesktopUploadPlan } from './desktop-upload-plan.ts'
+import { DESKTOP_ARTIFACT_PREFIX } from './desktop-product.mjs'
 
 /** Verified file and destination; the caller closes the handle after publication. */
 export interface DesktopWebsiteInstaller {
@@ -41,7 +42,7 @@ export async function prepareWebsiteInstaller(directory: string, manifest: Deskt
     throw new Error('website installer: build identity or production qualification mismatch')
   }
   const windows = route.target === 'win-x64'
-  const filename = `deepseek-harness-${source.version}-${route.target}.${windows ? 'exe' : 'dmg'}`
+  const filename = `${DESKTOP_ARTIFACT_PREFIX}-${source.version}-${route.target}.${windows ? 'exe' : 'dmg'}`
   const file = manifest.files.find(item => item.name === filename)
   if (!file) throw new Error('website installer: selected installer is absent from build manifest')
   const path = join(directory, file.name)

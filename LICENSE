@@ -1,6 +1,10 @@
 MIT License
 
 Copyright (c) 2026 DeepSeek
+Copyright (c) 2026 中国建筑第八工程局有限公司
+
+八局审计智能体 (CSCEC8B Audit Agent) is based on DeepSeek Harness,
+which is licensed under the MIT License below.
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
