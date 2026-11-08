@@ -2,7 +2,20 @@ import type { ProductEvent } from '@deepseek-ai/dsh-client-product-analytics/typ
 /** Native welcome operations using the shared Web authentication and RPC APIs. */
 
 import { randomUUID } from 'node:crypto'
+import type { AccountView } from '@deepseek-ai/dsh-deepseek-account/types'
 import { desktopAccountBackend, type DesktopAccountBackend } from './account-backend.ts'
+
+/** Gateway failure code for an endpoint that no active plugin exports. */
+const ENDPOINT_UNAVAILABLE = 'gateway/invocation-unavailable'
+
+/** Failed Web RPC; `code` is the Gateway failure code when the Host returned one. */
+export class DesktopWelcomeRpcError extends Error {
+  /** @param code - remote failure code from the response envelope, if present. */
+  constructor(readonly code: string | undefined) {
+    super('desktop welcome: Web RPC failed')
+    this.name = 'DesktopWelcomeRpcError'
+  }
+}
 
 /** Metadata needed before the native entry or workspace becomes visible. */
 export interface WelcomeState {
@@ -17,6 +30,8 @@ export interface DesktopWelcomeBackend {
   /** @returns the current Host policy; every read observes live configuration. */
   analyticsEnabled(): Promise<boolean>
   readonly account: DesktopAccountBackend
+  /** @returns whether the profile exports the account endpoints; profiles without an account service return false. */
+  accountAvailable(): Promise<boolean>
   /** @param event - desktop-owned fields. @returns after local Host intake. */
   report(event: ProductEvent): Promise<void>
   /** @returns Configured-key presence and the shared language preference, without credential values. */
@@ -60,13 +75,24 @@ export function connectDesktopWelcome(
     })
     if (!response.ok) throw new Error('desktop welcome: Web request failed')
     const envelope: unknown = await response.json()
-    if (!record(envelope) || envelope.type !== 'server-response' || envelope.rpcId !== rpcId
-      || !record(envelope.result) || envelope.result.ok !== true) {
-      throw new Error('desktop welcome: Web RPC failed')
+    if (!record(envelope) || envelope.type !== 'server-response' || envelope.rpcId !== rpcId || !record(envelope.result)) {
+      throw new DesktopWelcomeRpcError(undefined)
+    }
+    if (envelope.result.ok !== true) {
+      const error = envelope.result.error
+      throw new DesktopWelcomeRpcError(record(error) && typeof error.code === 'string' ? error.code : undefined)
     }
     return envelope.result.value
   }
   const account = desktopAccountBackend(origin, invoke, cookie)
+  const accountState = async (): Promise<AccountView | undefined> => {
+    try {
+      return await account.state()
+    } catch (error) {
+      if (error instanceof DesktopWelcomeRpcError && error.code === ENDPOINT_UNAVAILABLE) return undefined
+      throw error
+    }
+  }
   const settingsAndReference = async () => {
     const settings = await invoke({ namespace: 'settings', method: 'describe', args: {} })
     if (!record(settings) || !Array.isArray(settings.namespaces)) throw new Error('desktop welcome: missing settings namespaces')
@@ -112,7 +138,7 @@ export function connectDesktopWelcome(
     }
     if (ref !== undefined && !record(states[ref])) throw new Error('desktop welcome: missing credential metadata')
     return {
-      loggedIn: (await account.state()).status === 'credential-stored',
+      loggedIn: (await accountState())?.status === 'credential-stored',
       hasApiKey: Object.values(states).some(value => record(value) && value.configured === true),
       writable: ref !== undefined && record(states[ref]) && states[ref].writable === true,
       localePreference: localePreference(namespaces),
@@ -120,6 +146,7 @@ export function connectDesktopWelcome(
   }
   return {
     account,
+    async accountAvailable() { return await accountState() !== undefined },
     read,
     async analyticsEnabled() {
       const enabled = await invoke({ namespace: 'productAnalytics', method: 'enabled', args: {} }, AbortSignal.timeout(1000))

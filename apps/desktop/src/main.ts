@@ -547,6 +547,9 @@ async function main(): Promise<void> {
         analyticsEnabled = await welcomeBackend.analyticsEnabled().catch(() => false)
         if (!reportedLaunch) { reportedLaunch = true; void track('desktop_app_launch', {}) }
         stopAccount?.()
+        stopAccount = undefined
+        // A profile without an account service has no account or Desktop collection-policy stream; Welcome offers API-key setup only.
+        if (!await welcomeBackend.accountAvailable()) return
         const accountBackend = welcomeBackend.account
         stopAccount = accountBackend.watch((state) => {
           if (quitting) return

@@ -84,6 +84,31 @@ describe('desktop welcome Web operations', () => {
     expect(host.send).not.toHaveBeenCalled()
   })
 
+  it('reports a profile without account endpoints as signed out instead of failing', async () => {
+    const host = transport()
+    const backend = connectDesktopWelcome(url, cookie, host.send)
+    const send = host.send.getMockImplementation()!
+    host.send.mockImplementation(async (input, init) => {
+      const { rpcId, method } = JSON.parse(init!.body as string) as { rpcId: string; method: string }
+      if (method !== 'account/getState') return send(input, init)
+      return Response.json({ type: 'server-response', rpcId,
+        result: { ok: false, error: { code: 'gateway/invocation-unavailable', message: 'no active Remote method exports this endpoint', details: {} } } })
+    })
+    expect(await backend.accountAvailable()).toBe(false)
+    expect(await backend.read()).toMatchObject({ loggedIn: false, hasApiKey: false })
+  })
+
+  it('keeps other account failures visible', async () => {
+    const host = transport()
+    const backend = connectDesktopWelcome(url, cookie, host.send)
+    host.send.mockImplementationOnce(async (_input, init) => {
+      const { rpcId } = JSON.parse(init!.body as string) as { rpcId: string }
+      return Response.json({ type: 'server-response', rpcId, result: { ok: false, error: { code: 'gateway/internal', message: 'failed', details: {} } } })
+    })
+    await expect(backend.accountAvailable()).rejects.toMatchObject({ name: 'DesktopWelcomeRpcError', code: 'gateway/internal' })
+    expect(await backend.accountAvailable()).toBe(true)
+  })
+
   it('keeps provider diagnostics out of failures and rejects unmatched RPC envelopes', async () => {
     const host = transport()
     const backend = connectDesktopWelcome(url, cookie, host.send)
