@@ -37,6 +37,9 @@ import { installProxyFromEnvironment } from '@deepseek-ai/dsh-http-proxy'
 import { DSH_LAUNCH_ENVIRONMENT_KEY, type LaunchEnvironmentSnapshot } from '@deepseek-ai/dsh-launch-environment'
 import { provideCmdline, type AppReady } from '@deepseek-ai/dsh-cmdline'
 import { createProcessShutdown, type ProcessShutdown } from './process-shutdown.ts'
+import { AUDIT_RELEASE_LOCKED, restoreTemplateBundles } from './release-lock.ts'
+
+export { AUDIT_RELEASE_DESKTOP_TEMPLATE, AUDIT_RELEASE_LOCKED, restoreTemplateBundles } from './release-lock.ts'
 
 const NAME = 'dsh'
 
@@ -193,6 +196,7 @@ export function initializeProfileFromDefault(
  */
 export function prepareProfile(name: string, userLayer = true, fromDefaultProfile?: string): Profile {
   if (fromDefaultProfile !== undefined) initializeProfileFromDefault(name, fromDefaultProfile)
+  if (AUDIT_RELEASE_LOCKED) restoreTemplateBundles(NAME, resolveProfileDir(name), name)
   const profile = loadProfile(NAME, name, INSTALL_ANCHOR, undefined, { userLayer })
   reportSkippedBundles(NAME, profile)
   writeFileSync(join(profile.dir, PROFILE_ROOT_FILENAME), PROFILE_ROOT_CONFIG)

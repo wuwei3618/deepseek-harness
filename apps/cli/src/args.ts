@@ -16,6 +16,7 @@
  */
 
 import { Command, CommanderError, InvalidArgumentError } from 'commander'
+import { AUDIT_RELEASE_PROFILES, resolveReleaseProfile } from './release-lock.ts'
 
 /** Boot a named profile and hand it the invocation's inner arguments. */
 interface ProfileInvocation {
@@ -86,6 +87,27 @@ function rejectElectronProfile(program: Command, profile: string): void {
   }
 }
 
+/**
+ * Apply the audit release lock to a profile selection: launcher overlays and
+ * template replacement are refused, and the name maps to its audit template.
+ * @param program - the command that reports a refusal.
+ * @param profile - the requested profile name.
+ * @param options - the launcher flags commander collected.
+ * @returns the audit template name to boot.
+ */
+function lockProfile(program: Command, profile: string, options: BootOptions): string {
+  if ((options.patch ?? []).length > 0) program.error('error: --patch is unavailable in this audit release')
+  if (options.fromDefaultProfile !== undefined) {
+    program.error('error: --from-default-profile is unavailable in this audit release')
+  }
+  const locked = resolveReleaseProfile(profile)
+  if (locked === undefined) {
+    const allowed = [...new Set(Object.values(AUDIT_RELEASE_PROFILES))].join(', ')
+    program.error(`error: profile ${JSON.stringify(profile)} is unavailable in this audit release; use one of ${allowed}`)
+  }
+  return locked
+}
+
 /** The launcher's own help text; each app prints its own. */
 const HELP_EXAMPLES = `
 Examples:
@@ -141,9 +163,12 @@ function resolveBoot(program: Command, profile: string, options: BootOptions, ar
  * @param argv - arguments after the Node binary and script.
  * @param version - version string printed by `--version`.
  * @param manageDesktopProfile - permit Desktop's installed carrier to manage its reserved profile's plugins.
+ * @param releaseLocked - apply the audit release lock: boot only audit profiles, with no overlays or plugin commands.
  * @returns the resolved invocation.
  */
-export function parseDshArgs(argv: readonly string[], version: string, manageDesktopProfile = false): DshInvocation {
+export function parseDshArgs(
+  argv: readonly string[], version: string, manageDesktopProfile = false, releaseLocked = false,
+): DshInvocation {
   const first = argv[0]
   let resolved: DshInvocation | undefined
   // Annotated, not inferred: the actions below call back into `program`, and an
@@ -181,7 +206,8 @@ export function parseDshArgs(argv: readonly string[], version: string, manageDes
       const profile = options.profile
       if (profile === '') program.error('error: --profile needs a name')
       rejectElectronProfile(program, profile)
-      resolved = resolveBoot(program, profile, options, args)
+      const booted = releaseLocked ? lockProfile(program, profile, options) : profile
+      resolved = resolveBoot(program, booted, options, args)
     })
 
   if (first === 'plugin') {
@@ -195,6 +221,7 @@ export function parseDshArgs(argv: readonly string[], version: string, manageDes
       .allowUnknownOption()
       .argument('[args...]', 'pnpm arguments, forwarded verbatim (add <pkg>, remove <pkg>, why <pkg>, ...)')
       .action((args: string[], options: { profile: string }) => {
+        if (releaseLocked) program.error('error: plugin management is unavailable in this audit release')
         if (options.profile === '') program.error('error: --profile needs a name')
         if (!manageDesktopProfile) rejectElectronProfile(plugin, options.profile)
         if (args.length === 0) program.error('error: plugin needs pnpm arguments to forward (e.g. add <package>)')

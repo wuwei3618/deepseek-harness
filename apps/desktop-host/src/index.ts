@@ -5,7 +5,9 @@ import { randomUUID } from 'node:crypto'
 import type { PluginOperationRunId } from '@deepseek-ai/dsh-plugin-manager/diagnostic'
 import { formatFatalDiagnostic } from './fatal-diagnostic.ts'
 import { loadLayeredEnv, loadProfileDirectory, reportSkippedBundles } from '@deepseek-ai/dsh-app-boot'
-import { runProfile } from '@deepseek-ai/dsh/profile-boot'
+import {
+  AUDIT_RELEASE_DESKTOP_TEMPLATE, AUDIT_RELEASE_LOCKED, restoreTemplateBundles, runProfile,
+} from '@deepseek-ai/dsh/profile-boot'
 import type {} from '@deepseek-ai/dsh-client-connection'
 import type {} from '@deepseek-ai/dsh-host-webserver'
 import type {} from '@deepseek-ai/dsh-deepseek-account'
@@ -26,6 +28,8 @@ async function main(): Promise<void> {
   const projectDir = process.argv[3] as string
   installOfficeEngineResolution(runtimeDir)
   const installAnchor = join(runtimeDir, 'node_modules', '@deepseek-ai', 'dsh', 'package.json')
+  // A locked release boots the audit Desktop bundles even when an earlier installation wrote others.
+  if (AUDIT_RELEASE_LOCKED) restoreTemplateBundles('dsh', projectDir, AUDIT_RELEASE_DESKTOP_TEMPLATE)
   const profile = loadProfileDirectory('dsh', projectDir, installAnchor)
   reportSkippedBundles('dsh', profile)
   const application = runProfile({
