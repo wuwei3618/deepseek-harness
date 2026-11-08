@@ -1,12 +1,12 @@
 // @vitest-environment jsdom
 import { afterEach, expect, it, vi } from 'vitest'
-import type { DesktopBrowserReservation } from '../src/types.ts'
+import type { DesktopBrowserAgentRequestId, DesktopBrowserReservation } from '../src/types.ts'
 import { electronFixture } from './electron-harness.client.ts'
 
 const target = { kind: 'https' as const, url: 'https://example.test/', title: 'Example' }
 const fixtures: ReturnType<typeof electronFixture>[] = []
-function fixture() {
-  const h = electronFixture()
+function fixture(agentRequest?: DesktopBrowserAgentRequestId) {
+  const h = electronFixture(undefined, agentRequest)
   fixtures.push(h)
   return h
 }
@@ -177,4 +177,17 @@ it('ignores superseded and aborted load promises, but publishes an active naviga
   h.frame.loadUrl(target)
   await vi.waitFor(() => { expect(h.frame.getSnapshot().error).toBeDefined() })
   expect(error).toHaveBeenCalledOnce()
+})
+
+it('creates an empty guest for an agent page request and names that request only once', async () => {
+  const agentRequest = 'agent-1' as DesktopBrowserAgentRequestId
+  const h = fixture(agentRequest)
+  h.mount()
+  const guest = await h.guest()
+  expect(guest.loadURL).not.toHaveBeenCalled()
+  expect(h.bridge.acquire.mock.calls).toEqual([['cwd:/workspace', 'session-1', agentRequest]])
+  h.frame.loadUrl(target)
+  guest.emit('dom-ready')
+  await vi.waitFor(() => { expect(guest.loadURL).toHaveBeenCalledWith(target.url) })
+  expect(h.bridge.acquire).toHaveBeenCalledOnce()
 })

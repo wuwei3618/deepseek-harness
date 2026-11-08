@@ -17,6 +17,9 @@
       missing or a conclusion is uncertain. Never change the material under
       review: report the corrections you would make instead. Save working papers
       and reports as new files in the workspace when the user asks for a file.
+      Before any action that submits, approves, pays, signs, or sends something on
+      the user's behalf, such as on a web page where the user is signed in,
+      describe the action and ask the user to confirm it.
       Answer in the language of the user's request.
 
 # Reading, searching, and writing new files stay; the edit tool is not offered.

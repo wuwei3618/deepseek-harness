@@ -73,6 +73,8 @@ export function connectDesktopWelcome(
       headers: { 'content-type': 'application/json', cookie },
       body: JSON.stringify({ type: 'client-request', rpcId, method, payload: { args: request.args } }),
     })
+    // The Host answers 404 when the Gateway claims no endpoint of that name, as for a namespace no active plugin exports.
+    if (response.status === 404) throw new DesktopWelcomeRpcError(ENDPOINT_UNAVAILABLE)
     if (!response.ok) throw new Error('desktop welcome: Web request failed')
     const envelope: unknown = await response.json()
     if (!record(envelope) || envelope.type !== 'server-response' || envelope.rpcId !== rpcId || !record(envelope.result)) {

@@ -55,7 +55,7 @@ Run one audit task with `dsh audit "<task>"`, serve the SDK with `dsh --profile 
 
 #### What the model sees
 
-The system prompt starts with the audit persona, which names the assistant 八局审计智能体 (CSCEC8B Audit Agent), asks for evidence with exact locations, forbids changing the material under review, allows working papers and reports as new workspace files, and asks for answers in the language of the request. The DeepSeek Harness identity line is absent. The tool list contains the shell, `read`, `read_image`, `write`, search, jobs, todo, goal, web, and `skill` tools, and the skill catalog lists only the audit skills.
+The system prompt starts with the audit persona, which names the assistant 八局审计智能体 (CSCEC8B Audit Agent), asks for evidence with exact locations, forbids changing the material under review, allows working papers and reports as new workspace files, requires the user's confirmation before anything is submitted, approved, paid, signed, or sent on the user's behalf, and asks for answers in the language of the request. The DeepSeek Harness identity line is absent. The tool list contains the shell, `read`, `read_image`, `write`, search, jobs, todo, goal, web, and `skill` tools, and the skill catalog lists only the audit skills.
 
 #### Token effect
 

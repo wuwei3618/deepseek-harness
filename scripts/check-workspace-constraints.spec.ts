@@ -232,6 +232,23 @@ describe('experimental workspace constraints', () => {
     },
   )
 
+  it('allows the audit Desktop bundle only its Playwright MCP runtime dependency', () => {
+    const playwright = '@deepseek-ai/dsh-experimental-browser-use-playwright-mcp'
+    const audit = (section: 'dependencies' | 'peerDependencies', name: string): WorkspaceManifest => ({
+      dir: 'packages/audit/audit-desktop', manifest: { name: '@deepseek-ai/dsh-audit-desktop', [section]: { [name]: 'workspace:*' } },
+    })
+    expect(checkExperimentalDependencyIsolation([audit('dependencies', playwright)], [])).toEqual([])
+    expect(checkExperimentalDependencyIsolation([audit('peerDependencies', playwright)], [])).toEqual([
+      `@deepseek-ai/dsh-audit-desktop: peerDependencies.${playwright} must not reference an experimental package`,
+    ])
+    expect(checkExperimentalDependencyIsolation([audit('dependencies', '@deepseek-ai/dsh-experimental-prototype')], [])).toEqual([
+      '@deepseek-ai/dsh-audit-desktop: dependencies.@deepseek-ai/dsh-experimental-prototype must not reference an experimental package',
+    ])
+    expect(checkExperimentalDependencyIsolation([{
+      dir: 'packages/core/consumer', manifest: { name: '@deepseek-ai/dsh-consumer', dependencies: { [playwright]: 'workspace:*' } },
+    }], [])).toEqual([`@deepseek-ai/dsh-consumer: dependencies.${playwright} must not reference an experimental package`])
+  })
+
   it('allows the dsh installation to ship the optional bundles the launcher names, and nothing else experimental', () => {
     const listed = { '@deepseek-ai/dsh-experimental-prototype': 'workspace:^' }
     const installation = { dir: 'apps/cli', manifest: { name: '@deepseek-ai/dsh', dependencies: listed } } satisfies WorkspaceManifest

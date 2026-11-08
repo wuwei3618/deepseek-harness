@@ -15,8 +15,8 @@
   en: 76368b6b1da79c80
   zh: ff1aad10e0ebcbce
 /deepseek-ai-dsh-audit-desktop/use-this-package:
-  en: 9b90dcc765c1c3bc
-  zh: 34ec73bc00d4245f
+  en: 994adb8cc6ffa985
+  zh: 4afa9ecc95f38cf6
 /deepseek-ai-dsh-audit-desktop/understand-the-implementation:
   en: 9ff4adab06a4c124
   zh: 1325a6355ab26c3b
@@ -27,17 +27,29 @@
   en: ad7093bddad0e6f2
   zh: d7a4a891c5c78410
 /deepseek-ai-dsh-audit-desktop/model-experience/audit-preset/what-the-model-sees:
-  en: ce66b1c34b27ad4f
-  zh: 6cfea58fc88c7308
+  en: 02ed04eefe858d53
+  zh: 3dcb0b7996dd056c
 /deepseek-ai-dsh-audit-desktop/model-experience/audit-preset/token-effect:
   en: ab6d5776f324b354
   zh: 24fc3fd558b97e32
 /deepseek-ai-dsh-audit-desktop/model-experience/audit-preset/kv-cache-effect:
   en: 9ffe892d3e67daf3
   zh: 57406938ac16716b
+/deepseek-ai-dsh-audit-desktop/model-experience/sidebar-browser-tools:
+  en: 533b6a34f745fc72
+  zh: 689c2e2679aabc7f
+/deepseek-ai-dsh-audit-desktop/model-experience/sidebar-browser-tools/what-the-model-sees:
+  en: f6f318a19a975522
+  zh: b9461844c5a96a0a
+/deepseek-ai-dsh-audit-desktop/model-experience/sidebar-browser-tools/token-effect:
+  en: bb29a4c763d9d594
+  zh: 0e67639e7e1f50ad
+/deepseek-ai-dsh-audit-desktop/model-experience/sidebar-browser-tools/kv-cache-effect:
+  en: 69cfc40083a0e9d9
+  zh: 2a992dfd2e18af91
 /deepseek-ai-dsh-audit-desktop/known-limitations-and-deferred-work:
-  en: e05ca5e1300ca709
-  zh: c93f2d1a5cb4ce4b
+  en: 28b682a74a762b24
+  zh: d7333e3d526baaa8
 /deepseek-ai-dsh-audit-desktop/known-limitations-and-deferred-work/dev-note:
   en: e67f633dc6fe7773
   zh: 8ec3e73528ddb1a6

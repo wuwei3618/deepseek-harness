@@ -33,6 +33,15 @@ it('supports headed launch and attaches without launching a browser or creating 
   expect(options.args.slice(1)).toEqual(['--browser', 'chromium', '--cdp-endpoint', 'http://127.0.0.1:9222'])
 })
 
+it('gives each live Session its own attachment endpoint without a cross-Session reservation', () => {
+  Provider.apply(new Context(), Provider.Config({ mode: 'attach', endpoint: 'ws://127.0.0.1:9333/devtools/browser/secret/{sessionId}' }))
+  const options = vi.mocked(mountSessionMcp).mock.calls[0]![1]
+  expect(options.exclusive).toBe(false)
+  expect(options.args.slice(1)).toEqual(['--browser', 'chromium'])
+  const agent = { session: { id: 'a/b c' } } as Parameters<NonNullable<typeof options.agentArgs>>[0]
+  expect(options.agentArgs?.(agent)).toEqual(['--cdp-endpoint', 'ws://127.0.0.1:9333/devtools/browser/secret/a%2Fb%20c'])
+})
+
 it('rejects malformed endpoints before mounting any browser resources', () => {
   expect(() => { Provider.apply(new Context(), Provider.Config({ mode: 'attach', endpoint: 'http://localhost:bad/path' })) }).toThrow('browser endpoint')
   expect(mountSessionMcp).not.toHaveBeenCalled()

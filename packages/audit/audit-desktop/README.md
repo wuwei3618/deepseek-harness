@@ -36,6 +36,7 @@ Desktop reads the `audit-desktop` template from [`dsh-official-bundles`](../../u
 | `ui-settings-account`, `account-controller` | switched off |
 | `desktop-product-telemetry`, `product-analytics` | switched off |
 | `system-prompt` | `includeHarnessIdentity: false` and the audit persona at the root |
+| `browser-use`, `browser-use-playwright-mcp` | inserted: [Playwright MCP](../../experimental/browser-use-playwright-mcp/README.md) in `attach` mode on Desktop's per-Session Sidebar browser endpoint; both rows stay off when `DSH_DESKTOP_BROWSER_CDP_ENDPOINT` is unset, as outside Desktop |
 | `ui-brand-official` → `ui-brand-cscec8b` | the official artwork is switched off; [`dsh-client-ui-brand-cscec8b`](../../client/ui-brand-cscec8b/README.md) shows the seal and 八局审计智能体 |
 
 -----
@@ -59,7 +60,7 @@ Desktop reads the `audit-desktop` template from [`dsh-official-bundles`](../../u
 
 #### What the model sees
 
-The same audit persona as [`dsh-audit-agent`](../audit-agent/README.md), without the DeepSeek Harness identity line or the harness development context. The tool list holds only the tools the preset mounts, and the skill catalog lists only the audit skills.
+The same audit persona as [`dsh-audit-agent`](../audit-agent/README.md), without the DeepSeek Harness identity line or the harness development context. The tool list holds only the tools the preset mounts plus, on Desktop, the Playwright MCP browser tools, and the skill catalog lists only the audit skills. The persona asks the model to describe and get confirmation for any action that submits, approves, pays, signs, or sends something on the user's behalf.
 
 #### Token effect
 
@@ -69,10 +70,26 @@ One paragraph of persona text; fewer tool schemas than the standard preset.
 
 Stable for a session. A changed preset revision applies to sessions created afterwards.
 
+### Sidebar browser tools
+
+#### What the model sees
+
+The upstream Playwright MCP tools. They list and operate only the Browser tabs of the current Session's Sidebar, and a page the model opens appears there as a new visible tab with the sign-ins of the workspace.
+
+#### Token effect
+
+The Playwright MCP tool schemas; page snapshots and screenshots are ordinary tool results.
+
+#### KV Cache effect
+
+The tool list is fixed when the Session's browser connection initializes.
+
 ## Known Limitations and Deferred Work
 
 <a id="known-limitations-and-deferred-work"></a>
 
+- **Agent pages need the Session on screen** — a page the agent opens appears in the Session's Sidebar; while that Session is not open in the window, the request fails after 20 seconds.
+- **Screenshots need an image-capable model** — with a text-only model the agent works from page snapshots.
 - **Existing Desktop profiles keep their bundle list** — Desktop initializes its reserved profile only when it is absent, so a profile created by an earlier Web-based build keeps `dsh-web-app` alone.
 
 <a id="dev-note"></a>

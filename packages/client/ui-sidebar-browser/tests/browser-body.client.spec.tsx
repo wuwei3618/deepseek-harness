@@ -15,6 +15,7 @@ import { browserAddressCheckpoint, type BrowserTabState } from '../src/client/br
 import type { BrowserPageFactory, BrowserPageOptions } from '../src/client/browser/BrowserPage.ts'
 import { createSnapshotStore } from '@deepseek-ai/dsh-client-store'
 import { emptyBrowserFrame, type BrowserFrameState } from '../src/client/browser/BrowserFrame.ts'
+import type { DesktopBrowserAgentRequestId } from '../src/types.ts'
 
 const SESSION = 'session' as SessionId
 const TAB = 'tab' as TabId
@@ -37,7 +38,7 @@ const absentState = {
   getSnapshot: (): BrowserControllerState | undefined => undefined,
 }
 
-function mountBrowser(navigation?: { readonly url?: string },
+function mountBrowser(navigation?: { readonly url?: string; readonly agentRequest?: DesktopBrowserAgentRequestId },
   options: { initial?: BrowserTabState; createPage?: BrowserPageFactory; refreshShortcut?: ReturnType<BrowserBodyProps['useTabInfo']>['tab']['refreshShortcut'] } = {}) {
   const store = createBrowserStore().create(`browser-body-test-${String(++mountSequence)}`)
   if (options.initial !== undefined) store.actions.replace(TAB, options.initial)
@@ -93,6 +94,13 @@ describe('BrowserBody', () => {
       modified: true, conflicts: [], issue: null } })
     expect(mounted.view.getByRole('button', { name: zh.reload }).getAttribute('aria-keyshortcuts')).toBe('Control+R')
   })
+  it('hands the agent page request from the tab parameters to the page it creates', () => {
+    const agentRequest = 'agent-1' as DesktopBrowserAgentRequestId
+    const created: BrowserPageOptions[] = []
+    mountBrowser({ agentRequest }, { createPage: (options) => { created.push(options); return createIframePage(options) } })
+    expect(created.map(options => options.agentRequest)).toEqual([agentRequest])
+  })
+
   it('shows the saved title and URL without loading until Restore is clicked', async () => {
     const target = { kind: 'https' as const, url: 'https://saved.example/page', title: 'Saved title' }
     const mounted = mountBrowser(undefined, { initial: browserAddressCheckpoint(target, 1) })

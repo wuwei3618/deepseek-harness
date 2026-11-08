@@ -123,6 +123,19 @@ describe('the audit-desktop profile', () => {
     ]) expect(row(rows, id).disabled, id).toBe(true)
   })
 
+  it('mounts Playwright MCP on the Desktop Sidebar browser only when Desktop names its endpoint', () => {
+    const absent = { __jsExpr: 'process.env.DSH_DESKTOP_BROWSER_CDP_ENDPOINT === undefined' }
+    expect(row(rows, 'browser-use')).toMatchObject({ name: '@deepseek-ai/dsh-browser-use', disabled: absent })
+    expect(row(rows, 'browser-use-playwright-mcp')).toEqual({
+      id: 'browser-use-playwright-mcp', name: '@deepseek-ai/dsh-experimental-browser-use-playwright-mcp', disabled: absent,
+      config: { mode: 'attach', endpoint: { __jsExpr: 'process.env.DSH_DESKTOP_BROWSER_CDP_ENDPOINT' } },
+    })
+  })
+
+  it('asks the user to confirm actions taken on the user\'s behalf', () => {
+    expect(config(rows, 'system-prompt')['personaPrefix']).toContain('describe the action and ask the user to confirm it.')
+  })
+
   it('replaces the official brand with the CSCEC8B seal', () => {
     expect(row(rows, 'ui-brand-official').disabled).toBe(true)
     expect(row(rows, 'ui-brand-cscec8b').name).toBe('@deepseek-ai/dsh-client-ui-brand-cscec8b')

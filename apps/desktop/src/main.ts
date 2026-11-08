@@ -66,6 +66,7 @@ import { readDesktopLocaleCache, writeDesktopLocaleCache } from './locale-cache.
 import { DesktopUpdateDialog, type UpdateDialogOptions } from './update-dialog.ts'
 import { readDesktopRuntime } from './runtime-tree.ts'
 import { DesktopBrowserGuests } from './browser-guests.ts'
+import { startCdpBridge } from './browser-cdp-bridge.ts'
 import { installDesktopShortcuts } from './keyboard.ts'
 import { DesktopUpdateOverlays } from './update-overlay.ts'
 import { DesktopQuitConfirmation } from './quit-confirmation.ts'
@@ -481,6 +482,18 @@ async function main(): Promise<void> {
   let hostUrl: string | undefined
   let hostCookie: string | undefined
   const browserGuests = new DesktopBrowserGuests(() => hostUrl)
+  // The agent operates the Sidebar pages of its own Session through this loopback endpoint.
+  const browserBridge = await startCdpBridge(browserGuests)
+  app.on('will-quit', () => { void browserBridge.close().catch((error: unknown) => { console.error(error) }) })
+  const clearBrowsingData = async (): Promise<void> => {
+    const messages = currentDesktopLocale().messages
+    const { response } = await dialog.showMessageBox({
+      type: 'warning', buttons: [messages.clearBrowsingDataConfirm, messages.cancel], defaultId: 1, cancelId: 1,
+      message: messages.clearBrowsingDataTitle, detail: messages.clearBrowsingDataDetail,
+    })
+    if (response !== 0) return
+    await browserGuests.clearBrowsingData(join(app.getPath('userData'), 'Partitions'))
+  }
   let injections: readonly unknown[] = []
   let welcomeBackend: DesktopWelcomeBackend | undefined
   let reportedLaunch = false
@@ -525,7 +538,9 @@ async function main(): Promise<void> {
   const backend = new DesktopBackendController((onFailure) => {
     const hostInspectPort = developmentHostInspectPort(development)
     const host = new DesktopHostProcess(resources.node, resources.dsh, activeProject,
-      hostInspectPort, { ...hostEnvironment, DSH_CLIENT_VERSION: desktopClientVersion() }, onFailure,
+      hostInspectPort, {
+        ...hostEnvironment, DSH_CLIENT_VERSION: desktopClientVersion(), DSH_DESKTOP_BROWSER_CDP_ENDPOINT: browserBridge.endpoint,
+      }, onFailure,
       primaryRuntime,
       resources, (next) => { platformView.setSession(next) }, (record) => {
         operationJournal ??= new OperationJournal(join(app.getPath('userData'), 'plugin-operations'), {
@@ -828,9 +843,9 @@ async function main(): Promise<void> {
     reportFatal(new Error(message), 'web-boot')
   })
 
-  ipcMain.handle(DESKTOP_IPC.browserAcquire, (event, workspace: unknown) => {
+  ipcMain.handle(DESKTOP_IPC.browserAcquire, (event, workspace: unknown, sessionId: unknown, agentRequest: unknown) => {
     assertProductSender(event)
-    return browserGuests.acquire(event.sender, workspace)
+    return browserGuests.acquire(event.sender, workspace, sessionId, agentRequest)
   })
   ipcMain.handle(DESKTOP_IPC.browserRelease, (event, lease: unknown) => {
     assertProductSender(event)
@@ -1185,6 +1200,9 @@ async function main(): Promise<void> {
       : { label: currentDesktopLocale().messages.aboutMenu, role: 'about' },
     { type: 'separator' },
     { label: currentDesktopLocale().messages.checkUpdatesMenu, click: () => { void openUpdatePrompt(true) } },
+    { label: currentDesktopLocale().messages.clearBrowsingDataMenu, click: () => {
+      void clearBrowsingData().catch((error: unknown) => { console.error(error) })
+    } },
     ...process.platform === 'darwin' || process.platform === 'win32'
       ? [{ label: currentDesktopLocale().messages.cliCommandMenu, click: () => { void commandManager.show() } }] : [],
     { type: 'separator' },
@@ -1221,7 +1239,8 @@ async function main(): Promise<void> {
     // The tray is the way back to a hidden window; without it, relaunching the application still focuses it.
     try {
       tray = new DesktopTray({ iconPath: trayIconPath, locale: currentDesktopLocale,
-        open: () => { focusPrimaryWindow() }, quit: () => { app.quit() } })
+        open: () => { focusPrimaryWindow() }, quit: () => { app.quit() },
+        clearBrowsingData: () => { void clearBrowsingData().catch((error: unknown) => { console.error(error) }) } })
     } catch (error) { console.warn('desktop tray: unavailable', error) }
   }
   const backgroundNotice = process.platform === 'win32'

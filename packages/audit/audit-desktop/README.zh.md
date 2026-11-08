@@ -36,6 +36,7 @@ kind: "package-bundle"
 | `ui-settings-account`、`account-controller` | 关闭 |
 | `desktop-product-telemetry`、`product-analytics` | 关闭 |
 | `system-prompt` | 根上设置 `includeHarnessIdentity: false` 和审计 persona |
+| `browser-use`、`browser-use-playwright-mcp` | 插入：以 `attach` 模式连接桌面端按 Session 区分的侧栏浏览器端点的 [Playwright MCP](../../experimental/browser-use-playwright-mcp/README.zh.md)；未设置 `DSH_DESKTOP_BROWSER_CDP_ENDPOINT` 时（即不在桌面端时）两行都关闭 |
 | `ui-brand-official` → `ui-brand-cscec8b` | 关闭官方品牌图形；由 [`dsh-client-ui-brand-cscec8b`](../../client/ui-brand-cscec8b/README.zh.md) 显示印章和八局审计智能体 |
 
 -----
@@ -59,7 +60,7 @@ kind: "package-bundle"
 
 #### 模型看到什么
 
-与 [`dsh-audit-agent`](../audit-agent/README.zh.md) 相同的审计 persona，没有 DeepSeek Harness 身份行，也没有 harness 开发上下文。工具列表只包含 preset 挂载的工具，技能目录中只有审计技能。
+与 [`dsh-audit-agent`](../audit-agent/README.zh.md) 相同的审计 persona，没有 DeepSeek Harness 身份行，也没有 harness 开发上下文。工具列表只包含 preset 挂载的工具，在桌面端还有 Playwright MCP 浏览器工具；技能目录中只有审计技能。persona 要求模型在代用户提交、审批、付款、签署或发送任何内容之前先说明该操作并征得确认。
 
 #### Token 影响
 
@@ -69,10 +70,26 @@ kind: "package-bundle"
 
 在一个会话内保持稳定。preset 修订只对之后新建的会话生效。
 
+### 侧栏浏览器工具
+
+#### 模型看到什么
+
+上游 Playwright MCP 工具。它们只列出和操作当前 Session 侧栏中的 Browser tab；模型打开的页面会作为新的可见 tab 出现在那里，并带有该工作区的登录状态。
+
+#### Token 影响
+
+Playwright MCP 的工具定义；页面快照和截图是普通工具结果。
+
+#### KV Cache 影响
+
+工具列表在该 Session 的浏览器连接初始化时确定。
+
 ## 已知限制与暂缓工作
 
 <a id="known-limitations-and-deferred-work"></a>
 
+- **agent 打开页面需要该 Session 在屏幕上** — agent 打开的页面出现在该 Session 的侧栏中；该 Session 没有在窗口中打开时，请求会在 20 秒后失败。
+- **截图需要支持图像的模型** — 使用纯文本模型时，agent 依靠页面快照工作。
 - **已有的桌面 profile 保留原来的 bundle 列表** — 桌面端只在保留 profile 不存在时才初始化它，因此早先基于 Web 的版本创建的 profile 仍只有 `dsh-web-app`。
 
 <a id="dev-note"></a>

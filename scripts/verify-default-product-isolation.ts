@@ -33,7 +33,24 @@ const AUDIT_DESKTOP_OPTIONAL_BUNDLES = new Set([
   '@deepseek-ai/dsh-experimental-session-search',
   '@deepseek-ai/dsh-experimental-voice-input-bundle',
 ])
+/**
+ * Experimental packages the audit Desktop bundle mounts so its agent can operate the Desktop Sidebar browser,
+ * accepted only when the reference comes from that bundle or from these packages themselves.
+ */
+const AUDIT_DESKTOP_BROWSER_PACKAGES = new Map([
+  ['@deepseek-ai/dsh-experimental-browser-use-playwright-mcp', 'packages/experimental/browser-use-playwright-mcp/'],
+  ['@deepseek-ai/dsh-experimental-browser-use-runtime', 'packages/experimental/browser-use-runtime/'],
+])
+const AUDIT_DESKTOP_BROWSER_ORIGINS = [
+  '@deepseek-ai/dsh-audit-desktop ', 'packages/audit/audit-desktop/',
+  ...[...AUDIT_DESKTOP_BROWSER_PACKAGES].flatMap(([name, directory]) => [`${name} `, directory]),
+]
 const RUNTIME_SECTIONS = ['dependencies', 'optionalDependencies', 'peerDependencies'] as const
+
+/** @returns whether an experimental package reference is the audit Desktop browser exception. */
+function auditDesktopBrowser(name: string, origin: string): boolean {
+  return AUDIT_DESKTOP_BROWSER_PACKAGES.has(name) && AUDIT_DESKTOP_BROWSER_ORIGINS.some(prefix => origin.startsWith(prefix))
+}
 
 interface Manifest {
   name: string
@@ -118,7 +135,7 @@ export function verifyDefaultProductIsolation(root: string): ProductIsolationRes
   const isExperimental = (pkg: Package): boolean => isExperimentalPackageName(pkg.manifest.name)
     || display(pkg.directory).startsWith('packages/experimental/')
   const add = (pkg: Package, origin: string): void => {
-    if (isExperimental(pkg)) {
+    if (isExperimental(pkg) && !auditDesktopBrowser(pkg.manifest.name, origin)) {
       failures.push(`${origin} -> ${pkg.manifest.name}: default product must not include experimental packages`)
     } else if (!visited.has(pkg.directory)) {
       visited.add(pkg.directory)
@@ -144,7 +161,7 @@ export function verifyDefaultProductIsolation(root: string): ProductIsolationRes
       return
     }
     const packageName = barePackageName(name)
-    if (isExperimentalPackageName(packageName)) {
+    if (isExperimentalPackageName(packageName) && !auditDesktopBrowser(packageName, origin)) {
       failures.push(`${origin} -> ${name}: default product must not include experimental packages`)
       return
     }

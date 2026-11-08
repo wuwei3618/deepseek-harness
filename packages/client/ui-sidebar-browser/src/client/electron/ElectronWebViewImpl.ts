@@ -1,6 +1,6 @@
 /** Electron navigation and guest lifetime, independent from DOM placement. */
 import { createSnapshotStore, type SnapshotStore } from '@deepseek-ai/dsh-client-store'
-import type { DesktopBrowserBridge, DesktopBrowserLeaseId } from '../../types.ts'
+import type { DesktopBrowserAgentRequestId, DesktopBrowserBridge, DesktopBrowserLeaseId } from '../../types.ts'
 import type { ElectronWebviewPresentation, WebviewElement } from './ElectronWebviewPresentation.ts'
 import { emptyBrowserFrame, type BrowserFrame, type BrowserFrameState, type BrowserLoadError } from '../browser/BrowserFrame.ts'
 import type { BrowserPageOptions } from '../browser/BrowserPage.ts'
@@ -21,6 +21,8 @@ export class ElectronWebViewImpl implements BrowserFrame {
   private element: WebviewElement | undefined
   private lease: DesktopBrowserLeaseId | undefined
   private workspaceKey: string | undefined
+  /** Agent page request still to answer; the first reservation consumes it. */
+  private agentRequest: DesktopBrowserAgentRequestId | undefined
   private initializing: Promise<void> | undefined
   private ready = false
   private pending: BrowserTarget | undefined
@@ -34,13 +36,16 @@ export class ElectronWebViewImpl implements BrowserFrame {
   /**
    * @param options - saved address, persistence and source-tab opening callback.
    * @param bridge - main-process guest operations.
+   * @param sessionId - DSH Session whose Sidebar holds the page.
    * @param workspace - resolves the storage account once for this frame lifetime.
    * @param presentation - tag and Sidebar placement adapter.
    */
   constructor(private readonly options: BrowserPageOptions, private readonly bridge: DesktopBrowserBridge,
+    private readonly sessionId: string,
     private readonly workspace: (signal: AbortSignal) => Promise<string>,
     private readonly presentation: ElectronWebviewPresentation) {
     this.checkpoint = currentBrowserTarget(options.initial)
+    this.agentRequest = options.agentRequest
     this.store = createSnapshotStore(emptyBrowserFrame())
   }
 
@@ -54,7 +59,9 @@ export class ElectronWebViewImpl implements BrowserFrame {
     if (this.lifetime.signal.aborted) return
     this.attachment = new AbortController()
     this.pending ??= this.store.getSnapshot().target
-    if (this.pending !== undefined) {
+    // An agent's empty page needs its guest before the agent navigates it.
+    if (this.pending === undefined && this.agentRequest !== undefined) this.initialize()
+    else if (this.pending !== undefined) {
       this.store.set({ ...this.store.getSnapshot(), address: 'requested', loading: true,
         canGoBack: false, canGoForward: false, error: undefined })
       this.initialize()
@@ -144,7 +151,9 @@ export class ElectronWebViewImpl implements BrowserFrame {
   private async createGuest(attachmentSignal: AbortSignal): Promise<void> {
     this.workspaceKey ??= await this.workspace(attachmentSignal)
     if (attachmentSignal.aborted) return
-    const reservation = await this.bridge.acquire(this.workspaceKey)
+    const agentRequest = this.agentRequest
+    this.agentRequest = undefined
+    const reservation = await this.bridge.acquire(this.workspaceKey, this.sessionId, agentRequest)
     // oxlint-disable-next-line typescript/no-unnecessary-condition -- The signal can abort while acquire is pending.
     if (attachmentSignal.aborted) { await this.release(reservation.lease); return }
     this.lease = reservation.lease

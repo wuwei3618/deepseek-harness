@@ -55,7 +55,7 @@ kind: "package-bundle"
 
 #### 模型看到什么
 
-系统提示词以审计 persona 开头：它把助手称为八局审计智能体（CSCEC8B Audit Agent），要求给出带确切位置的证据，禁止修改被审查的材料，允许把底稿和报告作为新文件写入工作目录，并要求用请求的语言回答。没有 DeepSeek Harness 身份行。工具列表包含 shell、`read`、`read_image`、`write`、搜索、后台任务、todo、目标、联网和 `skill` 工具，技能目录中只有审计技能。
+系统提示词以审计 persona 开头：它把助手称为八局审计智能体（CSCEC8B Audit Agent），要求给出带确切位置的证据，禁止修改被审查的材料，允许把底稿和报告作为新文件写入工作目录，代用户提交、审批、付款、签署或发送任何内容之前必须先征得用户确认，并要求用请求的语言回答。没有 DeepSeek Harness 身份行。工具列表包含 shell、`read`、`read_image`、`write`、搜索、后台任务、todo、目标、联网和 `skill` 工具，技能目录中只有审计技能。
 
 #### Token 影响
 

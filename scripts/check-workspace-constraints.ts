@@ -657,6 +657,14 @@ const dependencySections = ['dependencies', 'devDependencies', 'peerDependencies
 const runtimeDependencySections = ['dependencies', 'optionalDependencies', 'peerDependencies'] as const
 
 /**
+ * Experimental runtime dependencies a release package may declare. The audit Desktop bundle mounts Playwright MCP
+ * so its agent can operate the Desktop Sidebar browser.
+ */
+const EXPERIMENTAL_DEPENDENCY_EXCEPTIONS: Readonly<Record<string, readonly string[]>> = {
+  '@deepseek-ai/dsh-audit-desktop': ['@deepseek-ai/dsh-experimental-browser-use-playwright-mcp'],
+}
+
+/**
  * Prevent an official runtime from requiring an experimental package. The dsh installation's `dependencies`
  * may hold the bundles the launcher's `OPTIONAL_BUNDLES` names: shipped switched off, they are not a requirement
  * ([rationale](../.agents/notes/implemented/process/2026-09-15-shipped-optional-bundles.md)).
@@ -681,6 +689,7 @@ export function checkExperimentalDependencyIsolation(
           || /^(?:npm:|workspace:)/.test(range) && hasExperimentalPackageReference(range)
         if (!experimental) continue
         if (section === 'dependencies' && offered.has(name)) continue
+        if (section === 'dependencies' && EXPERIMENTAL_DEPENDENCY_EXCEPTIONS[manifest.name ?? '']?.includes(name) === true) continue
         errors.push(`${manifest.name ?? dir}: ${section}.${name} must not reference an experimental package`)
       }
     }

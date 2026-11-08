@@ -7,6 +7,7 @@ import type { BrowserPage, BrowserPageFactory } from './BrowserPage.ts'
 import { currentBrowserTarget, type BrowserTabState } from './BrowserPersistence.ts'
 import type { BrowserStore } from './store.ts'
 import { parseBrowserAddress, type BrowserAddressFailure, type BrowserTarget } from './url.ts'
+import type { DesktopBrowserAgentRequestId } from '../../types.ts'
 
 /** Live tab state; navigation comes from its provider and draft validation stays local. */
 export interface BrowserControllerState {
@@ -26,6 +27,8 @@ export interface BrowserControllerOptions {
   readonly actions: BoundActions<BrowserStore>
   readonly createPage: BrowserPageFactory
   readonly openTab: (url: string) => void
+  /** Agent page request this tab occurrence answers. */
+  readonly agentRequest?: DesktopBrowserAgentRequestId
 }
 
 /** Owns input validation and page lifetime without inspecting the carrier type. */
@@ -57,6 +60,7 @@ export class BrowserController implements HostObservable<BrowserControllerState>
         if (!result.ok) { this.addressFailed(result.reason); return }
         options.openTab(result.target.url)
       },
+      ...options.agentRequest === undefined ? {} : { agentRequest: options.agentRequest },
     })
     this.store = createSnapshotStore({ frame: this.page.frame.getSnapshot(),
       restoreTarget: currentBrowserTarget(this.checkpoint), addressFailure: undefined, addressRevision: 0 })
@@ -177,6 +181,8 @@ export interface BrowserMountRequest {
   readonly initial: BrowserTabState | undefined
   readonly initialUrl: string | undefined
   readonly openTab: (url: string) => void
+  /** Agent page request from the tab's opening parameters. */
+  readonly agentRequest?: DesktopBrowserAgentRequestId
 }
 
 /** Plain Slot callbacks and a framework-bound state source, not a desktop protocol. */
