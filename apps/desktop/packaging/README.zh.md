@@ -32,6 +32,8 @@ description: "在本地或 Windows／macOS Actions 中生成 Desktop 安装包�
 
 安装锁定依赖后，从仓库根目录运行本地命令。本地构建使用平台命令，已注册的自托管 runner 使用对应平台的 Actions。test/production 部署与 signed/unsigned 模式分别选择。任何 Windows 签名构建或共享 runner 使用前，先阅读 [Windows 签名与 runner 运维](../windows-signing/README.zh.md#trust-and-isolation)。安装与打包分开进行；[发布](../publishing/README.zh.md)还需要单独的显式操作。
 
+每个打包命令，无论签名与否，都以 `DSH_AUDIT_RELEASE_LOCK=1` 构建仓库，所以每个安装包都带有[审计发行版锁定](../../cli/README.zh.md#audit-release-lock)；继承的环境变量不能解除锁定。
+
 将 `DSH_DESKTOP_PACKAGE_CACHE_DIR` 设为绝对构建缓存目录以跨 checkout 复用；详见[缓存配置与生命周期](#desktop-runtime-preparation)。
 
 <a id="release-versions"></a>

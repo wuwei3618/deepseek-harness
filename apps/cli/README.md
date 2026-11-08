@@ -53,6 +53,7 @@ The [CLI behavior reference](reference/README.md) owns exact layer precedence, f
 
 `config/examples/` ships opt-in overlays for GitHub review webhooks, memory MCP servers, and runtime Cordis tools. They are never part of a default profile; the [user guides](../../docs/user/guide/index.md) and [developer practice guides](../../docs/user/develop/practice/index.md) own setup and safety instructions.
 
+<a id="audit-release-lock"></a>
 ## Audit release lock
 
 A build with `DSH_AUDIT_RELEASE_LOCK=1` in the environment of `pnpm run build` or `build:artifacts` is a locked audit release; unset or `0` builds an unlocked launcher, and any other value fails the build. Source launches and tests are always unlocked. The locked launcher boots only the `audit`, `audit-sdk`, and `audit-acp` templates and maps `headless`, `sdk`, and `acp` to them, so SDK and ACP clients reach the audit agent. It refuses every other profile, `--patch`, `--from-default-profile`, and `dsh plugin`, and before loading rewrites the booted profile's bundle list to its template. The Desktop host of a locked build restores the `audit-desktop` bundles of its reserved profile the same way. The profile and home `cordis.patch.yml` layers still apply.
