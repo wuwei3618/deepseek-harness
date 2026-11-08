@@ -3,6 +3,7 @@ import { execFileSync } from 'node:child_process'
 import { createHash } from 'node:crypto'
 import { existsSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { dirname, join } from 'node:path'
+import { DESKTOP_LOCAL_APP_ID, DESKTOP_PRODUCT_NAME } from './desktop-product.mjs'
 
 /** Workspace and runtime settings captured for Launch Services cold starts. */
 export interface DevelopmentAppOptions {
@@ -36,11 +37,11 @@ export function prepareDevelopmentApp(options: DevelopmentAppOptions): string {
     execFileSync('/usr/bin/ditto', [source, bundle])
     const plist = join(bundle, 'Contents', 'Info.plist')
     const values = {
-      CFBundleIdentifier: `com.deepseek.harness.dev.${createHash('sha256').update(options.appRoot).digest('hex').slice(0, 12)}`,
+      CFBundleIdentifier: `${DESKTOP_LOCAL_APP_ID}.dev.${createHash('sha256').update(options.appRoot).digest('hex').slice(0, 12)}`,
       CFBundleName: 'Harness Dev',
       CFBundleDisplayName: 'Harness Dev',
       CFBundleExecutable: 'HarnessDev',
-      CFBundleURLTypes: [{ CFBundleURLName: 'DeepSeek Harness', CFBundleURLSchemes: ['dsh'], CFBundleTypeRole: 'Viewer' }],
+      CFBundleURLTypes: [{ CFBundleURLName: DESKTOP_PRODUCT_NAME, CFBundleURLSchemes: ['dsh'], CFBundleTypeRole: 'Viewer' }],
     }
     for (const [key, value] of Object.entries(values)) {
       execFileSync('/usr/bin/plutil', ['-replace', key, '-json', JSON.stringify(value), plist])

@@ -225,10 +225,13 @@ const harness = await vi.hoisted(async () => {
 
     get analyticsEnabled() { return analyticsEnabled },
     set analyticsEnabled(value: boolean) { analyticsEnabled = value; analyticsEnabledListener?.(value) },
+    accountAvailable: true,
+    accountWatches: 0,
     watchAccount: (
       listener: (state: AccountView) => void, _failed: () => void, _expired: () => void,
       onAnalyticsEnabledChanged?: (enabled: boolean) => void,
     ) => {
+      harness.accountWatches++
       analyticsEnabledListener = onAnalyticsEnabledChanged
       accountListener = listener
       return () => { accountListener = undefined; analyticsEnabledListener = undefined }
@@ -419,6 +422,7 @@ vi.mock('../src/welcome-backend.ts', () => ({
       readLocalePreference: async () => null,
       read: async (): Promise<unknown> => (await harness.hosts.at(-1)!.fetch()).json() as Promise<unknown>,
       save: async () => ({ ok: true }),
+      accountAvailable: async () => harness.accountAvailable,
       account: { watch: harness.watchAccount, state: async () => ({ status: 'signed-out', attempt: null }) },
     }
   },
@@ -479,6 +483,8 @@ beforeEach(() => {
   vi.stubEnv('DSH_DESKTOP_UPDATE_JOURNAL_DIR', undefined)
   vi.stubEnv('DSH_CLIENT_VERSION', '1.2.3')
   harness.analyticsEnabled = true
+  harness.accountAvailable = true
+  harness.accountWatches = 0
 })
 
 afterEach(async () => {
@@ -1417,6 +1423,19 @@ describe('desktop main startup', () => {
     await Promise.resolve(invoke(DESKTOP_IPC.boot))
     await vi.waitFor(() => { expect(console.error).toHaveBeenCalledWith('desktop: legacy Host cookie cleanup failed', failure) })
     expect(harness.connectWelcome).toHaveBeenCalled()
+  })
+
+  it.each([true, false])('opens the account stream only when the profile exports account endpoints (available=%s)', async (available) => {
+    harness.accountAvailable = available
+    await import('../src/main.ts')
+    await harness.preparing.promise
+    harness.prepared.resolve()
+    await harness.hostStarted.promise
+    harness.hosts[0]!.ready.resolve()
+    await Promise.resolve(invoke(DESKTOP_IPC.boot))
+    await vi.waitFor(() => { expect(harness.connectWelcome).toHaveBeenCalled() })
+    await vi.advanceTimersByTimeAsync(0)
+    expect(harness.accountWatches).toBe(available ? 1 : 0)
   })
 
   it('shares login key discovery with onboarding and rejects foreign renderers', async () => {
