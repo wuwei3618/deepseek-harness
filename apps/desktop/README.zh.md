@@ -85,7 +85,7 @@ Windows 在整个运行期间常驻托盘图标。悬停提示为产品名，单
 
 ## 关键技术决策
 
-完整图案是蓝色圆底上的 CSCEC8B AUDIT 印章，位于 `resources/icon.png` 和 `resources/icon.svg`；`resources/icon-windows.*` 和 `resources/icon-macos.*` 中的平台适配按各平台的图标网格缩放同一枚印章。将各平台 SVG 导出为透明的 1024×1024 PNG。electron-builder 为 Windows 应用、安装程序和卸载程序生成多尺寸 ICO（[Windows 图标要求](https://learn.microsoft.com/en-us/windows/apps/design/iconography/app-icon-construction)）。安装页面在两种主题下使用匹配的图案；卸载程序的欢迎和完成页共用 `installer/assets/uninstaller-sidebar.png`，准备阶段将其转换为 164×314 BMP。
+完整图案是蓝色圆底上的 CSCEC8B AUDIT 印章，位于 `resources/icon.png` 和 `resources/icon.svg`；`icon.svg` 把圆底放在 1104 单位画布的 (40, 32) 处，外层保留 Web 安装图标渲染脚本（`apps/web/scripts/render-app-icons.ts`）裁剪和缩放所需的阴影组与图案组；`resources/icon-windows.*` 和 `resources/icon-macos.*` 中的平台适配按各平台的图标网格缩放同一枚印章。将各平台 SVG 导出为透明的 1024×1024 PNG。electron-builder 为 Windows 应用、安装程序和卸载程序生成多尺寸 ICO（[Windows 图标要求](https://learn.microsoft.com/en-us/windows/apps/design/iconography/app-icon-construction)）。安装页面在两种主题下使用匹配的图案；卸载程序的欢迎和完成页共用 `installer/assets/uninstaller-sidebar.png`，准备阶段将其转换为 164×314 BMP。
 
 快捷键覆盖保存在 `app.getPath('userData')/keybindings.json`，与 `DSH_HOME` 分离。主进程校验并串行保存修改后才发布已接受键位。读取失败保留上次接受的键位并阻止编辑，包括全部恢复；不可读和未来版本的文件保持不变。开发时可通过 `DSH_DESKTOP_USER_DATA_DIR` 隔离这些偏好，启动器会输出解析后的路径。格式和冲突语义见[快捷键服务](../../packages/client/shortcuts/README.zh.md)。
 
