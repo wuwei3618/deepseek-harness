@@ -37,7 +37,14 @@ describe('seal stamp frame layer', () => {
     const [stamp] = stamps(view.container)
     expect([stamp?.style.left, stamp?.style.top]).toEqual(['100px', '50px'])
     expect(stamp?.style.getPropertyValue('--seal-stamp-tilt')).toBe('-6deg')
-    expect(stamp?.querySelector('path')?.getAttribute('fill-rule')).toBe('evenodd')
+    const impression = stamp?.querySelector('path')
+    expect(impression?.getAttribute('fill-rule')).toBe('evenodd')
+    const filter = view.container.querySelector('[data-home-stamp] filter')!
+    expect(impression?.getAttribute('filter')).toBe(`url(#${filter.id})`)
+    expect(filter.id).toMatch(/^seal-stamp-ink-[^:]+$/u)
+    const droplets = [...stamp!.querySelectorAll<HTMLElement>('span')].filter(part => part.style.getPropertyValue('--seal-drop-angle') !== '')
+    expect(droplets.map(part => part.style.getPropertyValue('--seal-drop-angle'))).toEqual(['-8deg', '48deg', '87deg', '143deg', '182deg', '221deg', '277deg', '316deg'])
+    expect(droplets.map(part => part.style.getPropertyValue('--seal-drop-distance'))).toEqual(['14px', '18px', '22px', '26px', '14px', '18px', '22px', '26px'])
   })
 
   it('ignores controls, the composer card, portaled overlays, and secondary clicks', () => {
@@ -89,6 +96,9 @@ describe('seal stamp frame layer', () => {
     for (let i = 0; i < 4; i++) fireEvent.click(view.getByTestId('blank'))
     const kept = stamps(view.container)
     expect(kept.map(stamp => stamp.style.getPropertyValue('--seal-stamp-tilt'))).toEqual(['-1deg', '4deg', '-4deg'])
+    // An inner layer finishing first leaves the impression in place.
+    animationEnd(kept[1]!.querySelector('svg')!)
+    expect(stamps(view.container)).toHaveLength(3)
     animationEnd(kept[1]!)
     expect(stamps(view.container).map(stamp => stamp.style.getPropertyValue('--seal-stamp-tilt'))).toEqual(['-1deg', '-4deg'])
   })

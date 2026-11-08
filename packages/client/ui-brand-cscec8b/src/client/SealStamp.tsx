@@ -1,5 +1,5 @@
 /** Home frame layer: clicks on blank home space press a fading seal impression below the Conversation content. */
-import { useEffect, useRef, useState, type CSSProperties, type MouseEvent, type ReactNode } from 'react'
+import { useEffect, useId, useRef, useState, type CSSProperties, type MouseEvent, type ReactNode } from 'react'
 import type { HeroFrameOwnerProps } from '@deepseek-ai/dsh-client-ui-conversation/client'
 import { SEAL_STAMP_PATH, SEAL_VIEWBOX } from './artwork.ts'
 import css from './SealStamp.module.css'
@@ -17,6 +17,19 @@ const MAX_STAMPS = 3
  */
 function tiltOf(id: number): number {
   return (id * 5) % 13 - 6
+}
+
+/** Ink droplets thrown from the rim as the seal lands. */
+const DROPLETS = 8
+
+/**
+ * Direction and reach of one droplet, varied per impression so splashes differ.
+ * @param id - the impression's sequence number.
+ * @param index - the droplet's position around the rim.
+ * @returns the droplet's angle in degrees and its travel in pixels.
+ */
+function dropletOf(id: number, index: number): { angle: number; distance: number } {
+  return { angle: index * (360 / DROPLETS) + ((id * 7 + index * 11) % 17) - 8, distance: 14 + ((id * 3 + index * 5) % 4) * 4 }
 }
 
 /** One impression, positioned in the stamp layer's own coordinates. */
@@ -57,6 +70,7 @@ export function SealStamp({ hero, children }: SealStampProps) {
   const layer = useRef<HTMLDivElement>(null)
   const nextId = useRef(0)
   const [stamps, setStamps] = useState<readonly Stamp[]>([])
+  const inkId = `seal-stamp-ink-${useId().replace(/:/gu, '')}`
   useEffect(() => { if (!hero) setStamps([]) }, [hero])
   const onClick = (event: MouseEvent<HTMLDivElement>): void => {
     const surface = layer.current
@@ -71,15 +85,31 @@ export function SealStamp({ hero, children }: SealStampProps) {
     <div className={css.frame} onClick={onClick}>
       {hero && (
         <div ref={layer} className={css.layer} data-home-stamp="" aria-hidden="true">
+          <svg className={css.defs} width="0" height="0">
+            {/* Uneven ink: roughened edges and a grain that leaves small uninked specks. */}
+            <filter id={inkId} x="-10%" y="-10%" width="120%" height="120%">
+              <feTurbulence type="fractalNoise" baseFrequency="1.1" numOctaves="2" seed="3" result="noise" />
+              <feDisplacementMap in="SourceGraphic" in2="noise" scale="0.55" xChannelSelector="R" yChannelSelector="G" result="rough" />
+              <feColorMatrix in="noise" type="matrix" values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  3.2 0 0 0 -0.6" result="grain" />
+              <feComposite in="rough" in2="grain" operator="in" />
+            </filter>
+          </svg>
           {stamps.map(stamp => (
             <span
               key={stamp.id}
               className={css.stamp}
               style={{ left: stamp.x, top: stamp.y, '--seal-stamp-tilt': `${stamp.tilt}deg` } as CSSProperties}
-              onAnimationEnd={() => { remove(stamp.id) }}
+              onAnimationEnd={(event) => { if (event.target === event.currentTarget) remove(stamp.id) }}
             >
-              <svg viewBox={`0 0 ${SEAL_VIEWBOX} ${SEAL_VIEWBOX}`} fill="none">
-                <path d={SEAL_STAMP_PATH} fill="currentColor" fillRule="evenodd" />
+              <span className={css.shadow} />
+              <span className={css.ripple} />
+              <span className={css.ripple} data-late="" />
+              {Array.from({ length: DROPLETS }, (_, index) => {
+                const { angle, distance } = dropletOf(stamp.id, index)
+                return <span key={index} className={css.droplet} style={{ '--seal-drop-angle': `${angle}deg`, '--seal-drop-distance': `${distance}px` } as CSSProperties} />
+              })}
+              <svg className={css.impression} viewBox={`0 0 ${SEAL_VIEWBOX} ${SEAL_VIEWBOX}`} fill="none">
+                <path d={SEAL_STAMP_PATH} fill="currentColor" fillRule="evenodd" filter={`url(#${inkId})`} />
               </svg>
             </span>
           ))}
