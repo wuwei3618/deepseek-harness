@@ -1,0 +1,199 @@
+/* Layout-neutral: the wrapped scroll body stays a direct flex item of the Conversation body. */
+.frame {
+  display: contents;
+}
+
+.layer {
+  /* The host isolates stacking at the Conversation root, so -1 lands above its background and below its content. */
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  overflow: hidden;
+  pointer-events: none;
+  /* Seal ink: deep blue in the light theme, pale blue in the dark theme. */
+  color: var(--dsw-alias-label-primary-bluish);
+}
+
+.defs {
+  position: absolute;
+}
+
+/* One impression; the element's own animation spans the whole sequence and its end removes the impression. */
+.stamp {
+  --seal-stamp-duration: 2.4s;
+
+  position: absolute;
+  width: 128px;
+  height: 128px;
+  margin: -64px 0 0 -64px;
+  transform: rotate(var(--seal-stamp-tilt));
+  animation: seal-stamp-life var(--seal-stamp-duration) linear forwards;
+}
+
+.impression {
+  position: absolute;
+  inset: 0;
+  display: block;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  animation: seal-stamp-press var(--seal-stamp-duration) cubic-bezier(0.22, 0.9, 0.3, 1) forwards;
+}
+
+/* The seal's shadow narrows as it descends, then disappears under the impression. */
+.shadow {
+  position: absolute;
+  inset: 6px;
+  border-radius: 50%;
+  background: currentColor;
+  filter: blur(10px);
+  opacity: 0;
+  animation: seal-stamp-shadow var(--seal-stamp-duration) ease-out forwards;
+}
+
+/* Ink spreading from the rim as the seal lands; the second ring follows wider and fainter. */
+.ripple {
+  position: absolute;
+  inset: 0;
+  border: 2px solid currentColor;
+  border-radius: 50%;
+  opacity: 0;
+  animation: seal-stamp-ripple var(--seal-stamp-duration) cubic-bezier(0.1, 0.6, 0.3, 1) forwards;
+}
+
+.ripple[data-late] {
+  border-width: 1px;
+  animation-name: seal-stamp-ripple-late;
+}
+
+.droplet {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 5px;
+  height: 5px;
+  margin: -2.5px 0 0 -2.5px;
+  border-radius: 50%;
+  background: currentColor;
+  opacity: 0;
+  transform: rotate(var(--seal-drop-angle)) translateX(58px);
+  animation: seal-stamp-droplet var(--seal-stamp-duration) cubic-bezier(0.1, 0.7, 0.3, 1) forwards;
+}
+
+@keyframes seal-stamp-life {
+  from {
+    visibility: visible;
+  }
+
+  to {
+    visibility: visible;
+  }
+}
+
+@keyframes seal-stamp-press {
+  0% {
+    opacity: 0;
+    transform: scale(1.45);
+    filter: blur(3px);
+  }
+
+  12% {
+    opacity: 0.42;
+    transform: scale(0.93);
+    filter: blur(0);
+  }
+
+  19% {
+    transform: scale(1.025);
+  }
+
+  26%,
+  72% {
+    opacity: 0.36;
+    transform: scale(1);
+  }
+
+  100% {
+    opacity: 0;
+    transform: scale(1.01);
+  }
+}
+
+@keyframes seal-stamp-shadow {
+  0% {
+    opacity: 0;
+    transform: scale(1.55);
+  }
+
+  11% {
+    opacity: 0.22;
+    transform: scale(1);
+  }
+
+  30%,
+  100% {
+    opacity: 0;
+    transform: scale(1);
+  }
+}
+
+@keyframes seal-stamp-ripple {
+  0%,
+  12% {
+    opacity: 0;
+    transform: scale(0.96);
+  }
+
+  14% {
+    opacity: 0.5;
+  }
+
+  55%,
+  100% {
+    opacity: 0;
+    transform: scale(1.75);
+  }
+}
+
+@keyframes seal-stamp-ripple-late {
+  0%,
+  18% {
+    opacity: 0;
+    transform: scale(0.98);
+  }
+
+  21% {
+    opacity: 0.32;
+  }
+
+  70%,
+  100% {
+    opacity: 0;
+    transform: scale(2.2);
+  }
+}
+
+@keyframes seal-stamp-droplet {
+  0%,
+  12% {
+    opacity: 0;
+    transform: rotate(var(--seal-drop-angle)) translateX(58px) scale(1);
+  }
+
+  14% {
+    opacity: 0.7;
+  }
+
+  45%,
+  100% {
+    opacity: 0;
+    transform: rotate(var(--seal-drop-angle)) translateX(calc(58px + var(--seal-drop-distance))) scale(0.4);
+  }
+}
+
+/* Reduced motion shows no impression; the frame keeps at most MAX_STAMPS hidden entries until the home closes. */
+@media (prefers-reduced-motion: reduce) {
+  .stamp {
+    display: none;
+  }
+}

@@ -9,7 +9,7 @@ English | [中文](README.zh.md)
 
 ## Summary
 
-The audit agent of the `audit-desktop` profile that Desktop boots. The layer inserts the `audit` agent preset, makes it the registry default, and switches off the four shipped presets, so new sessions can only start in audit mode. It also switches off the Web rows for plugin and preset authoring, the DeepSeek Harness development context, the DeepSeek account settings page, and product analytics.
+The audit agent of the `audit-desktop` profile that Desktop boots. The layer inserts the `audit` agent preset, makes it the registry default, and switches off the four shipped presets, so new sessions can only start in audit mode. It also switches off the Web rows for plugin and preset authoring, the DeepSeek Harness development context, the DeepSeek account settings page, and product analytics. It replaces the official brand artwork with the CSCEC8B seal.
 
 ## Table of Contents
 
@@ -36,6 +36,7 @@ Desktop reads the `audit-desktop` template from [`dsh-official-bundles`](../../u
 | `ui-settings-account`, `account-controller` | switched off |
 | `desktop-product-telemetry`, `product-analytics` | switched off |
 | `system-prompt` | `includeHarnessIdentity: false` and the audit persona at the root |
+| `ui-brand-official` → `ui-brand-cscec8b` | the official artwork is switched off; [`dsh-client-ui-brand-cscec8b`](../../client/ui-brand-cscec8b/README.md) shows the seal and 八局审计智能体 |
 
 -----
 
@@ -72,7 +73,6 @@ Stable for a session. A changed preset revision applies to sessions created afte
 
 <a id="known-limitations-and-deferred-work"></a>
 
-- **The brand slots still show the official occupant** — `ui-brand-official` stays mounted until the CSCEC8B brand plugin replaces it.
 - **Existing Desktop profiles keep their bundle list** — Desktop initializes its reserved profile only when it is absent, so a profile created by an earlier Web-based build keeps `dsh-web-app` alone.
 
 <a id="dev-note"></a>
