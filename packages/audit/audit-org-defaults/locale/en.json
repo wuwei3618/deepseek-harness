@@ -1,0 +1,6 @@
+{
+  "meta": {
+    "title": "Audit defaults",
+    "description": "Keep every audit profile writing only inside its workspace and switch off the DeepSeek account, telemetry and session-log uploads, and plugin installation."
+  }
+}

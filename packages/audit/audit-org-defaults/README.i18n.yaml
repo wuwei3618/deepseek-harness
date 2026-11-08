@@ -1,0 +1,34 @@
+# Bilingual-pair consistency record for README.md (docs/i18n/README.md): per heading
+# section, a hash of its English and Chinese blocks outside code blocks and generated regions.
+# After editing either side, bring the other along and re-record with:
+#   pnpm run verify-translation-pairing --write packages/audit/audit-org-defaults/README.md
+/:
+  en: 8e06cd09095d67fa
+  zh: 0f5a57ab2d723f16
+/deepseek-ai-dsh-audit-org-defaults:
+  en: 2988606b923ad64b
+  zh: 1579077a79ad5825
+/deepseek-ai-dsh-audit-org-defaults/summary:
+  en: 1e30b7c190eb6379
+  zh: 29aed3ce27bbbf00
+/deepseek-ai-dsh-audit-org-defaults/table-of-contents:
+  en: 76368b6b1da79c80
+  zh: ff1aad10e0ebcbce
+/deepseek-ai-dsh-audit-org-defaults/use-this-package:
+  en: cfd296110de5f570
+  zh: fe1231965704a0ac
+/deepseek-ai-dsh-audit-org-defaults/understand-the-implementation:
+  en: fc25d718505bfd05
+  zh: db33d6af9abe3631
+/deepseek-ai-dsh-audit-org-defaults/model-experience:
+  en: 81cf4a46adc64764
+  zh: 165b4a3f3575877c
+/deepseek-ai-dsh-audit-org-defaults/model-experience/kv-cache-effect:
+  en: e79b2ab6f96600b4
+  zh: 157debd13e0300f0
+/deepseek-ai-dsh-audit-org-defaults/known-limitations-and-deferred-work:
+  en: 04a900d0d191892e
+  zh: 5c85e69011c68073
+/deepseek-ai-dsh-audit-org-defaults/known-limitations-and-deferred-work/dev-note:
+  en: e67f633dc6fe7773
+  zh: 8ec3e73528ddb1a6

@@ -47,7 +47,8 @@ describe('shipped MCP resource composition', () => {
     try {
       const profile = loadProfile('dsh', name, installAnchor, home)
       const rows = composeEntries([...profile.layers.map(layer => layer.patches), profile.patches])
-      expect(rows.filter(row => row.name === '@deepseek-ai/dsh-mcp-manager')).toEqual(name === 'web'
+      // audit-desktop composes the Web application under the audit layers.
+      expect(rows.filter(row => row.name === '@deepseek-ai/dsh-mcp-manager')).toEqual(name === 'web' || name === 'audit-desktop'
         ? [{ id: 'mcp-manager', name: '@deepseek-ai/dsh-mcp-manager', inject: ['credentials'] }]
         : [])
     } finally {

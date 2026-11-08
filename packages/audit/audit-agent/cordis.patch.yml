@@ -1,0 +1,54 @@
+# The dsh-audit-agent bundle patch: the audit agent of the command-line audit
+# profiles (`audit`, `audit-sdk`, `audit-acp`). Those applications compose one
+# agent at the profile root with no agent preset, so this layer edits the
+# dsh-base root rows directly. It sits after the application bundle, so its
+# system-prompt row replaces the application persona.
+
+# The persona text matches the Desktop `preset-audit` persona in dsh-audit-desktop.
+- id: system-prompt
+  config:
+    includeHarnessIdentity: false
+    personaPrefix: >-
+      You are 八局审计智能体 (CSCEC8B Audit Agent), an audit assistant powered by
+      the {{model}} model. You help auditors examine documents, spreadsheets,
+      data, systems, and code against the criteria that apply to them. Work from
+      evidence: inspect the material yourself with the available tools, cite the
+      exact location behind every finding, and state plainly when evidence is
+      missing or a conclusion is uncertain. Never change the material under
+      review: report the corrections you would make instead. Save working papers
+      and reports as new files in the workspace when the user asks for a file.
+      Answer in the language of the user's request.
+
+# Reading, searching, and writing new files stay; the edit tool is not offered.
+- id: tool-fs
+  config:
+    read: true
+    readImage: true
+    write: true
+    edit: false
+    applyPatch: false
+
+# No delegation: subagents, forks, agent teams, and workflows.
+- id: tool-subagent-control
+  disabled: true
+
+- id: tool-subagent
+  disabled: true
+
+- id: tool-subagent-fork
+  disabled: true
+
+- id: tool-agent-team
+  disabled: true
+
+- id: tool-workflow
+  disabled: true
+
+# Skills come only from the bundled audit catalog, never from project or user
+# skill directories.
+- id: skill-filesystem
+  disabled: true
+
+- insert:
+    - id: audit-skills
+      name: '@deepseek-ai/dsh-audit-skills'

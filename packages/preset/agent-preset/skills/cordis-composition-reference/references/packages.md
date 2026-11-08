@@ -31,6 +31,12 @@ Every package below exports a Cordis plugin that a bundle patch can name in a Lo
 |---|---|---|
 | `@deepseek-ai/dsh-attachment-local` | yes | Private content-addressed DSH_HOME attachment storage |
 
+## audit
+
+| Package | Config | Description |
+|---|---|---|
+| `@deepseek-ai/dsh-audit-skills` | yes | Bundled general-purpose audit skills registered as one skill provider |
+
 ## boot
 
 | Package | Config | Description |
