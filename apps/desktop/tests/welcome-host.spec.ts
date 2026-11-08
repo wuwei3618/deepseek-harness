@@ -98,6 +98,20 @@ describe('desktop welcome Web operations', () => {
     expect(await backend.read()).toMatchObject({ loggedIn: false, hasApiKey: false })
   })
 
+  it('reports a profile without the account namespace as signed out when the Host answers 404', async () => {
+    const host = transport()
+    const backend = connectDesktopWelcome(url, cookie, host.send)
+    const send = host.send.getMockImplementation()!
+    host.send.mockImplementation(async (input, init) => {
+      const { method } = JSON.parse(init!.body as string) as { method: string }
+      return method === 'account/getState' ? new Response('not found', { status: 404 }) : send(input, init)
+    })
+    expect(await backend.accountAvailable()).toBe(false)
+    expect(await backend.read()).toMatchObject({ loggedIn: false, hasApiKey: false })
+    host.send.mockImplementation(async () => new Response('failed', { status: 500 }))
+    await expect(backend.accountAvailable()).rejects.toThrow('desktop welcome: Web request failed')
+  })
+
   it('keeps other account failures visible', async () => {
     const host = transport()
     const backend = connectDesktopWelcome(url, cookie, host.send)
