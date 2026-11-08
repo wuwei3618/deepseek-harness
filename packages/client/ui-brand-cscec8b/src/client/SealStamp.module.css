@@ -1,0 +1,92 @@
+/* Layout-neutral: the wrapped scroll body stays a direct flex item of the Conversation body. */
+.frame {
+  display: contents;
+}
+
+.layer {
+  /* The host isolates stacking at the Conversation root, so -1 lands above its background and below its content. */
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  overflow: hidden;
+  pointer-events: none;
+  color: var(--dsw-alias-label-secondary);
+}
+
+.stamp {
+  position: absolute;
+  width: 128px;
+  height: 128px;
+  margin: -64px 0 0 -64px;
+  opacity: 0;
+  animation: seal-stamp-press 1.8s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
+}
+
+.stamp svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+/* Ink spreading from the rim as the seal lands. */
+.stamp::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border: 2px solid currentColor;
+  border-radius: 50%;
+  opacity: 0;
+  animation: seal-stamp-ink 1.8s ease-out forwards;
+}
+
+@keyframes seal-stamp-press {
+  0% {
+    opacity: 0;
+    transform: rotate(var(--seal-stamp-tilt)) scale(1.7);
+  }
+
+  18% {
+    opacity: 0.24;
+    transform: rotate(var(--seal-stamp-tilt)) scale(0.94);
+  }
+
+  26% {
+    transform: rotate(var(--seal-stamp-tilt)) scale(1.02);
+  }
+
+  32%,
+  70% {
+    opacity: 0.22;
+    transform: rotate(var(--seal-stamp-tilt)) scale(1);
+  }
+
+  100% {
+    opacity: 0;
+    transform: rotate(var(--seal-stamp-tilt)) scale(1);
+  }
+}
+
+@keyframes seal-stamp-ink {
+  0%,
+  16% {
+    opacity: 0;
+    transform: scale(0.9);
+  }
+
+  20% {
+    opacity: 1;
+  }
+
+  60%,
+  100% {
+    opacity: 0;
+    transform: scale(1.6);
+  }
+}
+
+/* Reduced motion shows no impression; the frame keeps at most MAX_STAMPS hidden entries until the home closes. */
+@media (prefers-reduced-motion: reduce) {
+  .stamp {
+    display: none;
+  }
+}

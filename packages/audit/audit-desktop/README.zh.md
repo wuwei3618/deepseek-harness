@@ -9,7 +9,7 @@ kind: "package-bundle"
 
 ## 概述
 
-桌面端启动的 `audit-desktop` profile 的审计智能体。该层插入 `audit` agent preset，把它设为注册表的默认值，并关闭随附的四个 preset，因此新会话只能以审计模式启动。它还关闭插件和 preset 创作、DeepSeek Harness 开发上下文、DeepSeek 账号设置页和产品分析相关的 Web 行。
+桌面端启动的 `audit-desktop` profile 的审计智能体。该层插入 `audit` agent preset，把它设为注册表的默认值，并关闭随附的四个 preset，因此新会话只能以审计模式启动。它还关闭插件和 preset 创作、DeepSeek Harness 开发上下文、DeepSeek 账号设置页和产品分析相关的 Web 行。它用八局印章替换官方品牌图形。
 
 ## 目录
 
@@ -36,6 +36,7 @@ kind: "package-bundle"
 | `ui-settings-account`、`account-controller` | 关闭 |
 | `desktop-product-telemetry`、`product-analytics` | 关闭 |
 | `system-prompt` | 根上设置 `includeHarnessIdentity: false` 和审计 persona |
+| `ui-brand-official` → `ui-brand-cscec8b` | 关闭官方品牌图形；由 [`dsh-client-ui-brand-cscec8b`](../../client/ui-brand-cscec8b/README.zh.md) 显示印章和八局审计智能体 |
 
 -----
 
@@ -72,7 +73,6 @@ kind: "package-bundle"
 
 <a id="known-limitations-and-deferred-work"></a>
 
-- **品牌位置仍显示官方内容** — 在八局品牌插件替换它之前，`ui-brand-official` 仍然挂载。
 - **已有的桌面 profile 保留原来的 bundle 列表** — 桌面端只在保留 profile 不存在时才初始化它，因此早先基于 Web 的版本创建的 profile 仍只有 `dsh-web-app`。
 
 <a id="dev-note"></a>

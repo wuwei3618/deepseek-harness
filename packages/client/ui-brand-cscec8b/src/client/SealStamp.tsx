@@ -1,0 +1,91 @@
+/** Home frame layer: clicks on blank home space press a fading seal impression below the Conversation content. */
+import { useEffect, useRef, useState, type CSSProperties, type MouseEvent, type ReactNode } from 'react'
+import type { HeroFrameOwnerProps } from '@deepseek-ai/dsh-client-ui-conversation/client'
+import { SEAL_STAMP_PATH, SEAL_VIEWBOX } from './artwork.ts'
+import css from './SealStamp.module.css'
+
+/** Interactive descendants whose clicks belong to the control, not to blank home space. */
+const CONTROLS = 'button, a, input, textarea, select, label, [contenteditable], [role="button"], [role="dialog"], [role="menu"], [role="listbox"], [data-composer-card]'
+
+/** Impressions kept at once; a further click replaces the oldest. */
+const MAX_STAMPS = 3
+
+/**
+ * Rotation in degrees of an impression, between -6 and 6, so successive stamps do not line up.
+ * @param id - the impression's sequence number.
+ * @returns the impression's tilt.
+ */
+function tiltOf(id: number): number {
+  return (id * 5) % 13 - 6
+}
+
+/** One impression, positioned in the stamp layer's own coordinates. */
+interface Stamp {
+  readonly id: number
+  readonly x: number
+  readonly y: number
+  readonly tilt: number
+}
+
+/** Frame owner state and the wrapped content. */
+export type SealStampProps = HeroFrameOwnerProps & { children: ReactNode }
+
+/**
+ * Classify a click that bubbled to the frame. React bubbles portaled overlays through their React parent, so a
+ * target outside the frame's DOM subtree is excluded. A click that ends a text selection made inside the frame is
+ * not a blank click; a selection elsewhere in the document does not block the stamp.
+ * @param event - the click observed on the frame.
+ * @returns whether the click is a primary click on blank home space.
+ */
+function isBlankClick(event: MouseEvent<HTMLDivElement>): boolean {
+  // React reports element targets; text-node targets resolve to their parent element.
+  const target = event.target as Element
+  const frame = event.currentTarget
+  const selection = window.getSelection()
+  return event.button === 0
+    && frame.contains(target)
+    && target.closest(CONTROLS) === null
+    && !(selection !== null && !selection.isCollapsed && frame.contains(selection.anchorNode))
+}
+
+/**
+ * Wrap the Conversation scroll body; while the home is shown, press a seal impression where blank space is clicked.
+ * @param props - the home state and the wrapped scroll body.
+ * @returns a layout-neutral frame around the children.
+ */
+export function SealStamp({ hero, children }: SealStampProps) {
+  const layer = useRef<HTMLDivElement>(null)
+  const nextId = useRef(0)
+  const [stamps, setStamps] = useState<readonly Stamp[]>([])
+  useEffect(() => { if (!hero) setStamps([]) }, [hero])
+  const onClick = (event: MouseEvent<HTMLDivElement>): void => {
+    const surface = layer.current
+    if (surface === null || !isBlankClick(event)) return
+    const box = surface.getBoundingClientRect()
+    const id = nextId.current++
+    const stamp = { id, x: event.clientX - box.left, y: event.clientY - box.top, tilt: tiltOf(id) }
+    setStamps(current => [...current.slice(1 - MAX_STAMPS), stamp])
+  }
+  const remove = (id: number): void => { setStamps(current => current.filter(stamp => stamp.id !== id)) }
+  return (
+    <div className={css.frame} onClick={onClick}>
+      {hero && (
+        <div ref={layer} className={css.layer} data-home-stamp="" aria-hidden="true">
+          {stamps.map(stamp => (
+            <span
+              key={stamp.id}
+              className={css.stamp}
+              style={{ left: stamp.x, top: stamp.y, '--seal-stamp-tilt': `${stamp.tilt}deg` } as CSSProperties}
+              onAnimationEnd={() => { remove(stamp.id) }}
+            >
+              <svg viewBox={`0 0 ${SEAL_VIEWBOX} ${SEAL_VIEWBOX}`} fill="none">
+                <path d={SEAL_STAMP_PATH} fill="currentColor" fillRule="evenodd" />
+              </svg>
+            </span>
+          ))}
+        </div>
+      )}
+      {children}
+    </div>
+  )
+}

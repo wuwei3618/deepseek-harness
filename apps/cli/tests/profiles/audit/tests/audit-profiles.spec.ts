@@ -122,6 +122,12 @@ describe('the audit-desktop profile', () => {
       'product-analytics',
     ]) expect(row(rows, id).disabled, id).toBe(true)
   })
+
+  it('replaces the official brand with the CSCEC8B seal', () => {
+    expect(row(rows, 'ui-brand-official').disabled).toBe(true)
+    expect(row(rows, 'ui-brand-cscec8b').name).toBe('@deepseek-ai/dsh-client-ui-brand-cscec8b')
+    expect(row(rows, 'ui-brand-cscec8b').disabled).toBeUndefined()
+  })
 })
 
 describe('the audit agent persona', () => {
