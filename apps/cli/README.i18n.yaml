@@ -15,8 +15,11 @@
   en: 523477a093beb0c2
   zh: f88ea21e5fbea969
 /deepseek-ai-dsh/optional-overlays:
-  en: 3a40ddc44e55f79c
-  zh: 8d3949132e1ef93c
+  en: 0406dcff4b8c8a01
+  zh: b90e3402484a02b8
+/deepseek-ai-dsh/audit-release-lock:
+  en: b725768ea548b168
+  zh: 98d10252358609b2
 /deepseek-ai-dsh/development:
   en: 0a289c1235869927
   zh: a1f473f70036ad37

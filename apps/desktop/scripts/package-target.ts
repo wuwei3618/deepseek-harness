@@ -434,8 +434,12 @@ export async function packageTarget(
     rmSync(`${releaseRecordPath}.tmp`, { force: true })
   }
   const artifactsRoot = desktopArtifactOutput(buildPaths, invocation).directory
-  const buildEnv = withoutWindowsSigningEnvironment(withoutDesktopUploadCredentials(
-    desktopElectronBuilderEnvironment(environment, invocation.unsigned)))
+  // Every distributed package is a locked audit release, whatever the caller's environment says.
+  const buildEnv: NodeJS.ProcessEnv = {
+    ...withoutWindowsSigningEnvironment(withoutDesktopUploadCredentials(
+      desktopElectronBuilderEnvironment(environment, invocation.unsigned))),
+    DSH_AUDIT_RELEASE_LOCK: '1',
+  }
   const targetEnv: NodeJS.ProcessEnv = {
     ...buildEnv,
     DSH_DESKTOP_MACOS_SKIP_NOTARIZATION: invocation.skipNotarization ? '1' : '0',

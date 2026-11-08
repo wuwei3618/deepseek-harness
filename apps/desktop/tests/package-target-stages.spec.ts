@@ -207,7 +207,7 @@ it.each(['--unsigned', '--prepare-only'])('keeps %s hardware-free and creates no
   expect(stages.includes('exec tsx scripts/smoke-packaged-runtime.ts --unsigned')).toBe(mode === '--unsigned')
 })
 
-it.each(['mac-arm64', 'mac-x64', 'win-x64'] as const)('builds official branding in every signing mode for %s', async (target) => {
+it.each(['mac-arm64', 'mac-x64', 'win-x64'] as const)('builds a locked audit release with official branding in every signing mode for %s', async (target) => {
   const modes = [[], ['--unsigned'], ['--dir'], ['--unsigned', '--dir'], ['--prepare-only'],
     ...(target === 'win-x64' ? [] : [['--skip-notarization'], ['--skip-notarization', '--dir']])]
   for (const flags of modes) {
@@ -222,9 +222,11 @@ it.each(['mac-arm64', 'mac-x64', 'win-x64'] as const)('builds official branding 
       DSH_BUILD_CLIENT_PROFILE: unsigned ? 'official' : 'local',
       DSH_CLIENT_BUILD_PROFILE: unsigned ? 'official' : 'local',
       DSH_CLIENT_TITLE: 'Inherited title',
+      DSH_AUDIT_RELEASE_LOCK: '0',
     }, run)
     const build = stages.find(stage => stage.startsWith('run build'))
     expect(build).toBe('run build:official')
+    expect(run.run.mock.calls.find(([stage]) => stage === build)?.[3].env).toHaveProperty('DSH_AUDIT_RELEASE_LOCK', '1')
     expect(stages.some(stage => stage.startsWith('exec tsx apps/desktop/scripts/pack-local-packages.ts'))).toBe(unsigned)
     expect(stages.some(stage => stage.startsWith('run release:pack --family dsh'))).toBe(!unsigned)
   }
