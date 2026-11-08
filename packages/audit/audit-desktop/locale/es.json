@@ -1,0 +1,6 @@
+{
+  "meta": {
+    "title": "Modo de auditoría de escritorio",
+    "description": "Hace del modo de auditoría el único modo de agente de Desktop y desactiva la creación de modos y plugins, el inicio de sesión de la cuenta y la analítica de producto."
+  }
+}

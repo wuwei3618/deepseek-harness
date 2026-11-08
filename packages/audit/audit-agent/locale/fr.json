@@ -1,0 +1,6 @@
+{
+  "meta": {
+    "title": "Agent d’audit",
+    "description": "Exécute les profils d’audit en ligne de commande avec le persona d’auditeur, des outils de fichiers sans modification et les compétences d’audit intégrées."
+  }
+}

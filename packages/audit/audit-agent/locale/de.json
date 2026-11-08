@@ -1,0 +1,6 @@
+{
+  "meta": {
+    "title": "Prüfungsagent",
+    "description": "Führt die Prüfungsprofile der Befehlszeile mit der Prüfer-Persona, Dateiwerkzeugen ohne Bearbeiten und den mitgelieferten Prüfungs-Skills aus."
+  }
+}

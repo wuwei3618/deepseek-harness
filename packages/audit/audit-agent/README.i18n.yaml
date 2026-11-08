@@ -1,0 +1,43 @@
+# Bilingual-pair consistency record for README.md (docs/i18n/README.md): per heading
+# section, a hash of its English and Chinese blocks outside code blocks and generated regions.
+# After editing either side, bring the other along and re-record with:
+#   pnpm run verify-translation-pairing --write packages/audit/audit-agent/README.md
+/:
+  en: 0e1a0643e174c08b
+  zh: d0179017bd84e0cb
+/deepseek-ai-dsh-audit-agent:
+  en: ba7dd644ebe9efaa
+  zh: bd5376f289401af7
+/deepseek-ai-dsh-audit-agent/summary:
+  en: 8e07cbe813665372
+  zh: c0de2645d5816c0e
+/deepseek-ai-dsh-audit-agent/table-of-contents:
+  en: 76368b6b1da79c80
+  zh: ff1aad10e0ebcbce
+/deepseek-ai-dsh-audit-agent/use-this-package:
+  en: cee23f973e07cc85
+  zh: 4e660da1ac37c1e8
+/deepseek-ai-dsh-audit-agent/understand-the-implementation:
+  en: 82bc51e2191ce498
+  zh: 8a3b6061d8f988a0
+/deepseek-ai-dsh-audit-agent/model-experience:
+  en: 215e7ba838619b7b
+  zh: a311da3843709f90
+/deepseek-ai-dsh-audit-agent/model-experience/audit-persona:
+  en: 90dbd3adf24c6385
+  zh: 188a3ba44290ea0d
+/deepseek-ai-dsh-audit-agent/model-experience/audit-persona/what-the-model-sees:
+  en: 32599b943c58e934
+  zh: 57d4ac721ce48459
+/deepseek-ai-dsh-audit-agent/model-experience/audit-persona/token-effect:
+  en: db3a0d8038b1b6ed
+  zh: f155591117cd1efc
+/deepseek-ai-dsh-audit-agent/model-experience/audit-persona/kv-cache-effect:
+  en: f7c35eab2725807d
+  zh: 4e2aebcb78b3f7aa
+/deepseek-ai-dsh-audit-agent/known-limitations-and-deferred-work:
+  en: 150d527d93fab85a
+  zh: f6af50b102bfa324
+/deepseek-ai-dsh-audit-agent/known-limitations-and-deferred-work/dev-note:
+  en: e67f633dc6fe7773
+  zh: 8ec3e73528ddb1a6

@@ -1,0 +1,172 @@
+# The dsh-audit-desktop bundle patch: the audit agent of the `audit-desktop`
+# profile that Desktop boots. It sits after dsh-web-app and
+# dsh-audit-org-defaults, replaces the shipped agent presets with the single
+# `audit` preset, and switches off the Web rows that let a person create
+# presets or plugins, sign in to a DeepSeek account, or send product analytics.
+
+# The root persona serves agents created outside a preset; `preset-audit`
+# shadows it for every Desktop session.
+- id: system-prompt
+  config:
+    includeHarnessIdentity: false
+    personaPrefix: >-
+      You are 八局审计智能体 (CSCEC8B Audit Agent), an audit assistant powered by
+      the {{model}} model. You help auditors examine documents, spreadsheets,
+      data, systems, and code against the criteria that apply to them. Work from
+      evidence: inspect the material yourself with the available tools, cite the
+      exact location behind every finding, and state plainly when evidence is
+      missing or a conclusion is uncertain. Never change the material under
+      review: report the corrections you would make instead. Save working papers
+      and reports as new files in the workspace when the user asks for a file.
+      Answer in the language of the user's request.
+
+# ── the audit preset is the only preset ─────────────────────────────────────
+
+- id: preset-standard
+  disabled: true
+
+- id: preset-ptc
+  disabled: true
+
+- id: preset-minimal
+  disabled: true
+
+# Without the `cordis` preset the Creator entry points are unavailable.
+- id: preset-cordis
+  disabled: true
+
+- id: agent-preset-registry
+  config:
+    default: audit
+
+# The persona text matches the dsh-audit-agent root persona.
+- insert:
+    - id: preset-audit
+      name: '@deepseek-ai/dsh-agent-preset'
+      config:
+        id: audit
+        name: 审计模式
+        description: 审计：执行命令、联网搜索、读取和检索文件，只能在当前工作目录中写入底稿和报告。
+        order: 1
+        plugins:
+          - id: persona
+            name: '@deepseek-ai/dsh-persona'
+            config:
+              prefix: >-
+                You are 八局审计智能体 (CSCEC8B Audit Agent), an audit assistant powered by
+                the {{model}} model. You help auditors examine documents, spreadsheets,
+                data, systems, and code against the criteria that apply to them. Work from
+                evidence: inspect the material yourself with the available tools, cite the
+                exact location behind every finding, and state plainly when evidence is
+                missing or a conclusion is uncertain. Never change the material under
+                review: report the corrections you would make instead. Save working papers
+                and reports as new files in the workspace when the user asks for a file.
+                Answer in the language of the user's request.
+          - id: agent-instructions
+            name: '@deepseek-ai/dsh-agent-instructions'
+            config:
+              maxBytes: 65536
+          - id: time-context
+            name: '@deepseek-ai/dsh-time-context'
+          - id: tool-bash
+            name: '@deepseek-ai/dsh-tool-bash'
+            disabled: !!js process.platform === 'win32'
+          - id: tool-pwsh
+            name: '@deepseek-ai/dsh-tool-pwsh'
+            disabled: !!js process.platform !== 'win32'
+          - id: tool-fs
+            name: '@deepseek-ai/dsh-tool-fs'
+            config:
+              read: true
+              readImage: true
+              write: true
+              edit: false
+              applyPatch: false
+          - id: tool-fs-search
+            name: '@deepseek-ai/dsh-tool-fs-search'
+            config:
+              sampleOverCapGlobResults: false
+          - id: tool-jobs
+            name: '@deepseek-ai/dsh-tool-jobs'
+          # Skills come only from the bundled audit catalog, never from
+          # project or user skill directories.
+          - id: audit-skills
+            name: '@deepseek-ai/dsh-audit-skills'
+          - id: tool-skill
+            name: '@deepseek-ai/dsh-tool-skill'
+          - id: compaction
+            name: cordis:group
+            group: true
+            isolate:
+              compaction: true
+              toolResultPruner: true
+            config:
+              - id: compaction-basic
+                name: '@deepseek-ai/dsh-compaction-basic'
+              - id: command-compact
+                name: '@deepseek-ai/dsh-command-compact'
+              - id: tool-result-pruner
+                name: '@deepseek-ai/dsh-compaction-tool-result-pruner'
+                config:
+                  thresholdChars: 8192
+                  headChars: 4096
+                  tailChars: 1024
+          - id: tool-ask-user
+            name: '@deepseek-ai/dsh-tool-ask-user'
+          - id: tool-todo
+            name: '@deepseek-ai/dsh-tool-todo'
+            config:
+              allowParallelInProgress: true
+          - id: tool-web
+            name: '@deepseek-ai/dsh-tool-web'
+            config:
+              fetch: true
+              searchTimeoutMs: 60000
+          - id: present
+            name: '@deepseek-ai/dsh-tool-present'
+
+# ── no preset or plugin authoring ───────────────────────────────────────────
+
+# dsh-audit-org-defaults switches off the Host plugin manager; these are the
+# Web pages and runners that create plugins, plus the Agent presets settings
+# section, which saves edited preset plugin lists into the profile patch.
+- id: ui-plugin-manager
+  disabled: true
+
+- id: ui-agent-preset
+  disabled: true
+
+# Its More menus offer "Create your plugin", which starts a `cordis` preset session.
+- id: entry-customization
+  disabled: true
+
+- id: ui-cordis
+  disabled: true
+
+- id: cordis-host-runner
+  disabled: true
+
+- id: cordis-client-runner
+  disabled: true
+
+# The inspect providers wait for the Host runner's inspect service.
+- id: cordis-inspect-providers
+  disabled: true
+
+# Model context describing the DeepSeek Harness checkout and GUI.
+- id: harness-dev-context
+  disabled: true
+
+# ── no DeepSeek account or product analytics ────────────────────────────────
+
+- id: ui-settings-account
+  disabled: true
+
+- id: account-controller
+  disabled: true
+
+- id: desktop-product-telemetry
+  disabled: true
+
+- id: product-analytics
+  disabled: true

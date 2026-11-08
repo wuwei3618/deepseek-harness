@@ -1,0 +1,131 @@
+/**
+ * Bundle-layer composition of the shipped audit profile templates: workspace-only write
+ * permissions, the audit agent, and the rows each template switches off.
+ */
+import { mkdtempSync, rmSync } from 'node:fs'
+import { tmpdir } from 'node:os'
+import { join } from 'node:path'
+import { fileURLToPath } from 'node:url'
+import type { EntryOptions } from '@deepseek-ai/cordis-plugin-loader'
+import { composeEntries, loadProfile } from '@deepseek-ai/dsh-app-boot'
+import { afterAll, describe, expect, it } from 'vitest'
+
+const installAnchor = fileURLToPath(new URL('../../../../package.json', import.meta.url))
+const home = mkdtempSync(join(tmpdir(), 'dsh-audit-profiles-'))
+afterAll(() => { rmSync(home, { recursive: true, force: true }) })
+
+/** Compose a shipped template's bundle layers; a patch addressing an absent row fails the test. */
+function compose(name: string): Map<string, EntryOptions> {
+  const profile = loadProfile('dsh', name, installAnchor, home, { userLayer: false })
+  expect(profile.skippedBundles).toEqual([])
+  const rows = composeEntries(profile.layers.map(layer => layer.patches), (message) => { throw new Error(message) })
+  return new Map(rows.map(row => [row.id, row]))
+}
+
+/** The row with this id; absent rows fail the test. */
+function row(rows: Map<string, EntryOptions>, id: string): EntryOptions {
+  const found = rows.get(id)
+  expect(found, id).toBeDefined()
+  return found!
+}
+
+/** Config fields a row carries after composition. */
+function config(rows: Map<string, EntryOptions>, id: string): Record<string, unknown> {
+  return row(rows, id).config as Record<string, unknown>
+}
+
+const READ_ONLY_PERMISSIONS = {
+  presets: {
+    'workspace-write': {
+      sandbox: 'workspace-write',
+      approval: 'never',
+      name: 'workspace-write',
+      description: 'Run commands, read files, and write only inside the workspace; wider access is refused.',
+    },
+  },
+  defaultPreset: 'workspace-write',
+}
+
+const ORG_DISABLED = [
+  'deepseek-account', 'llm-deepseek-account', 'session-telemetry-otel', 'session-log-deepseek', 'plugin-package-inventory-deepseek',
+  'plugin-manager', 'tool-plugin-manager',
+]
+
+describe.each(['audit', 'audit-sdk', 'audit-acp', 'audit-desktop'])('the %s profile', (name) => {
+  const rows = compose(name)
+
+  it('confines writes to the workspace with approvals refused', () => {
+    expect(row(rows, 'sandbox-policy').config).toMatchObject({ mode: 'workspace-write' })
+    expect(config(rows, 'sandbox-policy')).not.toHaveProperty('additionalWritableRoots')
+    expect(config(rows, 'approval')).toEqual({ policy: 'never' })
+    expect(config(rows, 'permission')).toEqual(READ_ONLY_PERMISSIONS)
+  })
+
+  it('switches off the DeepSeek account, telemetry and session-log uploads, and plugin installation', () => {
+    for (const id of ORG_DISABLED) expect(row(rows, id).disabled, id).toBe(true)
+    expect(row(rows, 'config-editor').disabled).not.toBe(true)
+  })
+
+  it('omits the DeepSeek Harness identity and uses the audit persona at the root', () => {
+    expect(config(rows, 'system-prompt')).toMatchObject({ includeHarnessIdentity: false })
+    expect(config(rows, 'system-prompt')['personaPrefix']).toMatch(/^You are 八局审计智能体 \(CSCEC8B Audit Agent\)/u)
+  })
+})
+
+describe.each(['audit', 'audit-sdk', 'audit-acp'])('the command-line %s profile', (name) => {
+  const rows = compose(name)
+
+  it('offers reading and new-file tools without edit or delegation', () => {
+    expect(config(rows, 'tool-fs')).toMatchObject({ read: true, readImage: true, write: true, edit: false, applyPatch: false })
+    for (const id of ['tool-subagent-control', 'tool-subagent', 'tool-subagent-fork', 'tool-agent-team', 'tool-workflow']) {
+      expect(row(rows, id).disabled, id).toBe(true)
+    }
+    for (const id of ['tool-bash', 'tool-web', 'tool-skill']) expect(row(rows, id).disabled, id).not.toBe(true)
+  })
+
+  it('replaces local skill discovery with the bundled audit skills', () => {
+    expect(row(rows, 'skill-filesystem').disabled).toBe(true)
+    expect(row(rows, 'audit-skills')).toMatchObject({ name: '@deepseek-ai/dsh-audit-skills' })
+    expect(row(rows, 'audit-skills').disabled).toBeUndefined()
+  })
+})
+
+describe('the audit-desktop profile', () => {
+  const rows = compose('audit-desktop')
+  const preset = config(rows, 'preset-audit') as { id: string; plugins: EntryOptions[] }
+  const plugins = new Map(preset.plugins.map(plugin => [plugin.id, plugin]))
+
+  it('registers the audit preset as the only preset and the default', () => {
+    expect(preset.id).toBe('audit')
+    expect(config(rows, 'agent-preset-registry')).toEqual({ default: 'audit' })
+    const presets = [...rows.values()].filter(entry => entry.name === '@deepseek-ai/dsh-agent-preset' && entry.disabled !== true)
+    expect(presets.map(entry => entry.id)).toEqual(['preset-audit'])
+  })
+
+  it('gives the audit preset the root persona and the same file tools', () => {
+    expect((plugins.get('persona')!.config as { prefix: string }).prefix).toBe(config(rows, 'system-prompt')['personaPrefix'])
+    expect(plugins.get('tool-fs')!.config).toEqual(config(compose('audit'), 'tool-fs'))
+    expect([...plugins.keys()]).toContain('audit-skills')
+    for (const id of ['skill-filesystem', 'delegation', 'planning', 'tool-schedule', 'tool-plugin-manager', 'tool-plugin-market']) {
+      expect(plugins.has(id), id).toBe(false)
+    }
+  })
+
+  it('keeps session search and voice input on without the plugin manager', () => {
+    for (const id of ['optional-session-search', 'speech-to-text', 'ui-voice-input']) expect(row(rows, id).disabled, id).toBeUndefined()
+  })
+
+  it('switches off authoring, account, development context, and analytics rows', () => {
+    for (const id of [
+      'ui-plugin-manager', 'ui-agent-preset', 'entry-customization', 'ui-cordis', 'cordis-host-runner', 'cordis-client-runner',
+      'cordis-inspect-providers', 'harness-dev-context', 'ui-settings-account', 'account-controller', 'desktop-product-telemetry',
+      'product-analytics',
+    ]) expect(row(rows, id).disabled, id).toBe(true)
+  })
+})
+
+describe('the audit agent persona', () => {
+  it('is the same text in the command-line and Desktop profiles', () => {
+    expect(config(compose('audit'), 'system-prompt')['personaPrefix']).toBe(config(compose('audit-desktop'), 'system-prompt')['personaPrefix'])
+  })
+})

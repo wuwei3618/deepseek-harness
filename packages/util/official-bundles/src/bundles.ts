@@ -23,6 +23,23 @@ export const PROFILE_TEMPLATES: Record<string, ProfileTemplate> = {
   'sdk-minimal': {
     bundles: ['@deepseek-ai/dsh-sdk-minimal'],
   },
+  // Audit profiles: each application bundle followed by the audit deployment defaults and the audit agent.
+  audit: {
+    bundles: ['@deepseek-ai/dsh-base', '@deepseek-ai/dsh-headless', '@deepseek-ai/dsh-audit-org-defaults', '@deepseek-ai/dsh-audit-agent'],
+  },
+  'audit-sdk': {
+    bundles: ['@deepseek-ai/dsh-base', '@deepseek-ai/dsh-sdk-app', '@deepseek-ai/dsh-audit-org-defaults', '@deepseek-ai/dsh-audit-agent'],
+  },
+  'audit-acp': {
+    bundles: ['@deepseek-ai/dsh-base', '@deepseek-ai/dsh-acp-app', '@deepseek-ai/dsh-audit-org-defaults', '@deepseek-ai/dsh-audit-agent'],
+  },
+  // Desktop's reserved profile, with two optional bundles always on because the plugin manager is off.
+  'audit-desktop': {
+    bundles: [
+      '@deepseek-ai/dsh-base', '@deepseek-ai/dsh-web-app', '@deepseek-ai/dsh-audit-org-defaults', '@deepseek-ai/dsh-audit-desktop',
+      '@deepseek-ai/dsh-experimental-session-search', '@deepseek-ai/dsh-experimental-voice-input-bundle',
+    ],
+  },
 }
 
 /**

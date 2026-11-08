@@ -1,0 +1,6 @@
+{
+  "meta": {
+    "title": "Valores predeterminados de auditoría",
+    "description": "Hace que cada perfil de auditoría solo escriba dentro de su espacio de trabajo y desactiva la cuenta de DeepSeek, el envío de telemetría y de registros de sesión, y la instalación de plugins."
+  }
+}

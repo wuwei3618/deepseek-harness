@@ -1,0 +1,6 @@
+{
+  "meta": {
+    "title": "Agente de auditoria",
+    "description": "Executa os perfis de auditoria da linha de comando com a persona de auditor, ferramentas de arquivo sem edição e as habilidades de auditoria incluídas."
+  }
+}

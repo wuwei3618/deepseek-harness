@@ -1,0 +1,66 @@
+# The dsh-audit-org-defaults bundle patch: deployment defaults shared by every
+# audit profile. Every row it addresses is a dsh-base row, so the layer applies
+# unchanged over the headless, SDK, ACP, and Web application bundles. It sits
+# after the application bundle in each audit profile template.
+
+# ── no DeepSeek account ─────────────────────────────────────────────────────
+
+# The account platform and its model route. Without the route the model picker
+# offers no "DeepSeek Account" entry that can only ask for a sign-in.
+- id: deepseek-account
+  disabled: true
+
+- id: llm-deepseek-account
+  disabled: true
+
+# ── no telemetry export ─────────────────────────────────────────────────────
+
+- id: session-telemetry-otel
+  disabled: true
+
+# Request extensions that send the session log (`dsh_session_log`) and the
+# loaded plugin package list (`dsh_plugin_packages`) with each official
+# DeepSeek API request. The model request itself is unchanged.
+- id: session-log-deepseek
+  disabled: true
+
+- id: plugin-package-inventory-deepseek
+  disabled: true
+
+# ── no runtime self-modification ────────────────────────────────────────────
+
+# Plugin installation and the model-facing plugin tools. The config editor
+# stays: the settings service requires it.
+- id: plugin-manager
+  disabled: true
+
+- id: tool-plugin-manager
+  disabled: true
+
+# ── writes only inside the workspace ────────────────────────────────────────
+
+# Confined processes may write only inside the session workspace and their
+# private temporary directory. The literal mode replaces the
+# DSH_PERMISSION_MODE lookup in dsh-base and dsh-headless, and dropping
+# additionalWritableRoots makes `--add-dir` grant nothing.
+- id: sandbox-policy
+  config:
+    mode: workspace-write
+    workspaceRoot: !!js process.cwd()
+
+# `never` rejects every approval request without asking, so a denied command
+# cannot be retried in a wider sandbox mode through a human approval.
+- id: approval
+  config:
+    policy: never
+
+# The only preset a session, `--permission-mode`, or the permission menu can select.
+- id: permission
+  config:
+    presets:
+      workspace-write:
+        sandbox: workspace-write
+        approval: never
+        name: workspace-write
+        description: Run commands, read files, and write only inside the workspace; wider access is refused.
+    defaultPreset: workspace-write

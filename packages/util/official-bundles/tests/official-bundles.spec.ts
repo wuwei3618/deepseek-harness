@@ -20,13 +20,22 @@ describe('Official on-demand catalog', () => {
 })
 
 describe('Shipped profile templates', () => {
-  it('stack each mode bundle on base except the standalone minimal SDK', () => {
+  it('stack each mode bundle on base except the standalone minimal SDK, and the audit layers after their mode bundle', () => {
     expect(PROFILE_TEMPLATES).toEqual({
       acp: { bundles: ['@deepseek-ai/dsh-base', '@deepseek-ai/dsh-acp-app'] },
       web: { bundles: ['@deepseek-ai/dsh-base', '@deepseek-ai/dsh-web-app'] },
       headless: { bundles: ['@deepseek-ai/dsh-base', '@deepseek-ai/dsh-headless'] },
       sdk: { bundles: ['@deepseek-ai/dsh-base', '@deepseek-ai/dsh-sdk-app'] },
       'sdk-minimal': { bundles: ['@deepseek-ai/dsh-sdk-minimal'] },
+      audit: { bundles: ['@deepseek-ai/dsh-base', '@deepseek-ai/dsh-headless', '@deepseek-ai/dsh-audit-org-defaults', '@deepseek-ai/dsh-audit-agent'] },
+      'audit-sdk': { bundles: ['@deepseek-ai/dsh-base', '@deepseek-ai/dsh-sdk-app', '@deepseek-ai/dsh-audit-org-defaults', '@deepseek-ai/dsh-audit-agent'] },
+      'audit-acp': { bundles: ['@deepseek-ai/dsh-base', '@deepseek-ai/dsh-acp-app', '@deepseek-ai/dsh-audit-org-defaults', '@deepseek-ai/dsh-audit-agent'] },
+      'audit-desktop': {
+        bundles: [
+          '@deepseek-ai/dsh-base', '@deepseek-ai/dsh-web-app', '@deepseek-ai/dsh-audit-org-defaults', '@deepseek-ai/dsh-audit-desktop',
+          '@deepseek-ai/dsh-experimental-session-search', '@deepseek-ai/dsh-experimental-voice-input-bundle',
+        ],
+      },
     })
   })
 })

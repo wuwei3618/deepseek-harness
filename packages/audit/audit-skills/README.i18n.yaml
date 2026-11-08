@@ -1,0 +1,43 @@
+# Bilingual-pair consistency record for README.md (docs/i18n/README.md): per heading
+# section, a hash of its English and Chinese blocks outside code blocks and generated regions.
+# After editing either side, bring the other along and re-record with:
+#   pnpm run verify-translation-pairing --write packages/audit/audit-skills/README.md
+/:
+  en: 1b6b8eee6d03a493
+  zh: 170768940c5b40a8
+/deepseek-ai-dsh-audit-skills:
+  en: 8c2e462495c93f8f
+  zh: 0b760d1f80c98cbf
+/deepseek-ai-dsh-audit-skills/summary:
+  en: 5413997a88844bbd
+  zh: 4bc7f6c67636a06e
+/deepseek-ai-dsh-audit-skills/table-of-contents:
+  en: 76368b6b1da79c80
+  zh: ff1aad10e0ebcbce
+/deepseek-ai-dsh-audit-skills/use-this-package:
+  en: e23c24cd00c30228
+  zh: c6d9a76de5372a21
+/deepseek-ai-dsh-audit-skills/understand-the-implementation:
+  en: dbcd82c2f4fa879d
+  zh: 3514d4104a5f9356
+/deepseek-ai-dsh-audit-skills/model-experience:
+  en: 215e7ba838619b7b
+  zh: a311da3843709f90
+/deepseek-ai-dsh-audit-skills/model-experience/audit-skill-catalog:
+  en: 44ef77d0ea92a6be
+  zh: 8603390742a0ece5
+/deepseek-ai-dsh-audit-skills/model-experience/audit-skill-catalog/what-the-model-sees:
+  en: b09e9f5df3dc83a8
+  zh: 688069e2638d218d
+/deepseek-ai-dsh-audit-skills/model-experience/audit-skill-catalog/token-effect:
+  en: e0ee88e21cfc8143
+  zh: 62a0fcdbf3c18a21
+/deepseek-ai-dsh-audit-skills/model-experience/audit-skill-catalog/kv-cache-effect:
+  en: 351a206f06445fc6
+  zh: f3a49bd9e05ef715
+/deepseek-ai-dsh-audit-skills/known-limitations-and-deferred-work:
+  en: 6c915de2febeb44b
+  zh: a91e77d89d849761
+/deepseek-ai-dsh-audit-skills/known-limitations-and-deferred-work/dev-note:
+  en: e67f633dc6fe7773
+  zh: 8ec3e73528ddb1a6

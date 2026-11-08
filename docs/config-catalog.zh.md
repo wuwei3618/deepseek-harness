@@ -424,6 +424,23 @@ export interface Config {
 ```
 <!-- END GENERATED config-catalog:@deepseek-ai/dsh-attachment-local -->
 
+<!-- BEGIN GENERATED config-catalog:@deepseek-ai/dsh-audit-skills -->
+<a id="deepseek-aidsh-audit-skills"></a>
+
+## `@deepseek-ai/dsh-audit-skills`
+
+- `inject`: `skills`
+- `source`: [`packages/audit/audit-skills/src/index.ts:17`](../packages/audit/audit-skills/src/index.ts)
+
+```ts config-catalog
+/** Audit skill resource location. */
+export interface Config {
+  /** Absolute directory whose `<name>/SKILL.md` folders are the catalog; defaults to the packaged `assets/`. */
+  assetRoot?: string
+}
+```
+<!-- END GENERATED config-catalog:@deepseek-ai/dsh-audit-skills -->
+
 <!-- BEGIN GENERATED config-catalog:@deepseek-ai/dsh-bash-local -->
 <a id="deepseek-aidsh-bash-local"></a>
 
@@ -5051,6 +5068,9 @@ export interface Config {
 | `@deepseek-ai/dsh-anonymous-user-id` | — | [`packages/identity/anonymous-user-id/src/index.ts`](../packages/identity/anonymous-user-id/src/index.ts) |
 | `@deepseek-ai/dsh-app-boot` | — | [`packages/boot/app-boot/src/index.ts`](../packages/boot/app-boot/src/index.ts) |
 | `@deepseek-ai/dsh-atomic-write` | — | [`packages/util/atomic-write/src/index.ts`](../packages/util/atomic-write/src/index.ts) |
+| `@deepseek-ai/dsh-audit-agent` | — | [`packages/audit/audit-agent/src/index.ts`](../packages/audit/audit-agent/src/index.ts) |
+| `@deepseek-ai/dsh-audit-desktop` | — | [`packages/audit/audit-desktop/src/index.ts`](../packages/audit/audit-desktop/src/index.ts) |
+| `@deepseek-ai/dsh-audit-org-defaults` | — | [`packages/audit/audit-org-defaults/src/index.ts`](../packages/audit/audit-org-defaults/src/index.ts) |
 | `@deepseek-ai/dsh-base` | — | [`packages/bundle/base/src/index.ts`](../packages/bundle/base/src/index.ts) |
 | `@deepseek-ai/dsh-brand` | — | [`packages/util/brand/src/index.ts`](../packages/util/brand/src/index.ts) |
 | `@deepseek-ai/dsh-chunked-list` | — | [`packages/util/chunked-list/src/index.ts`](../packages/util/chunked-list/src/index.ts) |

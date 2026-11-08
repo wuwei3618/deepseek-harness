@@ -25,6 +25,14 @@ import { isExperimentalPackageName } from './experimental-package-policy.ts'
 const EXTERNAL_KIT_PACKAGES = new Set(['@deepseek-ai/libreoffice-kit'])
 const PROFILE_SOURCE = 'packages/util/official-bundles/src/bundles.ts'
 const PRESET_PATTERN = 'packages/bundle/web-app/presets/*.patch.yml'
+/**
+ * Optional bundles the audit Desktop template switches on. The audit fork ships them always on in its Desktop
+ * product; they stay optional bundles for every other template and keep their own dependency graphs.
+ */
+const AUDIT_DESKTOP_OPTIONAL_BUNDLES = new Set([
+  '@deepseek-ai/dsh-experimental-session-search',
+  '@deepseek-ai/dsh-experimental-voice-input-bundle',
+])
 const RUNTIME_SECTIONS = ['dependencies', 'optionalDependencies', 'peerDependencies'] as const
 
 interface Manifest {
@@ -366,6 +374,7 @@ function profilePackages(source: string): { packages: string[]; webBundles: stri
   const literals = (node: ts.Node, path: string[]): void => {
     if (ts.isStringLiteralLike(node)) {
       if (path[0] === 'OPTIONAL_BUNDLES') optionalBundles.push(node.text)
+      else if (path.join('.') === 'PROFILE_TEMPLATES.audit-desktop.bundles' && AUDIT_DESKTOP_OPTIONAL_BUNDLES.has(node.text)) return
       else if (node.text.startsWith('@')) packages.push(node.text)
       if (path.join('.') === 'PROFILE_TEMPLATES.web.bundles') webBundles.push(node.text)
     } else if (ts.isArrayLiteralExpression(node)) node.elements.forEach((child) => { literals(child, path) })

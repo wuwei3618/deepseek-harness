@@ -179,7 +179,8 @@ describe('optional bundles', () => {
   })
 
   it('ships all five lightweight bundles without selecting them in a default template', () => {
-    const defaults = Object.values(PROFILE_TEMPLATES).flatMap(template => template.bundles)
+    // The audit-desktop template selects session search because its profile has no plugin manager.
+    const defaults = Object.entries(PROFILE_TEMPLATES).filter(([name]) => name !== 'audit-desktop').flatMap(([, template]) => template.bundles)
     for (const name of lightweight) {
       expect(OPTIONAL_BUNDLES).toContain(name)
       expect(defaults).not.toContain(name)

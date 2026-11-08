@@ -12,10 +12,10 @@ Run `pnpm run gen-cli-help` to regenerate; run `pnpm run verify-cli-help` to che
 - [`dsh`](#dsh)
 - [`dsh plugin`](#dsh-plugin)
 - [`dsh acp`](#dsh-acp)
-- [`dsh headless`](#dsh-headless)
-- [`dsh sdk`](#dsh-sdk)
+- [`dsh audit`](#dsh-audit)
+- [`dsh audit-desktop`](#dsh-audit-desktop)
+- [`dsh audit-sdk`](#dsh-audit-sdk)
 - [`dsh sdk-minimal`](#dsh-sdk-minimal)
-- [`dsh web`](#dsh-web)
 
 <a id="dsh"></a>
 ## `dsh`
@@ -82,7 +82,7 @@ Options:
 <a id="dsh-acp"></a>
 ## `dsh acp`
 
-Invocations: `dsh acp --help`, `dsh --profile acp --help`
+Invocations: `dsh acp --help`, `dsh --profile acp --help`, `dsh audit-acp --help`, `dsh --profile audit-acp --help`
 
 ```text
 Usage: dsh --profile acp [options]
@@ -97,10 +97,10 @@ Example:
 
 ```
 
-<a id="dsh-headless"></a>
-## `dsh headless`
+<a id="dsh-audit"></a>
+## `dsh audit`
 
-Invocations: `dsh headless --help`, `dsh --profile headless --help`
+Invocations: `dsh audit --help`, `dsh --profile audit --help`, `dsh headless --help`, `dsh --profile headless --help`
 
 ```text
 Usage: dsh --profile headless [options] [task...]
@@ -134,46 +134,10 @@ Examples:
 
 ```
 
-<a id="dsh-sdk"></a>
-## `dsh sdk`
+<a id="dsh-audit-desktop"></a>
+## `dsh audit-desktop`
 
-Invocations: `dsh sdk --help`, `dsh --profile sdk --help`
-
-```text
-Usage: dsh --profile sdk [options]
-
-Serve DeepSeek Harness SDK clients over stdio JSON-RPC.
-
-Options:
-  -h, --help  show this help
-
-Example:
-  dsh --profile sdk     serve one SDK runtime until its client disconnects
-
-```
-
-<a id="dsh-sdk-minimal"></a>
-## `dsh sdk-minimal`
-
-Invocations: `dsh sdk-minimal --help`, `dsh --profile sdk-minimal --help`
-
-```text
-Usage: dsh --profile sdk-minimal [options]
-
-Serve DeepSeek Harness SDK clients over stdio JSON-RPC.
-
-Options:
-  -h, --help  show this help
-
-Example:
-  dsh --profile sdk-minimal     serve one SDK runtime until its client disconnects
-
-```
-
-<a id="dsh-web"></a>
-## `dsh web`
-
-Invocations: `dsh web --help`, `dsh --profile web --help`
+Invocations: `dsh audit-desktop --help`, `dsh --profile audit-desktop --help`, `dsh web --help`, `dsh --profile web --help`
 
 ```text
 Usage: dsh --profile web [options]
@@ -207,5 +171,41 @@ Examples:
                                              advertise a prefix-stripping HTTPS proxy entry and admit its authority
   dsh --profile web --tls-cert ./server-chain.pem --tls-key ./server-key.pem
                                              serve HTTPS with an existing certificate and key
+
+```
+
+<a id="dsh-audit-sdk"></a>
+## `dsh audit-sdk`
+
+Invocations: `dsh audit-sdk --help`, `dsh --profile audit-sdk --help`, `dsh sdk --help`, `dsh --profile sdk --help`
+
+```text
+Usage: dsh --profile sdk [options]
+
+Serve DeepSeek Harness SDK clients over stdio JSON-RPC.
+
+Options:
+  -h, --help  show this help
+
+Example:
+  dsh --profile sdk     serve one SDK runtime until its client disconnects
+
+```
+
+<a id="dsh-sdk-minimal"></a>
+## `dsh sdk-minimal`
+
+Invocations: `dsh sdk-minimal --help`, `dsh --profile sdk-minimal --help`
+
+```text
+Usage: dsh --profile sdk-minimal [options]
+
+Serve DeepSeek Harness SDK clients over stdio JSON-RPC.
+
+Options:
+  -h, --help  show this help
+
+Example:
+  dsh --profile sdk-minimal     serve one SDK runtime until its client disconnects
 
 ```

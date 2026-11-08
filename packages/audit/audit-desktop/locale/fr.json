@@ -1,0 +1,6 @@
+{
+  "meta": {
+    "title": "Mode audit de Desktop",
+    "description": "Fait du mode audit le seul mode d’agent de Desktop et désactive la création de modes et de plugins, la connexion au compte et l’analyse produit."
+  }
+}
