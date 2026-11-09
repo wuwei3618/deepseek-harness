@@ -752,6 +752,9 @@ importers:
       '@deepseek-ai/dsh-atomic-write':
         specifier: workspace:*
         version: link:../../packages/util/atomic-write
+      '@deepseek-ai/dsh-audit-plugin-pack':
+        specifier: workspace:*
+        version: link:../../packages/audit/audit-plugin-pack
       '@deepseek-ai/dsh-client-product-analytics':
         specifier: workspace:*
         version: link:../../packages/client/product-analytics
@@ -824,6 +827,9 @@ importers:
       extract-zip:
         specifier: ^2.0.1
         version: 2.0.1(supports-color@9.4.0)
+      fflate:
+        specifier: ^0.8.2
+        version: 0.8.3
       js-yaml:
         specifier: ^4.3.2
         version: 4.3.2
@@ -2148,6 +2154,9 @@ importers:
       '@deepseek-ai/schemastery':
         specifier: link:../../../vendor/schemastery
         version: link:../../../vendor/schemastery
+      fflate:
+        specifier: ^0.8.2
+        version: 0.8.3
       js-yaml:
         specifier: ^4.3.2
         version: 4.3.2

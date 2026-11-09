@@ -183,6 +183,12 @@ Desktop 的致命故障通过原生恢复对话框提供退出、重启、禁用
 
 macOS 和 Linux 从图形界面启动的程序只继承会话管理器提供的环境，不包含 shell 启动文件导出的变量。第一个 Host 启动之前，Desktop 以 `<shell> -ilc` 运行一次账户的登录 shell（取自用户数据库，不看 `$SHELL`），读取定界符之间的 `env -0` 输出，使 `~/.zprofile` 和 `~/.zshrc`（或该 shell 的对应文件）对 Host、agent shell、终端和 profile 配置生效。读取与 profile 准备并行进行。读取进程没有终端输入，并设置 `DISABLE_AUTO_UPDATE=true`、`ZSH_TMUX_AUTOSTARTED=true` 和 `ZSH_TMUX_AUTOSTART=false`，避免 oh-my-zsh 和 tmux 插件阻塞。shell 的值覆盖继承的值，但 `PWD`、`OLDPWD`、`SHLVL`、`_`、上述读取变量以及启动方自有的 `DSH_*` 和 `ELECTRON_*` 除外；Desktop 在读取之前已按 `DSH_HOME` 等变量解析路径，因此 Host 保持相同的值。读取在结束定界符出现时完成，因此启动文件启动的后台进程可以继续运行，其输出被丢弃。候选 shell 无法启动、以非零状态退出、没有输出定界内容或超过 `DSH_DESKTOP_LOGIN_SHELL_TIMEOUT_MS`（1000 到 2147483647 的整数毫秒，默认 `10000`；超时会结束其进程组）时，Desktop 记录一条警告，并依次尝试 `/bin/zsh`、`/bin/bash` 和 `/bin/sh`；全部失败时 Host 使用继承的环境。读取命令使用 POSIX 语法，因此 csh、tcsh 或 nushell 等账户 shell 会失败，Host 改为获得第一个系统 shell 的启动文件所设置的环境。读取期间退出 Desktop 会结束正在运行的读取进程组。每个应用进程只读取一次，因此修改 shell 启动文件后需要退出并重新打开 Desktop。Windows 从图形界面启动的程序已经从注册表继承用户和系统环境变量，因此 Windows 跳过这一步。
 
+<a id="audit-plugin-pack"></a>
+
+### 审计插件包
+
+`audit` preset 通过 [`dsh-audit-plugin-pack`](../../packages/audit/audit-plugin-pack/README.zh.md) 挂载解压在 `$DSH_HOME/audit-plugins` 的 audit-plugins 发布包，安装包不带它。应用菜单中的 **导入审计插件包…** 让用户选择 `audit-plugins-<version>-dsh.zip`，把它解压到插件包目录旁的 `audit-plugins.pending`，并按 loader 的读取方式检查，正在使用的插件包保持不变；无效的 zip 会提示并删除。确认框提供立即重启，重启会中断正在运行的任务；不重启时下次启动生效。每次启动 Host 之前，桌面端把暂存的插件包移入 `audit-plugins`，并把被替换的插件包保留为 `audit-plugins.previous`，因此运行中的 Host 不会遇到插件包被替换。`audit-plugins/package.json` 不存在时，每次启动后第一次打开工作区窗口会提示导入；选择 **不再提示** 会在 Electron `userData` 下记录 `audit-plugin-pack-notice-dismissed`。
+
 <a id="develop"></a>
 
 ## 开发

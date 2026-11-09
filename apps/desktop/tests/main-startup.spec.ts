@@ -213,11 +213,19 @@ const harness = await vi.hoisted(async () => {
     constructor(readonly image: unknown) { super(); trays.push(this) }
   }
   const backgroundNotice = { close: vi.fn((hide: () => void) => { hide() }), dispose: vi.fn(), markerPath: undefined as string | undefined }
+  const auditPluginPack = {
+    applyPending: vi.fn(async () => {}), check: vi.fn(async () => {}), import: vi.fn(async () => {}), dispose: vi.fn(),
+    options: undefined as {
+      markerPath: string
+      chooseZip: (title: string) => Promise<string | undefined>
+      restart: () => void
+    } | undefined,
+  }
   const shellDialog = { isOpen: false, focus: vi.fn() }
   return {
     failWindow(error: Error) { windowFailure = error },
     windows, views, hosts, handlers, app, FakeWindow, FakeView, FakeHost, powerMonitor, nativeTheme, analytics,
-    trays, FakeTray, backgroundNotice, shellDialog,
+    trays, FakeTray, backgroundNotice, auditPluginPack, shellDialog,
     menu, popup, socketHeaders: vi.fn(), connectWelcome: vi.fn(), removeLegacyHostCookies: vi.fn(async () => {}), hostCookies: {},
     loginShell, readLoginShell, updateCheck, updateDownload, updateInstall,
     platformDispose,
@@ -272,6 +280,7 @@ const harness = await vi.hoisted(async () => {
       views.length = 0; hosts.length = 0; handlers.clear(); app.removeAllListeners()
       trays.length = 0
       backgroundNotice.markerPath = undefined
+      auditPluginPack.options = undefined
       shellDialog.isOpen = false
       powerMonitor.removeAllListeners()
       app.isPackaged = true
@@ -336,6 +345,13 @@ vi.mock('../src/background-notice.ts', () => ({ DesktopBackgroundNotice: class {
   constructor(options: { markerPath: string }) { harness.backgroundNotice.markerPath = options.markerPath }
   readonly close = harness.backgroundNotice.close
   readonly dispose = harness.backgroundNotice.dispose
+} }))
+vi.mock('../src/audit-plugin-pack.ts', () => ({ DesktopAuditPluginPack: class {
+  constructor(options: NonNullable<typeof harness.auditPluginPack.options>) { harness.auditPluginPack.options = options }
+  readonly applyPending = harness.auditPluginPack.applyPending
+  readonly check = harness.auditPluginPack.check
+  readonly import = harness.auditPluginPack.import
+  readonly dispose = harness.auditPluginPack.dispose
 } }))
 vi.mock('node:fs/promises', async (importOriginal) => {
   const original = await importOriginal<typeof import('node:fs/promises')>()
@@ -808,7 +824,7 @@ describe('desktop main startup', () => {
     const visible = menu.filter(item => item.visible !== false)
     expect(visible.map(item => item.role === 'quit' ? 'quit' : item.label ?? item.type)).toEqual([
       messages.aboutMenu, 'separator', messages.checkUpdatesMenu, messages.clearBrowsingDataMenu,
-      ...platform === 'linux' ? [] : [messages.cliCommandMenu],
+      ...platform === 'linux' ? [] : [messages.cliCommandMenu], messages.auditPluginPackImportMenu,
       'separator', ...packaged ? [] : [messages.reloadPageMenu, messages.restartAppHostMenu],
       messages.toggleDevToolsMenu, 'separator',
       ...platform === 'darwin' ? [messages.hideApplication, messages.hideOtherApplications, messages.showAllApplications, 'separator'] : [],
@@ -1296,6 +1312,23 @@ describe('desktop main startup', () => {
     expect((harness.dialog.showMessageBox.mock.calls[0]![0] as MessageBoxOptions).message).toBe(zh.fatalSummary)
   })
 
+  it('applies a staged audit plugin pack before the Host starts and checks for the pack after the workspace opens', async () => {
+    await readyForUpdate()
+    await vi.waitFor(() => { expect(harness.auditPluginPack.check).toHaveBeenCalledOnce() })
+    const { applyPending, check } = harness.auditPluginPack
+    expect(applyPending.mock.invocationCallOrder[0]).toBeLessThan(check.mock.invocationCallOrder[0]!)
+    const options = harness.auditPluginPack.options!
+    expect(options.markerPath).toBe(join(harness.app.getPath('userData'), 'audit-plugin-pack-notice-dismissed'))
+    harness.dialog.showOpenDialog.mockResolvedValueOnce({ canceled: false, filePaths: ['/downloads/audit-plugins-2.66.0-dsh.zip'] })
+    expect(await options.chooseZip('选择审计插件包')).toBe('/downloads/audit-plugins-2.66.0-dsh.zip')
+    expect(harness.dialog.showOpenDialog).toHaveBeenLastCalledWith(harness.windows[0], expect.objectContaining({
+      title: '选择审计插件包', properties: ['openFile'], filters: [{ name: 'audit-plugins-*-dsh.zip', extensions: ['zip'] }] }))
+    harness.dialog.showOpenDialog.mockResolvedValueOnce({ canceled: true, filePaths: [] })
+    expect(await options.chooseZip('选择审计插件包')).toBeUndefined()
+    options.restart()
+    expect(harness.app.relaunch).toHaveBeenCalledOnce()
+  })
+
   it('maps Windows caption menus to localized native commands and rejects foreign popup requests', async () => {
     vi.spyOn(process, 'platform', 'get').mockReturnValue('win32')
     await import('../src/main.ts')
@@ -1312,8 +1345,12 @@ describe('desktop main startup', () => {
     expect(() => handler(event, 'application', NaN, 34)).toThrow('invalid popup request')
     const application = handler(event, 'application', 48, 34)
     expect(harness.menu.buildFromTemplate.mock.lastCall![0].map(item => item.label ?? item.type)).toEqual([
-      '关于八局审计智能体', 'separator', '检查更新…', '清除浏览器数据…', '管理 dsh 命令…', 'separator', zh.toggleDevToolsMenu, 'separator', '退出',
+      '关于八局审计智能体', 'separator', '检查更新…', '清除浏览器数据…', '管理 dsh 命令…', '导入审计插件包…', 'separator',
+      zh.toggleDevToolsMenu, 'separator', '退出',
     ])
+    const importPack = harness.menu.buildFromTemplate.mock.lastCall![0].find(item => item.label === '导入审计插件包…')!.click as () => void
+    importPack()
+    expect(harness.auditPluginPack.import).toHaveBeenCalledOnce()
     expect(harness.popup.mock.lastCall![0]).toMatchObject({ window, x: 48, y: 34 })
     expect(harness.popup.mock.lastCall![0].callback).toBeTypeOf('function')
     harness.popup.mock.lastCall![0].callback!()
@@ -1360,9 +1397,10 @@ describe('desktop main startup', () => {
       : undefined)
     const application = template[0]!.submenu as MenuItemConstructorOptions[]
     expect(application.filter(item => item.visible !== false).map(describeItem)).toEqual(platform === 'darwin'
-      ? ['about', 'separator', en.checkUpdatesMenu, en.clearBrowsingDataMenu, en.cliCommandMenu, 'separator', 'toggleDevTools', 'separator',
-        'hide', 'hideOthers', 'unhide', 'separator', 'quit']
-      : ['about', 'separator', en.checkUpdatesMenu, en.clearBrowsingDataMenu, 'separator', 'toggleDevTools', 'separator', 'quit'])
+      ? ['about', 'separator', en.checkUpdatesMenu, en.clearBrowsingDataMenu, en.cliCommandMenu, en.auditPluginPackImportMenu, 'separator',
+        'toggleDevTools', 'separator', 'hide', 'hideOthers', 'unhide', 'separator', 'quit']
+      : ['about', 'separator', en.checkUpdatesMenu, en.clearBrowsingDataMenu, en.auditPluginPackImportMenu, 'separator', 'toggleDevTools',
+        'separator', 'quit'])
     expect(harness.menu.setApplicationMenu).toHaveBeenCalledOnce()
   })
 

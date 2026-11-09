@@ -10,12 +10,9 @@ import { type Context, Service } from '@deepseek-ai/cordis'
 import { EntryGroup } from '@deepseek-ai/cordis-plugin-loader'
 import { expandHomePath, resolveDshHome } from '@deepseek-ai/dsh-home-paths'
 import z from '@deepseek-ai/schemastery'
-import { readPluginPack } from './pack.ts'
+import { PACK_DIR_NAME, readPluginPack } from './pack.ts'
 
-export { PACK_PRESET_ID, PACK_TOOLKIT_ID, PluginPackError, readPluginPack, type LoadedPack, type MissingPack, type PluginPack } from './pack.ts'
-
-/** Directory name of the pack under the Harness home. */
-export const PACK_DIR_NAME = 'audit-plugins'
+export { PACK_DIR_NAME, PACK_PRESET_ID, PACK_TOOLKIT_ID, PluginPackError, readPackDirectory, readPluginPack, type LoadedPack, type MissingPack, type PluginPack } from './pack.ts'
 
 /** Pack location. */
 export interface Config {

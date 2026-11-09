@@ -11,6 +11,8 @@ import { entryListSchema } from '@deepseek-ai/cordis-plugin-include'
 import type { EntryOptions } from '@deepseek-ai/cordis-plugin-loader'
 import * as yaml from 'js-yaml'
 
+/** Directory name of the pack under the Harness home. */
+export const PACK_DIR_NAME = 'audit-plugins'
 /** Id of the preset the pack declares, which this package replaces with the host's own `audit` preset. */
 export const PACK_PRESET_ID = 'audit'
 /** Id of the group row, inside the pack's preset, that holds the pack's Host plugin, skill provider, and MCP clients. */
@@ -131,6 +133,16 @@ function rewritePackRows(row: EntryOptions, packageName: string, mainUrl: string
  */
 export async function readPluginPack(root: string): Promise<PluginPack> {
   if (await stat(root).then(() => false, (error: unknown) => isRecord(error) && error['code'] === 'ENOENT')) return { kind: 'missing', root }
+  return readPackDirectory(root)
+}
+
+/**
+ * Read a pack directory that is expected to exist.
+ * @param root - absolute directory holding the unpacked release, with the bundle `package.json` at its top.
+ * @returns the toolkit rows of the pack.
+ * @throws {PluginPackError} when the manifest or bundle patch is absent or unreadable, or the patch lacks the toolkit.
+ */
+export async function readPackDirectory(root: string): Promise<LoadedPack> {
   let manifestText: string
   try {
     manifestText = await readFile(join(root, 'package.json'), 'utf8')

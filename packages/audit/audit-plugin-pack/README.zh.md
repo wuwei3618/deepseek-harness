@@ -9,7 +9,7 @@ kind: "package-reference"
 
 ## 概述
 
-桌面端 `audit` preset 和命令行审计 profile 的 loader 分组。加载时它读取解压在 `$DSH_HOME/audit-plugins` 的 audit-plugins 发布包（`audit-plugins-<version>-dsh.zip`），并挂载该发布包的工具行：它的 Host 插件、技能提供方，以及每个审计 MCP 服务一条 [`dsh-mcp-client`](../../mcp/mcp-client/README.zh.md) 行。发布包与安装包分开分发，因此更新插件包只需替换该目录并重启，安装包里也不会带插件包的代码。没有该目录时，这一行不挂载任何内容，只记录一条警告。
+桌面端 `audit` preset 和命令行审计 profile 的 loader 分组。加载时它读取解压在 `$DSH_HOME/audit-plugins` 的 audit-plugins 发布包（`audit-plugins-<version>-dsh.zip`），并挂载该发布包的工具行：它的 Host 插件、技能提供方，以及每个审计 MCP 服务一条 [`dsh-mcp-client`](../../mcp/mcp-client/README.zh.md) 行。发布包与安装包分开分发，安装包不带插件包的代码；`./install` 把发布包 zip 暂存在该目录旁，并在下一次启动 Host 之前替换进去。没有该目录时，这一行不挂载任何内容，只记录一条警告。
 
 ## 目录
 
@@ -24,7 +24,7 @@ kind: "package-reference"
 <a id="use-this-package"></a>
 ## 使用此包
 
-[`dsh-audit-desktop`](../audit-desktop/README.zh.md) 把这一行放在 `audit` preset 的最后，[`dsh-audit-agent`](../audit-agent/README.zh.md) 以 `root: ~/.cscec8b-audit-agent/audit-plugins` 把它插入命令行审计 profile 的根上，因此解压一份插件包即可同时用于两者。桌面端把 `DSH_HOME` 设为 `~/.cscec8b-audit-agent`，所以插件包目录在 macOS 上是 `~/.cscec8b-audit-agent/audit-plugins`，在 Windows 上是 `%USERPROFILE%\.cscec8b-audit-agent\audit-plugins`。解压发布包，把顶层目录 `audit-plugins-<version>-dsh` 改名为 `audit-plugins`，移到上述位置，使其 `package.json` 直接位于该目录下，然后重启。MCP 服务通过 `uv` 启动，需要先安装 `uv`；第一次进入审计会话时，会按插件包自己的安装说明在 `$DSH_HOME/audit-runtime/venvs` 下建立它们的 Python 环境。
+[`dsh-audit-desktop`](../audit-desktop/README.zh.md) 把这一行放在 `audit` preset 的最后，[`dsh-audit-agent`](../audit-agent/README.zh.md) 以 `root: ~/.cscec8b-audit-agent/audit-plugins` 把它插入命令行审计 profile 的根上，因此解压一份插件包即可同时用于两者。桌面端把 `DSH_HOME` 设为 `~/.cscec8b-audit-agent`，所以插件包目录在 macOS 上是 `~/.cscec8b-audit-agent/audit-plugins`，在 Windows 上是 `%USERPROFILE%\.cscec8b-audit-agent\audit-plugins`。在桌面端，应用菜单中的 **导入审计插件包…** 会把发布包 zip 安装到该位置，并把被替换的插件包保留为 `audit-plugins.previous`（[桌面端导入](../../../apps/desktop/README.zh.md#audit-plugin-pack)）。不使用桌面端时，解压发布包，把顶层目录 `audit-plugins-<version>-dsh` 改名为 `audit-plugins`，移到上述位置，使其 `package.json` 直接位于该目录下，然后重启。MCP 服务通过 `uv` 启动，需要先安装 `uv`；第一次进入审计会话时，会按插件包自己的安装说明在 `$DSH_HOME/audit-runtime/venvs` 下建立它们的 Python 环境。
 
 ```yaml
 - id: audit-plugin-pack
@@ -44,6 +44,8 @@ kind: "package-reference"
 <summary>实现细节 — 点击展开</summary>
 
 发布包根目录的 `package.json` 声明 bundle 名（`audit-dsh`）、`dsh.bundle.patch` 和 `.` 导出。该 patch 插入一个 id 为 `audit` 的 agent preset，其 `plugins` 中有一个 `audit-toolkit` 分组行；本包只挂载这个分组，因此宿主自己的 `audit` preset 保留其 persona、工具和沙箱，插件包的 preset 不会注册。插件包没有安装到 profile 的 `node_modules` 中，所以指向 bundle 包名的行会被改写为其 `.` 导出的文件 URL；其他行指向 `dsh-audit-desktop` 已依赖的包。这些行保留 `!!js` 表达式，从插件包 Host 插件提供的 `auditDsh` 读取路径。
+
+`@deepseek-ai/dsh-audit-plugin-pack/install` 的 `stagePluginPack(zip, root)` 把 zip 解压到 `<root>.pending`，`package.json` 不在 zip 根上时去掉唯一的顶层目录，并对它执行同样的读取；条目指向目录之外、zip 中没有 `package.json` 或读取失败时，删除暂存目录并抛出错误。`applyPendingPluginPack(root)` 把 `<root>` 改名为 `<root>.previous`（替换更早的一份），再把 `<root>.pending` 改名为 `<root>`，第二次改名失败时把旧插件包移回；调用方要在没有 Host 使用插件包时运行它，因为 Windows 不允许改名被运行中的 MCP 服务打开的目录。
 
 插件包在一个会话加载 preset 插件时读取一次。安装之前目录不存在是预期状态，不挂载任何内容。目录中没有 `package.json`、manifest 字段无效、patch 无法读取，或缺少 `audit` preset 及其 `audit-toolkit` 行时，这一行以注明目录的 `PluginPackError` 失败。
 
@@ -72,7 +74,7 @@ MCP 服务连接后工具列表增长一次；晚连接的服务会改变之后�
 
 <a id="known-limitations-and-deferred-work"></a>
 
-- **安装需要手动解压** — 桌面端没有导入页面；缺少插件包的警告只出现在 Host 日志中。
+- **只能本地导入** — 桌面端只导入用户已有的 zip，不检查新版本，因为 audit-plugins 仓库是私有的；命令行没有导入命令，读取桌面端安装的目录。
 - **不接管分组以外的行** — 如果新版本在其 preset 中 `audit-toolkit` 以外的位置加入工具，需要在 `dsh-audit-desktop` 中加入对应的行。
 
 <a id="dev-note"></a>

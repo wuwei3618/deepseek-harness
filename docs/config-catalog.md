@@ -427,7 +427,7 @@ export interface Config {
 
 ## `@deepseek-ai/dsh-audit-plugin-pack`
 
-- `source`: [`packages/audit/audit-plugin-pack/src/index.ts:21`](../packages/audit/audit-plugin-pack/src/index.ts)
+- `source`: [`packages/audit/audit-plugin-pack/src/index.ts:18`](../packages/audit/audit-plugin-pack/src/index.ts)
 
 ```ts config-catalog
 /** Pack location. */
