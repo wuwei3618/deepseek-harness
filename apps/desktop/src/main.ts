@@ -72,6 +72,11 @@ import { DesktopUpdateOverlays } from './update-overlay.ts'
 import { DesktopQuitConfirmation } from './quit-confirmation.ts'
 import { DesktopTray } from './tray.ts'
 import { DesktopBackgroundNotice } from './background-notice.ts'
+import { DSH_HOME_ENV } from '@deepseek-ai/dsh-home-paths'
+import { selectAuditDshHome } from './audit-home.ts'
+
+// Before any path resolves: the Host and agent processes inherit this, so DeepSeek Harness data in ~/.dsh stays unread.
+process.env[DSH_HOME_ENV] = selectAuditDshHome(process.env)
 
 let focusPrimaryWindow = (): void => {}
 let stopForRecovery = async (): Promise<void> => { await stopOperationReports() }

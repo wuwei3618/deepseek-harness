@@ -112,6 +112,8 @@ export function createElectronBuilderConfig(
     appId,
     protocols: [{ name: DESKTOP_PRODUCT_NAME, schemes: ['dsh'] }],
     extraMetadata: {
+      // Electron derives app.name and the default userData directory from productName, apart from DeepSeek Harness's package name.
+      productName: DESKTOP_PRODUCT_NAME,
       dshDesktopAppId: appId,
       dshDesktopUpdateChannel: update?.channel ?? 'nightly',
       ...(policy === undefined ? {} : { dshMandatoryUpdatePolicy: policy }),
