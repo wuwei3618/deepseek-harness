@@ -424,6 +424,22 @@ export interface Config {
 ```
 <!-- END GENERATED config-catalog:@deepseek-ai/dsh-attachment-local -->
 
+<!-- BEGIN GENERATED config-catalog:@deepseek-ai/dsh-audit-plugin-pack -->
+<a id="deepseek-aidsh-audit-plugin-pack"></a>
+
+## `@deepseek-ai/dsh-audit-plugin-pack`
+
+- `source`: [`packages/audit/audit-plugin-pack/src/index.ts:21`](../packages/audit/audit-plugin-pack/src/index.ts)
+
+```ts config-catalog
+/** Pack location. */
+export interface Config {
+  /** Directory holding the unpacked release; absolute or `~`-prefixed. Defaults to `audit-plugins` under the Harness home. */
+  root?: string
+}
+```
+<!-- END GENERATED config-catalog:@deepseek-ai/dsh-audit-plugin-pack -->
+
 <!-- BEGIN GENERATED config-catalog:@deepseek-ai/dsh-audit-skills -->
 <a id="deepseek-aidsh-audit-skills"></a>
 

@@ -106,9 +106,22 @@ describe('the audit-desktop profile', () => {
     expect((plugins.get('persona')!.config as { prefix: string }).prefix).toBe(config(rows, 'system-prompt')['personaPrefix'])
     expect(plugins.get('tool-fs')!.config).toEqual(config(compose('audit'), 'tool-fs'))
     expect([...plugins.keys()]).toContain('audit-skills')
-    for (const id of ['skill-filesystem', 'delegation', 'planning', 'tool-schedule', 'tool-plugin-manager', 'tool-plugin-market']) {
+    for (const id of ['skill-filesystem', 'planning', 'tool-schedule', 'tool-plugin-manager', 'tool-plugin-market']) {
       expect(plugins.has(id), id).toBe(false)
     }
+  })
+
+  it('mounts the audit plugin pack with spawned subagents, workflows, and room for its long skills', () => {
+    expect(plugins.get('audit-plugin-pack')).toEqual({ id: 'audit-plugin-pack', name: '@deepseek-ai/dsh-audit-plugin-pack' })
+    const delegation = (plugins.get('delegation')!.config as EntryOptions[]).map((entry): unknown[] => [entry.id, entry.config])
+    expect(delegation).toEqual([
+      ['tool-subagent-control', undefined],
+      ['tool-subagent', { provider: 'spawn', toolName: 'subagent' }],
+      ['workflow-ptc', { provider: 'spawn' }],
+      ['tool-workflow', undefined],
+    ])
+    const pruner = (plugins.get('compaction')!.config as EntryOptions[]).find(entry => entry.id === 'tool-result-pruner')
+    expect(pruner?.config).toEqual({ thresholdChars: 40000, headChars: 20000, tailChars: 8000 })
   })
 
   it('keeps session search and voice input on without the plugin manager', () => {

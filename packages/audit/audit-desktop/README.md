@@ -28,7 +28,7 @@ Desktop reads the `audit-desktop` template from [`dsh-official-bundles`](../../u
 
 | Row | Effect |
 |---|---|
-| `preset-audit` | inserted: the 审计模式 preset with the audit persona and file tools without edit |
+| `preset-audit` | inserted: the 审计模式 preset with the audit persona, file tools without edit, spawned subagents and workflows, and the [audit plugin pack](../audit-plugin-pack/README.md) |
 | `agent-preset-registry` | `default: audit` |
 | `preset-standard`, `preset-ptc`, `preset-minimal`, `preset-cordis` | switched off; without `cordis` the Creator entry points are unavailable |
 | `ui-plugin-manager`, `ui-agent-preset`, `entry-customization`, `ui-cordis`, `cordis-host-runner`, `cordis-client-runner`, `cordis-inspect-providers` | switched off: no plugin or preset authoring |
@@ -47,7 +47,7 @@ Desktop reads the `audit-desktop` template from [`dsh-official-bundles`](../../u
 <details>
 <summary>Implementation details — click to expand</summary>
 
-[`cordis.patch.yml`](cordis.patch.yml) patches [`dsh-web-app`](../../bundle/web-app/README.md) and `dsh-base` rows by id and inserts the preset row. The preset mounts the persona, workspace instructions, time context, the shell, `read`, `read_image`, and `write`, search, jobs, [`dsh-audit-skills`](../audit-skills/README.md) with the `skill` tool, compaction, ask-user, todo, web, and present tools. It mounts no edit, delegation, plan, schedule, or plugin tools.
+[`cordis.patch.yml`](cordis.patch.yml) patches [`dsh-web-app`](../../bundle/web-app/README.md) and `dsh-base` rows by id and inserts the preset row. The preset mounts the persona, workspace instructions, time context, the shell, `read`, `read_image`, and `write`, search, jobs, [`dsh-audit-skills`](../audit-skills/README.md) with the `skill` tool, compaction, spawned subagents and workflows, ask-user, todo, web, and present tools, then [`dsh-audit-plugin-pack`](../audit-plugin-pack/README.md), which adds the MCP servers and skills of the audit-plugins release unpacked at `$DSH_HOME/audit-plugins`. The pack skills hand their named roles to spawned subagents and run workflows, and their longest `SKILL.md` is about 33,000 characters, so the preset mounts the spawn subagent and workflow tools and raises the tool result pruner threshold to 40,000 characters, keeping the first 20,000 and the last 8,000. Subagents inherit the preset and its workspace-only sandbox. It mounts no edit, forked or model-selecting subagent, plan, schedule, or plugin tools.
 
 </details>
 
@@ -60,11 +60,11 @@ Desktop reads the `audit-desktop` template from [`dsh-official-bundles`](../../u
 
 #### What the model sees
 
-The same audit persona as [`dsh-audit-agent`](../audit-agent/README.md), without the DeepSeek Harness identity line or the harness development context. The tool list holds only the tools the preset mounts plus, on Desktop, the Playwright MCP browser tools, and the skill catalog lists only the audit skills. The persona asks the model to describe and get confirmation for any action that submits, approves, pays, signs, or sends something on the user's behalf.
+The same audit persona as [`dsh-audit-agent`](../audit-agent/README.md), without the DeepSeek Harness identity line or the harness development context. The tool list holds only the tools the preset mounts, the audit plugin pack MCP tools when the pack is unpacked, and, on Desktop, the Playwright MCP browser tools; the skill catalog lists only the bundled audit skills and the pack skills. The persona asks the model to describe and get confirmation for any action that submits, approves, pays, signs, or sends something on the user's behalf.
 
 #### Token effect
 
-One paragraph of persona text; fewer tool schemas than the standard preset.
+One paragraph of persona text. Without the pack, fewer tool schemas than the standard preset; with the pack, about 180 MCP tool schemas more.
 
 #### KV Cache effect
 

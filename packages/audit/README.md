@@ -28,6 +28,7 @@ This group turns the shipped profiles into audit profiles that write only inside
 | [`audit-agent/`](audit-agent/README.md) | Audit persona, file tools without edit, and audit skills at the profile root of the command-line profiles | — (patch only) |
 | [`audit-desktop/`](audit-desktop/README.md) | The `audit` agent preset as the only Desktop preset, with authoring, account, and analytics rows switched off | — (patch only) |
 | [`audit-skills/`](audit-skills/README.md) | Bundled general-purpose audit skills | registers on `ctx.skills` |
+| [`audit-plugin-pack/`](audit-plugin-pack/README.md) | The MCP servers and skills of an audit-plugins release unpacked under the Harness home, inside the Desktop audit preset | — (loader group) |
 
 -----
 

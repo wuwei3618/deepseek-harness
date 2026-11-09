@@ -28,7 +28,7 @@ kind: "package-bundle"
 
 | 行 | 效果 |
 |---|---|
-| `preset-audit` | 插入：带审计 persona 和不含编辑的文件工具的「审计模式」preset |
+| `preset-audit` | 插入：带审计 persona、不含编辑的文件工具、新建子代理和 workflow，以及[审计插件包](../audit-plugin-pack/README.zh.md)的「审计模式」preset |
 | `agent-preset-registry` | `default: audit` |
 | `preset-standard`、`preset-ptc`、`preset-minimal`、`preset-cordis` | 关闭；没有 `cordis` 时创作者模式入口不可用 |
 | `ui-plugin-manager`、`ui-agent-preset`、`entry-customization`、`ui-cordis`、`cordis-host-runner`、`cordis-client-runner`、`cordis-inspect-providers` | 关闭：不能创作插件或 preset |
@@ -47,7 +47,7 @@ kind: "package-bundle"
 <details>
 <summary>实现细节 — 点击展开</summary>
 
-[`cordis.patch.yml`](cordis.patch.yml) 按 id 修改 [`dsh-web-app`](../../bundle/web-app/README.zh.md) 和 `dsh-base` 的行，并插入 preset 行。该 preset 挂载 persona、工作区指令、时间上下文、shell、`read`、`read_image` 和 `write`、搜索、后台任务、[`dsh-audit-skills`](../audit-skills/README.zh.md) 及 `skill` 工具、上下文压缩、ask-user、todo、联网和 present 工具。它不挂载编辑、委派、计划、定时或插件工具。
+[`cordis.patch.yml`](cordis.patch.yml) 按 id 修改 [`dsh-web-app`](../../bundle/web-app/README.zh.md) 和 `dsh-base` 的行，并插入 preset 行。该 preset 挂载 persona、工作区指令、时间上下文、shell、`read`、`read_image` 和 `write`、搜索、后台任务、[`dsh-audit-skills`](../audit-skills/README.zh.md) 及 `skill` 工具、上下文压缩、新建子代理和 workflow、ask-user、todo、联网和 present 工具，最后挂载 [`dsh-audit-plugin-pack`](../audit-plugin-pack/README.zh.md)，由它加入解压在 `$DSH_HOME/audit-plugins` 的 audit-plugins 发布包中的 MCP 服务和技能。插件包的技能把具名角色交给新建的子代理并运行 workflow，最长的 `SKILL.md` 约 33,000 个字符，因此该 preset 挂载新建子代理和 workflow 工具，并把工具结果裁剪阈值提高到 40,000 个字符，保留开头 20,000 个和结尾 8,000 个。子代理继承该 preset 和只能写工作目录的沙箱。它不挂载编辑、分叉或选择模型的子代理、计划、定时或插件工具。
 
 </details>
 
@@ -60,11 +60,11 @@ kind: "package-bundle"
 
 #### 模型看到什么
 
-与 [`dsh-audit-agent`](../audit-agent/README.zh.md) 相同的审计 persona，没有 DeepSeek Harness 身份行，也没有 harness 开发上下文。工具列表只包含 preset 挂载的工具，在桌面端还有 Playwright MCP 浏览器工具；技能目录中只有审计技能。persona 要求模型在代用户提交、审批、付款、签署或发送任何内容之前先说明该操作并征得确认。
+与 [`dsh-audit-agent`](../audit-agent/README.zh.md) 相同的审计 persona，没有 DeepSeek Harness 身份行，也没有 harness 开发上下文。工具列表只包含 preset 挂载的工具、已解压插件包时的插件包 MCP 工具，在桌面端还有 Playwright MCP 浏览器工具；技能目录中只有内置审计技能和插件包技能。persona 要求模型在代用户提交、审批、付款、签署或发送任何内容之前先说明该操作并征得确认。
 
 #### Token 影响
 
-一段 persona 文本；工具定义比标准 preset 少。
+一段 persona 文本。没有插件包时工具定义比标准 preset 少；有插件包时多出约 180 个 MCP 工具定义。
 
 #### KV Cache 影响
 

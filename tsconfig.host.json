@@ -528,6 +528,7 @@
     { "path": "./packages/audit/audit-agent" },
     { "path": "./packages/audit/audit-desktop" },
     { "path": "./packages/audit/audit-org-defaults" },
+    { "path": "./packages/audit/audit-plugin-pack" },
     { "path": "./packages/audit/audit-skills" },
     { "path": "./packages/util/official-bundles" },
     { "path": "./packages/boot/app-boot" },

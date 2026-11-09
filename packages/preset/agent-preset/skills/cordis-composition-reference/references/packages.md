@@ -35,6 +35,7 @@ Every package below exports a Cordis plugin that a bundle patch can name in a Lo
 
 | Package | Config | Description |
 |---|---|---|
+| `@deepseek-ai/dsh-audit-plugin-pack` | yes | Mounts the audit MCP servers and skills of an audit-plugins release unpacked under the Harness home inside the audit agent preset |
 | `@deepseek-ai/dsh-audit-skills` | yes | Bundled general-purpose audit skills registered as one skill provider |
 
 ## boot

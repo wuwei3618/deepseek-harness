@@ -1,0 +1,6 @@
+{
+  "meta": {
+    "title": "Audit plugin pack",
+    "description": "Load the audit MCP servers and skills of the audit-plugins release unpacked in the data directory into audit mode."
+  }
+}

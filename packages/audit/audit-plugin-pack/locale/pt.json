@@ -1,0 +1,6 @@
+{
+  "meta": {
+    "title": "Pacote de plugins de auditoria",
+    "description": "Carrega no modo de auditoria os servidores MCP e as habilidades de auditoria da versão do audit-plugins descompactada no diretório de dados."
+  }
+}

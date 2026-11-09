@@ -1,0 +1,43 @@
+# Bilingual-pair consistency record for README.md (docs/i18n/README.md): per heading
+# section, a hash of its English and Chinese blocks outside code blocks and generated regions.
+# After editing either side, bring the other along and re-record with:
+#   pnpm run verify-translation-pairing --write packages/audit/audit-plugin-pack/README.md
+/:
+  en: 67d5b310f6e6eaaa
+  zh: 6563b1205d37de8b
+/deepseek-ai-dsh-audit-plugin-pack:
+  en: ce25d6944631b36d
+  zh: b5f3908fae89f6ae
+/deepseek-ai-dsh-audit-plugin-pack/summary:
+  en: dab9ca04fdf75730
+  zh: bdfd330debff4ec4
+/deepseek-ai-dsh-audit-plugin-pack/table-of-contents:
+  en: 76368b6b1da79c80
+  zh: ff1aad10e0ebcbce
+/deepseek-ai-dsh-audit-plugin-pack/use-this-package:
+  en: 1e1476f0ec6802ec
+  zh: 2455d588fe6ef4e8
+/deepseek-ai-dsh-audit-plugin-pack/understand-the-implementation:
+  en: a14882bb400e3e18
+  zh: ddf859f1484673a3
+/deepseek-ai-dsh-audit-plugin-pack/model-experience:
+  en: 215e7ba838619b7b
+  zh: a311da3843709f90
+/deepseek-ai-dsh-audit-plugin-pack/model-experience/audit-plugin-pack:
+  en: 421414ad1397fd30
+  zh: 36b891ff1caa7572
+/deepseek-ai-dsh-audit-plugin-pack/model-experience/audit-plugin-pack/what-the-model-sees:
+  en: dc2b7309e6ce7b0b
+  zh: 52aef2b8c11d5a33
+/deepseek-ai-dsh-audit-plugin-pack/model-experience/audit-plugin-pack/token-effect:
+  en: 3526cbdd4d2221c4
+  zh: db25a613709f3cc5
+/deepseek-ai-dsh-audit-plugin-pack/model-experience/audit-plugin-pack/kv-cache-effect:
+  en: 84f21f526c0e57e2
+  zh: e766853d41042a3a
+/deepseek-ai-dsh-audit-plugin-pack/known-limitations-and-deferred-work:
+  en: 8343eec7a2906ad6
+  zh: 732f0a128957042d
+/deepseek-ai-dsh-audit-plugin-pack/known-limitations-and-deferred-work/dev-note:
+  en: e67f633dc6fe7773
+  zh: 8ec3e73528ddb1a6

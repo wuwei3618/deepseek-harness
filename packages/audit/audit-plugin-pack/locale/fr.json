@@ -1,0 +1,6 @@
+{
+  "meta": {
+    "title": "Pack de plugins d'audit",
+    "description": "Charge dans le mode audit les serveurs MCP et les compétences d'audit de la version audit-plugins décompressée dans le répertoire de données."
+  }
+}
