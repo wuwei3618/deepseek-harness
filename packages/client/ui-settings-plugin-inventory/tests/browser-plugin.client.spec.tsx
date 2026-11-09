@@ -8,10 +8,15 @@ import { LocaleRuntime } from '@deepseek-ai/dsh-client-locale/client'
 import { SlotRegistry } from '@deepseek-ai/dsh-client-ui-renderer/client'
 import { resolveSlotLabel } from '@deepseek-ai/dsh-client-ui-slots'
 import { usePinnedBrowserLanguages } from '@deepseek-ai/dsh-client-test-runtime'
+import type { IndexInjection, WebServer } from '@deepseek-ai/dsh-host-webserver'
 import { apply, inject, NS } from '../src/client/index.ts'
+import { CONFIG_GLOBAL } from '../src/config.ts'
 import { PluginInventorySettingsTab } from '../src/client/PluginInventorySettingsTab.tsx'
 import type { PluginInventorySettingsTabInjected } from '../src/client/PluginInventorySettingsTab.tsx'
-import { apply as hostApply } from '../src/index.ts'
+import { apply as hostApply, Config } from '../src/index.ts'
+
+/** The Peer an index render speaks for; this listener reads no field of it. */
+const PAGE_PEER = { principal: { kind: 'owner' } } as Parameters<WebServer['renderIndex']>[1]
 
 usePinnedBrowserLanguages('zh-CN')
 afterEach(cleanup)
@@ -49,8 +54,18 @@ function declare(slots: SlotRegistry): () => void {
 }
 
 describe('ui-settings-plugin-inventory browser plugin', () => {
-  it('keeps the host Loader entry inert', () => {
-    expect(hostApply).not.toThrow()
+  it('publishes the validated card choices in the page bootstrap until disposal', async () => {
+    const ctx = new Context()
+    onTestFinished(() => ctx.fiber.dispose())
+    expect(Config({})).toEqual({ showModuleName: true })
+    await ctx.plugin({ Config, apply: hostApply }, { showModuleName: false })
+    const table: IndexInjection[] = []
+    ctx.emit('webserver/index-inject', table, PAGE_PEER)
+    expect(table).toEqual([{ kind: 'global', name: CONFIG_GLOBAL, value: { showModuleName: false } }])
+    await ctx.fiber.dispose()
+    table.length = 0
+    ctx.emit('webserver/index-inject', table, PAGE_PEER)
+    expect(table).toEqual([])
   })
 
   it('declares only the services used by the Settings Remote contribution', () => {
@@ -91,6 +106,22 @@ describe('ui-settings-plugin-inventory browser plugin', () => {
     b.locale.register('settings.agentPreset', 'zh', { presetStandardName: '标准模式' } as never)
     expect(injected.presetName({ id: 'standard', isDefault: true, rows: [] })).toBe('标准模式')
     expect(injected.presetName({ id: 'mine', name: '我自己的', isDefault: false, rows: [] })).toBe('我自己的')
+    await b.ctx.fiber.dispose()
+  })
+
+  it.each([
+    ['without a page global', undefined, true],
+    ['when the page global keeps them', { showModuleName: true }, true],
+    ['when the page global turns them off', { showModuleName: false }, false],
+  ] as const)('shows module names %s', async (_name, global, shown) => {
+    vi.stubGlobal(CONFIG_GLOBAL, global)
+    onTestFinished(() => { vi.unstubAllGlobals() })
+    const b = await bench()
+    declare(b.slots)
+    await b.ctx.plugin({ inject: [...inject], apply }).await()
+    const entry = b.slots.entries('settings.plugins.tab')[0]!
+    const injected = (entry.inject as unknown as () => PluginInventorySettingsTabInjected)()
+    expect(injected.showModuleName).toBe(shown)
     await b.ctx.fiber.dispose()
   })
 

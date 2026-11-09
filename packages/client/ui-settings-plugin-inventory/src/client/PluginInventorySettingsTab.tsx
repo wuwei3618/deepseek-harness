@@ -34,6 +34,11 @@ export interface PluginInventorySettingsTabInjected {
    * agent-preset dictionaries, user-authored ones keep their own metadata.
    */
   presetName: (preset: AgentPresetGroup) => string
+  /**
+   * Whether cards expose module specifiers: the detail row, the title hover
+   * text, and search matches. Entry ids, titles, and descriptions show either way.
+   */
+  showModuleName: boolean
 }
 type PluginFiberPhase = PluginInventoryEntry['fiberPhase']
 
@@ -99,11 +104,16 @@ function pluginText(row: PluginInventoryEntry | AgentPresetRow, resolveText: Plu
   }
 }
 
-/** Match translated text alongside the row's technical module and entry identities. */
-function matches(row: PluginInventoryEntry | AgentPresetRow, normalizedQuery: string, resolveText: PluginInventorySettingsTabInjected['resolveText']): boolean {
+/** Match translated text alongside the row's entry identity and, when shown, its module specifier. */
+function matches(
+  row: PluginInventoryEntry | AgentPresetRow,
+  normalizedQuery: string,
+  resolveText: PluginInventorySettingsTabInjected['resolveText'],
+  showModuleName: boolean,
+): boolean {
   if (normalizedQuery.length === 0) return true
   const { title, description } = pluginText(row, resolveText)
-  return [row.moduleName, row.entryId, title, description]
+  return [showModuleName ? row.moduleName : undefined, row.entryId, title, description]
     .some(value => value?.toLocaleLowerCase().includes(normalizedQuery))
 }
 
@@ -122,10 +132,11 @@ function presetLabel(preset: AgentPresetGroup, t: Translate, presetName: (preset
 
 /** One expandable plugin card; the caller owns the trailing status content. */
 function PluginCard({
-  rowKey, moduleName, title, description, metadataError, entryId, trailing, ariaLabel, failed, expanded, onToggle, children,
+  rowKey, moduleName, showModuleName, title, description, metadataError, entryId, trailing, ariaLabel, failed, expanded, onToggle, children,
 }: {
   readonly rowKey: string
   readonly moduleName: string
+  readonly showModuleName: boolean
   readonly title: string
   readonly description: string | undefined
   readonly metadataError: string | undefined
@@ -144,7 +155,7 @@ function PluginCard({
     <li
       className={css.card}
       data-plugin-entry={entryId ?? undefined}
-      data-plugin-module={moduleName}
+      data-plugin-module={showModuleName ? moduleName : undefined}
       data-failed={failed ? 'true' : undefined}
       data-open={open ? 'true' : undefined}
     >
@@ -158,7 +169,7 @@ function PluginCard({
         onClick={() => { onToggle(rowKey) }}
       >
         <span className={css.cardMainRow}>
-          <strong className={css.cardTitle} title={moduleName}>{title}</strong>
+          <strong className={css.cardTitle} title={showModuleName ? moduleName : undefined}>{title}</strong>
           <span className={css.cardTrailing}>
             {trailing}
             <IconChevronDownOutlineRegular className={css.chevron} size={12} aria-hidden="true" />
@@ -177,9 +188,9 @@ function PluginCard({
   )
 }
 
-/** Detail rows shared by every card: the Loader identity, then labeled facts. */
+/** Detail rows shared by every card: the Loader identity, the module specifier when shown, then labeled facts. */
 function CardFacts({ moduleName, moduleLabel, entryId, facts }: {
-  readonly moduleName: string
+  readonly moduleName: string | undefined
   readonly moduleLabel: string
   readonly entryId: string | null
   readonly facts: readonly (readonly [label: string, value: ReactNode])[]
@@ -188,10 +199,12 @@ function CardFacts({ moduleName, moduleLabel, entryId, facts }: {
     <>
       {entryId === null ? null : <code className={css.entryValue} data-loader-entry>{entryId}</code>}
       <dl className={css.details}>
-        <div>
-          <dt>{moduleLabel}</dt>
-          <dd>{moduleName}</dd>
-        </div>
+        {moduleName === undefined ? null : (
+          <div>
+            <dt>{moduleLabel}</dt>
+            <dd>{moduleName}</dd>
+          </div>
+        )}
         {facts.map(([label, value]) => (
           <div key={label}>
             <dt>{label}</dt>
@@ -250,7 +263,7 @@ function StateTag({ kind, label }: { readonly kind: EnablementKind; readonly lab
 
 /** Render the read-only plugin inventory: agent presets first, then the global plane. */
 export function PluginInventorySettingsTab(
-  { list, presetName, resolveText, t, useClientSync, retryClient }: PluginInventorySettingsTabProps,
+  { list, presetName, resolveText, showModuleName, t, useClientSync, retryClient }: PluginInventorySettingsTabProps,
 ): ReactNode {
   const clientSync = useClientSync(snapshot => snapshot)
   const sectionId = useId()
@@ -300,8 +313,8 @@ export function PluginInventorySettingsTab(
     else regularEntries.push(entry)
   }
 
-  const entryMatch = (entry: PluginInventoryEntry): boolean => matches(entry, normalizedQuery, resolveText)
-  const rowMatch = (row: AgentPresetRow): boolean => matches(row, normalizedQuery, resolveText)
+  const entryMatch = (entry: PluginInventoryEntry): boolean => matches(entry, normalizedQuery, resolveText, showModuleName)
+  const rowMatch = (row: AgentPresetRow): boolean => matches(row, normalizedQuery, resolveText, showModuleName)
   const filteredFailed = failedEntries.filter(entryMatch)
   const filteredRegular = regularEntries.filter(entryMatch)
   const globalCount = filteredFailed.length + filteredRegular.length
@@ -340,6 +353,7 @@ export function PluginInventorySettingsTab(
         key={key}
         rowKey={key}
         moduleName={row.moduleName}
+        showModuleName={showModuleName}
         title={title}
         description={description}
         metadataError={row.meta?.error === undefined ? undefined : t('metadataError', { error: row.meta.error })}
@@ -358,7 +372,7 @@ export function PluginInventorySettingsTab(
         )}
       >
         <CardFacts
-          moduleName={row.moduleName}
+          moduleName={showModuleName ? row.moduleName : undefined}
           moduleLabel={t('moduleLabel')}
           entryId={row.entryId}
           facts={[
@@ -389,6 +403,7 @@ export function PluginInventorySettingsTab(
         key={key}
         rowKey={key}
         moduleName={entry.moduleName}
+        showModuleName={showModuleName}
         title={title}
         description={description}
         metadataError={entry.meta?.error === undefined ? undefined : t('metadataError', { error: entry.meta.error })}
@@ -407,7 +422,7 @@ export function PluginInventorySettingsTab(
         )}
       >
         <CardFacts
-          moduleName={entry.moduleName}
+          moduleName={showModuleName ? entry.moduleName : undefined}
           moduleLabel={t('moduleLabel')}
           entryId={entry.entryId}
           facts={providers !== undefined

@@ -27,12 +27,14 @@ function props(
   list: PluginInventorySettingsTabInjected['list'],
   presetName: PluginInventorySettingsTabInjected['presetName'] = preset => preset.name ?? preset.id,
   resolveText: PluginInventorySettingsTabInjected['resolveText'] = text => typeof text === 'string' ? text : text.en,
+  showModuleName = true,
 ): PluginInventorySettingsTabProps {
   return {
     t,
     list,
     presetName,
     resolveText,
+    showModuleName,
     useClientSync: bindSnapshotSelector(createSnapshotStore<ClientEntryState>({ syncing: false, failures: [] })),
     retryClient: vi.fn(),
   } as PluginInventorySettingsTabProps
@@ -147,6 +149,33 @@ describe('PluginInventorySettingsTab', () => {
     })
     expect(screen.getAllByRole('listitem')).toHaveLength(2)
     expect(screen.getAllByRole('button', { name: /^tool-subagent, include:short-0-/ })).toHaveLength(2)
+  })
+
+  it.each(['global', 'preset'])('hides module names in the %s inventory when the deployment turns them off', async (scope) => {
+    const row = {
+      entryId: 'mcp-audit' as PluginEntryId,
+      moduleName: '@deepseek-ai/dsh-mcp-client',
+      enabled: true,
+      fiberPhase: 'active',
+      meta: { title: 'MCP client', description: 'Connects MCP servers.' },
+    } as const
+    const snapshot: Snapshot = scope === 'global'
+      ? { entries: [row] }
+      : { entries: [], agentPresets: [{ id: 'audit', isDefault: true, rows: [row] }] }
+    const view = render(<PluginInventorySettingsTab {...props(async () => snapshot, undefined, undefined, false)} />)
+    await screen.findByRole('searchbox', { name: en.search })
+    if (scope === 'global') fireEvent.click(globalToggle())
+    const card = screen.getByRole('button', { name: 'MCP client, mcp-audit, Enabled' })
+    fireEvent.click(card)
+    expect(view.container.querySelector('[data-loader-entry]')?.textContent).toBe('mcp-audit')
+    expect(screen.queryByText(en.moduleLabel)).toBeNull()
+    expect(view.container.textContent).not.toContain('@deepseek-ai')
+    expect(view.container.querySelector('[title*="@deepseek-ai"], [data-plugin-module]')).toBeNull()
+    const search = screen.getByRole('searchbox', { name: en.search })
+    fireEvent.change(search, { target: { value: '@deepseek-ai/dsh-mcp-client' } })
+    expect(screen.getByText(en.emptySearch)).toBeTruthy()
+    fireEvent.change(search, { target: { value: 'mcp-audit' } })
+    expect(screen.getAllByRole('listitem')).toHaveLength(1)
   })
 
   it('keeps authored locale titles verbatim when they resemble module names', async () => {

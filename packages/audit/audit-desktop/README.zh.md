@@ -38,6 +38,7 @@ kind: "package-bundle"
 | `system-prompt` | 根上设置 `includeHarnessIdentity: false` 和审计 persona |
 | `browser-use`、`browser-use-playwright-mcp` | 插入：以 `attach` 模式连接桌面端按 Session 区分的侧栏浏览器端点的 [Playwright MCP](../../experimental/browser-use-playwright-mcp/README.zh.md)；未设置 `DSH_DESKTOP_BROWSER_CDP_ENDPOINT` 时（即不在桌面端时）两行都关闭 |
 | `ui-brand-official` → `ui-brand-cscec8b` | 关闭官方品牌图形；由 [`dsh-client-ui-brand-cscec8b`](../../client/ui-brand-cscec8b/README.zh.md) 显示印章和八局审计智能体 |
+| `ui-settings-plugin-inventory` | `showModuleName: false`：设置里的插件列表不显示 `@deepseek-ai/dsh-*` 包名 |
 
 -----
 
