@@ -7,6 +7,8 @@ import { tmpdir } from 'node:os'
 import { dirname, join, relative } from 'node:path'
 import { expect, it, onTestFinished } from 'vitest'
 import { prepareDesktopCli } from '../scripts/prepare-cli.ts'
+import { AUDIT_DSH_HOME_DIR_NAME } from '../src/audit-home.ts'
+import { AUDIT_COMMAND_NAME } from '../src/audit-command.ts'
 
 function fixture() {
   const root = realpathSync(mkdtempSync(join(tmpdir(), 'dsh-cli-launcher-')))
@@ -34,19 +36,22 @@ function fixture() {
   writeFileSync(entry, [
     'const chunks = []',
     'for await (const chunk of process.stdin) chunks.push(chunk)',
-    "process.stdout.write(JSON.stringify({ args: process.argv.slice(2), cwd: process.cwd(), value: process.env.DSH_CLI_TEST_VALUE, nodeMode: process.env.ELECTRON_RUN_AS_NODE, input: Buffer.concat(chunks).toString('hex') }))",
+    "process.stdout.write(JSON.stringify({ args: process.argv.slice(2), cwd: process.cwd(), value: process.env.DSH_CLI_TEST_VALUE, nodeMode: process.env.ELECTRON_RUN_AS_NODE, home: process.env.DSH_HOME, input: Buffer.concat(chunks).toString('hex') }))",
     "process.stderr.write('separate stderr\\n')",
     'process.exitCode = 23',
     '',
   ].join('\n'))
-  const command = join(cli, 'bin', platform === 'win32' ? 'dsh.cmd' : 'dsh')
-  function start(args: string[], executable = command) {
+  const command = join(cli, 'bin', platform === 'win32' ? `${AUDIT_COMMAND_NAME}.cmd` : AUDIT_COMMAND_NAME)
+  function start(args: string[], executable = command, home?: string) {
+    const env: NodeJS.ProcessEnv = { ...process.env, DSH_CLI_TEST_VALUE: 'kept', [platform === 'win32' ? 'USERPROFILE' : 'HOME']: root }
+    if (home === undefined) delete env.DSH_HOME
+    else env.DSH_HOME = home
     // cmd fixture inputs contain no metacharacters; POSIX cases exercise literal expansion characters separately.
     const child = platform === 'win32'
       ? spawn(process.env.ComSpec ?? 'cmd.exe', ['/d', '/s', '/c', `""${executable}" ${args.map(value => `"${value}"`).join(' ')}"`], {
-        cwd: root, env: { ...process.env, DSH_CLI_TEST_VALUE: 'kept' }, stdio: 'pipe', windowsVerbatimArguments: true,
+        cwd: root, env, stdio: 'pipe', windowsVerbatimArguments: true,
       })
-      : spawn(executable, args, { cwd: root, env: { ...process.env, DSH_CLI_TEST_VALUE: 'kept' }, stdio: 'pipe' })
+      : spawn(executable, args, { cwd: root, env, stdio: 'pipe' })
     children.push(child)
     const closed = new Promise<number | null>((resolve, reject) => {
       child.once('error', reject)
@@ -69,14 +74,25 @@ it('preserves common arguments, cwd, environment, binary input, stderr and exit 
   const input = Buffer.from([0, 1, 10, 255])
   run.child.stdin.end(input)
   expect(await run.closed, run.stderr()).toBe(23)
-  expect(JSON.parse(run.stdout())).toEqual({ args, cwd: f.root, value: 'kept', nodeMode: '1', input: input.toString('hex') })
+  expect(JSON.parse(run.stdout())).toEqual({
+    args, cwd: f.root, value: 'kept', nodeMode: '1', home: join(f.root, AUDIT_DSH_HOME_DIR_NAME), input: input.toString('hex'),
+  })
   expect(run.stderr()).toBe('separate stderr\n')
+})
+
+it('keeps a Harness home selected by the invoking environment', async () => {
+  const f = fixture()
+  const home = join(f.root, 'selected home')
+  const run = f.start(['--version'], f.command, home)
+  run.child.stdin.end()
+  expect(await run.closed, run.stderr()).toBe(23)
+  expect(JSON.parse(run.stdout())).toMatchObject({ home })
 })
 
 it.skipIf(process.platform === 'win32')('resolves chained command symlinks without expanding argument contents', async () => {
   const f = fixture()
   const link = join(f.root, 'command-link')
-  const command = join(f.root, 'dsh')
+  const command = join(f.root, AUDIT_COMMAND_NAME)
   symlinkSync(relative(f.root, f.command), link)
   symlinkSync(link, command)
   const args = ['quote"inside', 'trailing\\', '%PATH%', '$HOME', '`literal`', '']

@@ -3,14 +3,14 @@
 # After editing either side, bring the other along and re-record with:
 #   pnpm run verify-translation-pairing --write docs/upgrade-guide/v0.2.2-rc.1/desktop-product-identity/guide.md
 /:
-  en: 7a32961e0d95f540
-  zh: d801ef22d4d3d407
+  en: ba49b7ae67b99a21
+  zh: ac74ed123d4cef01
 /desktop-installs-as-cscec8b-audit-agent:
   en: bf819313be562a22
   zh: 6dd556027ef92475
 /desktop-installs-as-cscec8b-audit-agent/change:
-  en: d2c585d5dc979602
-  zh: 554c027f6f507ed1
+  en: bef7dc99c5f384c3
+  zh: 95d60e84754e424c
 /desktop-installs-as-cscec8b-audit-agent/migration:
-  en: 12b6c5c562492aa9
-  zh: d39b26457cca3ef0
+  en: 475f1ace05ce3309
+  zh: ad3a981f24bad2b4

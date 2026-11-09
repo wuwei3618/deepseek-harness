@@ -13,17 +13,10 @@
     "label": "Clear Browser Data…"
   },
   {
-    "label": "Manage dsh Command…"
+    "label": "Manage cscec8b-audit Command…"
   },
   {
     "label": "Import audit plugin pack…"
-  },
-  {
-    "type": "separator"
-  },
-  {
-    "role": "toggleDevTools",
-    "label": "Developer tools"
   },
   {
     "type": "separator"
