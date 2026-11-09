@@ -80,7 +80,9 @@ describe('readPluginPack', () => {
   it('returns the toolkit group with the pack package rows pointing at its main export', async () => {
     const root = await pack()
     const result = await readPluginPack(root)
-    expect(result).toMatchObject({ kind: 'loaded', root, name: 'audit-dsh', version: '2.65.1' })
+    expect(result).toMatchObject({
+      kind: 'loaded', root, name: 'audit-dsh', version: '2.65.1', mainUrl: pathToFileURL(join(root, 'dsh', 'index.js')).href, workbench: undefined,
+    })
     if (result.kind !== 'loaded') throw new Error('expected a loaded pack')
     const [toolkit] = result.entries
     expect(toolkit).toMatchObject({ id: 'audit-toolkit', name: 'cordis:group', isolate: { auditDsh: true } })
@@ -88,6 +90,11 @@ describe('readPluginPack', () => {
       { id: 'audit-dsh-plugin', name: pathToFileURL(join(root, 'dsh', 'index.js')).href },
       { id: 'audit-reader', name: 'cordis:reader', inject: ['auditDsh'], config: { uv: { __jsExpr: 'ctx.auditDsh.uv' } } },
     ])
+  })
+
+  it('resolves the workbench manifest path the pack declares', async () => {
+    const root = await pack({ ...MANIFEST, dsh: { ...MANIFEST.dsh, auditWorkbench: './dsh/workbench.json' } })
+    expect(await readPluginPack(root)).toMatchObject({ workbench: join(root, 'dsh', 'workbench.json') })
   })
 
   it('finds a preset row that the patch lists without insert and keeps non-row group items', async () => {
@@ -124,6 +131,7 @@ describe('readPluginPack', () => {
     ['a manifest that is not an object', () => pack('[]'), /must declare/],
     ['a manifest without the bundle patch', () => pack({ ...MANIFEST, dsh: {} }), /must declare/],
     ['a manifest without exports', () => pack({ ...MANIFEST, exports: 'x' }), /must declare/],
+    ['a workbench manifest path that is not a string', () => pack({ ...MANIFEST, dsh: { ...MANIFEST.dsh, auditWorkbench: 1 } }), /dsh\.auditWorkbench must be a path string/],
     ['a patch that does not parse', () => pack(MANIFEST, '- [unclosed'), /cannot read the bundle patch/],
     ['a patch that is not a list', () => pack(MANIFEST, 'id: x\n'), /not a list/],
     ['a patch without the audit preset', () => pack(MANIFEST, '- insert:\n    - id: x\n      name: y\n'), /declares no "audit" agent preset/],

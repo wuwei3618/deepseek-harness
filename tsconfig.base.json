@@ -416,6 +416,8 @@
       "@deepseek-ai/dsh-message-quotes/client": ["./packages/session/message-quotes/src/client/index.ts"],
       "@deepseek-ai/dsh-ptc-runtime-node/configuration": ["./packages/ptc-runtime/ptc-runtime-node/src/configuration.ts"],
       "@deepseek-ai/dsh-audit-plugin-pack/install": ["./packages/audit/audit-plugin-pack/src/install.ts"],
+      "@deepseek-ai/dsh-audit-workbench/server": ["./packages/audit/audit-workbench/src/server.ts"],
+      "@deepseek-ai/dsh-audit-workbench/types": ["./packages/audit/audit-workbench/src/types.ts"],
       // BEGIN generated package aliases — pnpm run gen-tsconfig-paths
       "@deepseek-ai/dsh-acp": ["./packages/acp/acp/src"],
       "@deepseek-ai/dsh-acp-app": ["./packages/bundle/acp-app/src"],
@@ -437,6 +439,7 @@
       "@deepseek-ai/dsh-audit-org-defaults": ["./packages/audit/audit-org-defaults/src"],
       "@deepseek-ai/dsh-audit-plugin-pack": ["./packages/audit/audit-plugin-pack/src"],
       "@deepseek-ai/dsh-audit-skills": ["./packages/audit/audit-skills/src"],
+      "@deepseek-ai/dsh-audit-workbench": ["./packages/audit/audit-workbench/src"],
       "@deepseek-ai/dsh-authorization": ["./packages/credentials/authorization/src"],
       "@deepseek-ai/dsh-base": ["./packages/bundle/base/src"],
       "@deepseek-ai/dsh-bash-local": ["./packages/shell/bash-local/src"],

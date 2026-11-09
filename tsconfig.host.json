@@ -530,6 +530,7 @@
     { "path": "./packages/audit/audit-org-defaults" },
     { "path": "./packages/audit/audit-plugin-pack" },
     { "path": "./packages/audit/audit-skills" },
+    { "path": "./packages/audit/audit-workbench" },
     { "path": "./packages/util/official-bundles" },
     { "path": "./packages/boot/app-boot" },
     { "path": "./packages/boot/cmdline" },

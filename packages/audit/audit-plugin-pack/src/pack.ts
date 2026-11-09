@@ -31,6 +31,10 @@ export interface LoadedPack {
   version: string
   /** The toolkit group row, with every row naming the pack package rewritten to the file URL of the pack's main export. */
   entries: EntryOptions[]
+  /** File URL of the pack's main export, which the rewritten rows name. */
+  mainUrl: string
+  /** Absolute path of the audit workbench manifest that `dsh.auditWorkbench` names, when the pack declares one. */
+  workbench: string | undefined
 }
 
 /** A pack directory that does not exist. */
@@ -63,6 +67,7 @@ interface PackManifest {
   version: string
   patch: string
   main: string
+  workbench: string | undefined
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -89,12 +94,14 @@ function parseManifest(root: string, text: string): PackManifest {
     version: isRecord(data) ? data['version'] : undefined,
     patch: isRecord(bundle) ? bundle['patch'] : undefined,
     main: isRecord(exports) ? exports['.'] : undefined,
+    workbench: isRecord(dsh) ? dsh['auditWorkbench'] : undefined,
   }
-  const { name, version, patch, main } = fields
+  const { name, version, patch, main, workbench } = fields
   if (typeof name !== 'string' || typeof version !== 'string' || typeof patch !== 'string' || typeof main !== 'string') {
     throw new PluginPackError(root, 'package.json must declare name, version, dsh.bundle.patch, and the "." export as strings')
   }
-  return { name, version, patch, main }
+  if (workbench !== undefined && typeof workbench !== 'string') throw new PluginPackError(root, 'package.json dsh.auditWorkbench must be a path string')
+  return { name, version, patch, main, workbench }
 }
 
 /** Find the toolkit group row inside the pack preset that a patch list inserts. */
@@ -162,5 +169,7 @@ export async function readPackDirectory(root: string): Promise<LoadedPack> {
   return {
     kind: 'loaded', root, name: manifest.name, version: manifest.version,
     entries: [rewritePackRows(toolkit, manifest.name, mainUrl)],
+    mainUrl,
+    workbench: manifest.workbench === undefined ? undefined : resolve(root, manifest.workbench),
   }
 }
