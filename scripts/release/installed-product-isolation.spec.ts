@@ -106,3 +106,24 @@ describe.each([experimental, ...Object.values(EXPERIMENTAL_PACKAGE_NAME_EXCEPTIO
     expect(() => verifyInstalledProductIsolation(entry)).toThrow('dependency is missing')
   })
 })
+
+describe('installed audit Desktop browser exception', () => {
+  const playwright = '@deepseek-ai/dsh-experimental-browser-use-playwright-mcp'
+  const runtime = '@deepseek-ai/dsh-experimental-browser-use-runtime'
+
+  it('accepts the browser packages only below the audit Desktop bundle and each other', () => {
+    const root = fixture()
+    const entry = writePackage(root, '@deepseek-ai/dsh', { dependencies: { '@deepseek-ai/dsh-audit-desktop': '1.0.0' } })
+    writePackage(root, '@deepseek-ai/dsh-audit-desktop', { dependencies: { [playwright]: '1.0.0' } })
+    writePackage(root, playwright, { dependencies: { [runtime]: '1.0.0' } })
+    writePackage(root, runtime, {})
+    expect(verifyInstalledProductIsolation(entry, [])).toBe(4)
+
+    writePackage(root, runtime, { dependencies: { [experimental]: '1.0.0' } })
+    expect(() => verifyInstalledProductIsolation(entry, [])).toThrow(`${runtime} -> ${experimental}`)
+
+    writePackage(root, runtime, {})
+    writePackage(root, '@deepseek-ai/dsh', { dependencies: { '@deepseek-ai/dsh-audit-desktop': '1.0.0', [runtime]: '1.0.0' } })
+    expect(() => verifyInstalledProductIsolation(entry, [])).toThrow(`@deepseek-ai/dsh -> ${runtime}`)
+  })
+})

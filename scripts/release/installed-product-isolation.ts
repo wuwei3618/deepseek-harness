@@ -4,6 +4,7 @@ import { existsSync, readFileSync, realpathSync } from 'node:fs'
 import { createRequire } from 'node:module'
 import { join } from 'node:path'
 import { hasExperimentalPackageReference } from '../experimental-package-policy.ts'
+import { isAuditDesktopBrowserEdge } from '../audit-product-isolation.ts'
 import { OPTIONAL_BUNDLES } from '../../packages/util/official-bundles/src/bundles.ts'
 
 interface InstalledManifest {
@@ -15,7 +16,8 @@ interface InstalledManifest {
 }
 
 /**
- * Reject experimental dependencies reachable from one installed product entry.
+ * Reject experimental dependencies reachable from one installed product entry, except the audit Desktop browser edges
+ * that `audit-product-isolation.ts` admits.
  * Other packages installed beside the entry and development dependencies do not join its graph.
  * @param directory - installed entry package directory.
  * @returns number of distinct installed packages visited.
@@ -56,8 +58,9 @@ export function verifyInstalledProductIsolation(directory: string, optionalBundl
   return visited.size
 }
 
+/** Throw for an experimental `name` at the end of `chain` unless the edge from the preceding package is admitted. */
 function rejectExperimental(name: string, chain: readonly string[]): void {
-  if (hasExperimentalPackageReference(name)) {
+  if (hasExperimentalPackageReference(name) && !isAuditDesktopBrowserEdge(chain.at(-2), name)) {
     throw new Error(`default product includes an experimental package: ${chain.join(' -> ')}`)
   }
 }
