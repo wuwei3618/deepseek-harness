@@ -1,0 +1,6 @@
+{
+  "meta": {
+    "title": "Audit-Plugin-Paket",
+    "description": "Lädt die Audit-MCP-Server und -Skills des im Datenverzeichnis entpackten audit-plugins-Release in den Audit-Modus."
+  }
+}

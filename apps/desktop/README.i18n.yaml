@@ -39,8 +39,11 @@
   en: 4951cd3ee659eb33
   zh: 96bdd6358dad587a
 /deepseek-harness-desktop/installation-ownership/host-environment:
-  en: 98cf848762482d48
-  zh: 74f9100a39ec8c2f
+  en: dbf9e90b66e64e4e
+  zh: 271eb4f16d012d1c
+/deepseek-harness-desktop/installation-ownership/audit-plugin-pack:
+  en: d5754c71ad6f04fc
+  zh: 37d1bf54a59426b2
 /deepseek-harness-desktop/develop:
   en: faf7676ba18bbf2f
   zh: f1d7b75ad348c548

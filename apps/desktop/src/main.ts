@@ -74,6 +74,7 @@ import { DesktopTray } from './tray.ts'
 import { DesktopBackgroundNotice } from './background-notice.ts'
 import { DSH_HOME_ENV } from '@deepseek-ai/dsh-home-paths'
 import { selectAuditDshHome } from './audit-home.ts'
+import { DesktopAuditPluginPack } from './audit-plugin-pack.ts'
 
 // Before any path resolves: the Host and agent processes inherit this, so DeepSeek Harness data in ~/.dsh stays unread.
 process.env[DSH_HOME_ENV] = selectAuditDshHome(process.env)
@@ -399,7 +400,21 @@ async function main(): Promise<void> {
     return result.environment
   })
   let hostEnvironment: NodeJS.ProcessEnv = process.env
-  const prepareHostEnvironment = async (): Promise<void> => { hostEnvironment = await loginShell }
+  const auditPluginPack = new DesktopAuditPluginPack({ home: process.env[DSH_HOME_ENV] ?? selectAuditDshHome(process.env),
+    markerPath: join(app.getPath('userData'), 'audit-plugin-pack-notice-dismissed'),
+    locale: () => locale, show: options => ordinaryMessageBox(options),
+    chooseZip: async (title) => {
+      const parent = currentDialogWindow()
+      const options: Electron.OpenDialogOptions = { title, properties: ['openFile'], filters: [{ name: 'audit-plugins-*-dsh.zip', extensions: ['zip'] }] }
+      const result = parent === undefined ? await dialog.showOpenDialog(options) : await dialog.showOpenDialog(parent, options)
+      return result.canceled ? undefined : result.filePaths[0]
+    },
+    restart: () => { if (!quitting) { app.relaunch(); quitWithoutConfirmation() } } })
+  // A pack staged by an import replaces the pack directory only while no Host runs.
+  const prepareHostEnvironment = async (): Promise<void> => {
+    await auditPluginPack.applyPending()
+    hostEnvironment = await loginShell
+  }
   let quitting = false
   let startup: Promise<void> | undefined
   let workspaceRecovery: Promise<void> | undefined
@@ -1210,6 +1225,9 @@ async function main(): Promise<void> {
     } },
     ...process.platform === 'darwin' || process.platform === 'win32'
       ? [{ label: currentDesktopLocale().messages.cliCommandMenu, click: () => { void commandManager.show() } }] : [],
+    { label: currentDesktopLocale().messages.auditPluginPackImportMenu, click: () => {
+      void auditPluginPack.import().catch((error: unknown) => { console.error(error) })
+    } },
     { type: 'separator' },
     ...development ? [
       { label: currentDesktopLocale().messages.reloadPageMenu, role: 'reload' as const },
@@ -1380,6 +1398,7 @@ async function main(): Promise<void> {
       window.webContents.send(DESKTOP_IPC.enterWorkspace)
     }
     welcomeWindow = undefined
+    void auditPluginPack.check()
     if (raiseAfterUpdate) {
       raiseAfterUpdate = false
       window.moveTop()
@@ -1502,6 +1521,7 @@ async function main(): Promise<void> {
     updateJournal?.action('quit-requested')
     quitConfirmation.dispose()
     backgroundNotice?.dispose()
+    auditPluginPack.dispose()
     tray?.dispose()
     stopAccount?.()
     if (welcomeWindow !== undefined && !welcomeWindow.isDestroyed()) welcomeWindow.hide()
@@ -1524,6 +1544,7 @@ async function main(): Promise<void> {
       shuttingDown = true
       quitConfirmation.dispose()
       backgroundNotice?.dispose()
+      auditPluginPack.dispose()
       updateJournal?.action('quit-requested')
       tray?.dispose()
       updateDialog.dispose()

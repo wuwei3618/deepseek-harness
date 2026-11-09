@@ -32,6 +32,7 @@
     "@deepseek-ai/dsh-audit-agent": "workspace:*",
     "@deepseek-ai/dsh-audit-desktop": "workspace:*",
     "@deepseek-ai/dsh-audit-org-defaults": "workspace:*",
+    "@deepseek-ai/dsh-audit-plugin-pack": "workspace:*",
     "@deepseek-ai/dsh-audit-skills": "workspace:*",
     "@deepseek-ai/dsh-base": "workspace:*",
     "@deepseek-ai/dsh-client-ui-agent-preset": "workspace:*",

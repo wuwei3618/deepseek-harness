@@ -9,7 +9,7 @@ kind: "package-bundle"
 
 ## 概述
 
-`audit`、`audit-sdk` 和 `audit-acp` profile 的审计智能体。headless、SDK 和 ACP 应用在 profile 根上组合唯一的智能体，不使用 agent preset，因此本层修改 [`dsh-base`](../../bundle/base/README.zh.md) 的根级行：设置不含 DeepSeek Harness 身份行的审计 persona，去掉编辑工具和所有委派工具，并用 [`dsh-audit-skills`](../audit-skills/README.zh.md) 代替本地技能发现。在 [`dsh-audit-org-defaults`](../audit-org-defaults/README.zh.md) 设置的只能写工作目录的沙箱下，命令、新建文件和联网搜索仍然可用。
+`audit`、`audit-sdk` 和 `audit-acp` profile 的审计智能体。headless、SDK 和 ACP 应用在 profile 根上组合唯一的智能体，不使用 agent preset，因此本层修改 [`dsh-base`](../../bundle/base/README.zh.md) 的根级行：设置不含 DeepSeek Harness 身份行的审计 persona，去掉编辑工具、分叉子代理和智能体团队，用 [`dsh-audit-skills`](../audit-skills/README.zh.md) 代替本地技能发现，并在桌面端读取的插件包目录 `~/.cscec8b-audit-agent/audit-plugins` 上挂载 [`dsh-audit-plugin-pack`](../audit-plugin-pack/README.zh.md)。插件包的技能会用到新建子代理和 workflow，因此保留它们。在 [`dsh-audit-org-defaults`](../audit-org-defaults/README.zh.md) 设置的只能写工作目录的沙箱下，命令、新建文件和联网搜索仍然可用。
 
 ## 目录
 
@@ -30,9 +30,11 @@ kind: "package-bundle"
 |---|---|
 | `system-prompt` | `includeHarnessIdentity: false` 和审计 persona |
 | `tool-fs` | `read`、`read_image` 和 `write`；没有 `edit` |
-| `tool-subagent-control`、`tool-subagent`、`tool-subagent-fork`、`tool-agent-team`、`tool-workflow` | 关闭 |
+| `tool-subagent-fork`、`tool-agent-team` | 关闭；保留新建子代理和 workflow |
+| `tool-result-pruner` | `thresholdChars: 40000`、`headChars: 20000`、`tailChars: 8000` |
 | `skill-filesystem` | 关闭：不读取项目和用户的技能目录 |
 | `audit-skills` | 插入：内置审计技能目录 |
+| `audit-plugin-pack` | 插入：位于 `~/.cscec8b-audit-agent/audit-plugins` 的审计插件包 |
 
 -----
 
@@ -55,11 +57,11 @@ kind: "package-bundle"
 
 #### 模型看到什么
 
-系统提示词以审计 persona 开头：它把助手称为八局审计智能体（CSCEC8B Audit Agent），要求给出带确切位置的证据，禁止修改被审查的材料，允许把底稿和报告作为新文件写入工作目录，代用户提交、审批、付款、签署或发送任何内容之前必须先征得用户确认，并要求用请求的语言回答。没有 DeepSeek Harness 身份行。工具列表包含 shell、`read`、`read_image`、`write`、搜索、后台任务、todo、目标、联网和 `skill` 工具，技能目录中只有审计技能。
+系统提示词以审计 persona 开头：它把助手称为八局审计智能体（CSCEC8B Audit Agent），要求给出带确切位置的证据，禁止修改被审查的材料，允许把底稿和报告作为新文件写入工作目录，代用户提交、审批、付款、签署或发送任何内容之前必须先征得用户确认，并要求用请求的语言回答。没有 DeepSeek Harness 身份行。工具列表包含 shell、`read`、`read_image`、`write`、搜索、后台任务、todo、目标、联网、`skill`、新建子代理和 workflow 工具，已解压插件包时还有插件包的 MCP 工具；技能目录中只有内置审计技能和插件包技能。
 
 #### Token 影响
 
-用一段 persona 文本代替一行的编程智能体 persona；去掉的工具定义会减小请求体积。
+用一段 persona 文本代替一行的编程智能体 persona。没有插件包时，去掉的工具定义会减小请求体积；有插件包时多出约 180 个 MCP 工具定义。
 
 #### KV Cache 影响
 

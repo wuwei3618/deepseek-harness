@@ -1,0 +1,6 @@
+{
+  "meta": {
+    "title": "审计插件包",
+    "description": "把解压在数据目录中的 audit-plugins 发布包的审计 MCP 服务和技能加载到审计模式。"
+  }
+}

@@ -49,7 +49,7 @@
       config:
         id: audit
         name: 审计模式
-        description: 审计：执行命令、联网搜索、读取和检索文件，只能在当前工作目录中写入底稿和报告。
+        description: 审计：执行命令、联网搜索、读取和检索文件，使用审计插件包的工具和技能，只能在当前工作目录中写入底稿和报告。
         order: 1
         plugins:
           - id: persona
@@ -113,10 +113,32 @@
                 name: '@deepseek-ai/dsh-command-compact'
               - id: tool-result-pruner
                 name: '@deepseek-ai/dsh-compaction-tool-result-pruner'
+                # The longest audit plugin pack SKILL.md is about 33,000 characters.
                 config:
-                  thresholdChars: 8192
-                  headChars: 4096
-                  tailChars: 1024
+                  thresholdChars: 40000
+                  headChars: 20000
+                  tailChars: 8000
+          # The audit plugin pack skills dispatch their named roles to spawned
+          # subagents and run workflows; children inherit this preset.
+          - id: delegation
+            name: cordis:group
+            group: true
+            isolate:
+              workflowEngine: true
+            config:
+              - id: tool-subagent-control
+                name: '@deepseek-ai/dsh-tool-subagent-control'
+              - id: tool-subagent
+                name: '@deepseek-ai/dsh-tool-subagent'
+                config:
+                  provider: spawn
+                  toolName: subagent
+              - id: workflow-ptc
+                name: '@deepseek-ai/dsh-workflow-ptc'
+                config:
+                  provider: spawn
+              - id: tool-workflow
+                name: '@deepseek-ai/dsh-tool-workflow'
           - id: tool-ask-user
             name: '@deepseek-ai/dsh-tool-ask-user'
           - id: tool-todo
@@ -130,6 +152,10 @@
               searchTimeoutMs: 60000
           - id: present
             name: '@deepseek-ai/dsh-tool-present'
+          # The MCP servers and skills of the audit-plugins release unpacked at
+          # $DSH_HOME/audit-plugins; without that directory the row mounts nothing.
+          - id: audit-plugin-pack
+            name: '@deepseek-ai/dsh-audit-plugin-pack'
 
 # ── the Sidebar browser for the agent ───────────────────────────────────────
 

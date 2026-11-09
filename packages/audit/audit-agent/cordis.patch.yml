@@ -31,21 +31,20 @@
     edit: false
     applyPatch: false
 
-# No delegation: subagents, forks, agent teams, and workflows.
-- id: tool-subagent-control
-  disabled: true
-
-- id: tool-subagent
-  disabled: true
-
+# The audit plugin pack skills dispatch their named roles to spawned subagents
+# and run workflows; forks and agent teams stay off.
 - id: tool-subagent-fork
   disabled: true
 
 - id: tool-agent-team
   disabled: true
 
-- id: tool-workflow
-  disabled: true
+# The longest audit plugin pack SKILL.md is about 33,000 characters.
+- id: tool-result-pruner
+  config:
+    thresholdChars: 40000
+    headChars: 20000
+    tailChars: 8000
 
 # Skills come only from the bundled audit catalog, never from project or user
 # skill directories.
@@ -55,3 +54,9 @@
 - insert:
     - id: audit-skills
       name: '@deepseek-ai/dsh-audit-skills'
+    # The MCP servers and skills of the audit-plugins release that Desktop also
+    # reads, so one unpacked pack serves both; without it the row mounts nothing.
+    - id: audit-plugin-pack
+      name: '@deepseek-ai/dsh-audit-plugin-pack'
+      config:
+        root: ~/.cscec8b-audit-agent/audit-plugins

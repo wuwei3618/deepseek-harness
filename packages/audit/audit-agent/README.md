@@ -9,7 +9,7 @@ English | [中文](README.zh.md)
 
 ## Summary
 
-The audit agent of the `audit`, `audit-sdk`, and `audit-acp` profiles. The headless, SDK, and ACP applications compose their one agent at the profile root without agent presets, so this layer edits [`dsh-base`](../../bundle/base/README.md) root rows: it sets the audit persona without the DeepSeek Harness identity line, removes the edit tool and every delegation tool, and replaces local skill discovery with [`dsh-audit-skills`](../audit-skills/README.md). Commands, new files, and web search stay available under the workspace-only write sandbox that [`dsh-audit-org-defaults`](../audit-org-defaults/README.md) sets.
+The audit agent of the `audit`, `audit-sdk`, and `audit-acp` profiles. The headless, SDK, and ACP applications compose their one agent at the profile root without agent presets, so this layer edits [`dsh-base`](../../bundle/base/README.md) root rows: it sets the audit persona without the DeepSeek Harness identity line, removes the edit tool, forked subagents, and agent teams, replaces local skill discovery with [`dsh-audit-skills`](../audit-skills/README.md), and mounts [`dsh-audit-plugin-pack`](../audit-plugin-pack/README.md) on the pack directory Desktop reads, `~/.cscec8b-audit-agent/audit-plugins`. Spawned subagents and workflows stay because the pack skills use them. Commands, new files, and web search stay available under the workspace-only write sandbox that [`dsh-audit-org-defaults`](../audit-org-defaults/README.md) sets.
 
 ## Table of Contents
 
@@ -30,9 +30,11 @@ Run one audit task with `dsh audit "<task>"`, serve the SDK with `dsh --profile 
 |---|---|
 | `system-prompt` | `includeHarnessIdentity: false` and the audit persona |
 | `tool-fs` | `read`, `read_image`, and `write`; no `edit` |
-| `tool-subagent-control`, `tool-subagent`, `tool-subagent-fork`, `tool-agent-team`, `tool-workflow` | switched off |
+| `tool-subagent-fork`, `tool-agent-team` | switched off; spawned subagents and workflows stay |
+| `tool-result-pruner` | `thresholdChars: 40000`, `headChars: 20000`, `tailChars: 8000` |
 | `skill-filesystem` | switched off: no project or user skill directories |
 | `audit-skills` | inserted: the bundled audit skill catalog |
+| `audit-plugin-pack` | inserted: the audit plugin pack at `~/.cscec8b-audit-agent/audit-plugins` |
 
 -----
 
@@ -55,11 +57,11 @@ Run one audit task with `dsh audit "<task>"`, serve the SDK with `dsh --profile 
 
 #### What the model sees
 
-The system prompt starts with the audit persona, which names the assistant 八局审计智能体 (CSCEC8B Audit Agent), asks for evidence with exact locations, forbids changing the material under review, allows working papers and reports as new workspace files, requires the user's confirmation before anything is submitted, approved, paid, signed, or sent on the user's behalf, and asks for answers in the language of the request. The DeepSeek Harness identity line is absent. The tool list contains the shell, `read`, `read_image`, `write`, search, jobs, todo, goal, web, and `skill` tools, and the skill catalog lists only the audit skills.
+The system prompt starts with the audit persona, which names the assistant 八局审计智能体 (CSCEC8B Audit Agent), asks for evidence with exact locations, forbids changing the material under review, allows working papers and reports as new workspace files, requires the user's confirmation before anything is submitted, approved, paid, signed, or sent on the user's behalf, and asks for answers in the language of the request. The DeepSeek Harness identity line is absent. The tool list contains the shell, `read`, `read_image`, `write`, search, jobs, todo, goal, web, `skill`, spawned subagent, and workflow tools, plus the audit plugin pack MCP tools when the pack is unpacked, and the skill catalog lists only the bundled audit skills and the pack skills.
 
 #### Token effect
 
-One paragraph of persona text in place of the one-line coding-agent persona; the removed tool schemas reduce the request size.
+One paragraph of persona text in place of the one-line coding-agent persona. Without the pack, the removed tool schemas reduce the request size; with the pack, about 180 MCP tool schemas are added.
 
 #### KV Cache effect
 

@@ -16,6 +16,9 @@
     "label": "Manage dsh Command…"
   },
   {
+    "label": "Import audit plugin pack…"
+  },
+  {
     "type": "separator"
   },
   {

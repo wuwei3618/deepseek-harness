@@ -75,12 +75,21 @@ describe.each(['audit', 'audit-sdk', 'audit-acp', 'audit-desktop'])('the %s prof
 describe.each(['audit', 'audit-sdk', 'audit-acp'])('the command-line %s profile', (name) => {
   const rows = compose(name)
 
-  it('offers reading and new-file tools without edit or delegation', () => {
+  it('offers reading and new-file tools without edit, and spawned subagents and workflows without forks or teams', () => {
     expect(config(rows, 'tool-fs')).toMatchObject({ read: true, readImage: true, write: true, edit: false, applyPatch: false })
-    for (const id of ['tool-subagent-control', 'tool-subagent', 'tool-subagent-fork', 'tool-agent-team', 'tool-workflow']) {
-      expect(row(rows, id).disabled, id).toBe(true)
+    for (const id of ['tool-subagent-fork', 'tool-agent-team']) expect(row(rows, id).disabled, id).toBe(true)
+    for (const id of ['tool-bash', 'tool-web', 'tool-skill', 'tool-subagent-control', 'tool-subagent', 'workflow-ptc', 'tool-workflow']) {
+      expect(row(rows, id).disabled, id).not.toBe(true)
     }
-    for (const id of ['tool-bash', 'tool-web', 'tool-skill']) expect(row(rows, id).disabled, id).not.toBe(true)
+    expect(config(rows, 'tool-subagent')).toMatchObject({ provider: 'spawn', toolName: 'subagent' })
+  })
+
+  it('mounts the audit plugin pack that Desktop reads, with room for its long skills', () => {
+    expect(row(rows, 'audit-plugin-pack')).toMatchObject({
+      name: '@deepseek-ai/dsh-audit-plugin-pack', config: { root: '~/.cscec8b-audit-agent/audit-plugins' },
+    })
+    expect(row(rows, 'audit-plugin-pack').disabled).toBeUndefined()
+    expect(config(rows, 'tool-result-pruner')).toEqual({ thresholdChars: 40000, headChars: 20000, tailChars: 8000 })
   })
 
   it('replaces local skill discovery with the bundled audit skills', () => {
@@ -106,9 +115,22 @@ describe('the audit-desktop profile', () => {
     expect((plugins.get('persona')!.config as { prefix: string }).prefix).toBe(config(rows, 'system-prompt')['personaPrefix'])
     expect(plugins.get('tool-fs')!.config).toEqual(config(compose('audit'), 'tool-fs'))
     expect([...plugins.keys()]).toContain('audit-skills')
-    for (const id of ['skill-filesystem', 'delegation', 'planning', 'tool-schedule', 'tool-plugin-manager', 'tool-plugin-market']) {
+    for (const id of ['skill-filesystem', 'planning', 'tool-schedule', 'tool-plugin-manager', 'tool-plugin-market']) {
       expect(plugins.has(id), id).toBe(false)
     }
+  })
+
+  it('mounts the audit plugin pack with spawned subagents, workflows, and room for its long skills', () => {
+    expect(plugins.get('audit-plugin-pack')).toEqual({ id: 'audit-plugin-pack', name: '@deepseek-ai/dsh-audit-plugin-pack' })
+    const delegation = (plugins.get('delegation')!.config as EntryOptions[]).map((entry): unknown[] => [entry.id, entry.config])
+    expect(delegation).toEqual([
+      ['tool-subagent-control', undefined],
+      ['tool-subagent', { provider: 'spawn', toolName: 'subagent' }],
+      ['workflow-ptc', { provider: 'spawn' }],
+      ['tool-workflow', undefined],
+    ])
+    const pruner = (plugins.get('compaction')!.config as EntryOptions[]).find(entry => entry.id === 'tool-result-pruner')
+    expect(pruner?.config).toEqual({ thresholdChars: 40000, headChars: 20000, tailChars: 8000 })
   })
 
   it('keeps session search and voice input on without the plugin manager', () => {

@@ -16,6 +16,9 @@
     "label": "管理 dsh 命令…"
   },
   {
+    "label": "导入审计插件包…"
+  },
+  {
     "type": "separator"
   },
   {
