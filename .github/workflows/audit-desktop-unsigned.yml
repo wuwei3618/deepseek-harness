@@ -3,7 +3,8 @@ name: Package audit Desktop · unsigned
 # Builds the internally distributed, unsigned CSCEC8B Audit Agent installers on GitHub-hosted runners.
 # Every package is a locked audit release with the official brand profile and no update service
 # (apps/desktop/packaging/README.md#unsigned-windows-test-installer). Nothing is published; the
-# installers are run artifacts for manual distribution.
+# installers are run artifacts for manual distribution. A pull request that changes this file packages
+# every target so the workflow is exercised before it reaches the default branch.
 
 on:
   workflow_dispatch:
@@ -16,6 +17,8 @@ on:
         required: true
   push:
     tags: ['audit-desktop-v*']
+  pull_request:
+    paths: ['.github/workflows/audit-desktop-unsigned.yml']
 
 permissions:
   contents: read
@@ -33,7 +36,7 @@ jobs:
       - name: Select targets
         id: targets
         env:
-          REQUESTED: ${{ github.event_name == 'push' && 'all' || inputs.targets }}
+          REQUESTED: ${{ github.event_name == 'workflow_dispatch' && inputs.targets || 'all' }}
         run: |
           all='[{"target":"win-x64","runner":"windows-2025","artifact":"exe"},{"target":"mac-arm64","runner":"macos-15","artifact":"dmg"},{"target":"mac-x64","runner":"macos-15-intel","artifact":"dmg"}]'
           echo "matrix=$(jq -c --arg requested "$REQUESTED" \

@@ -185,7 +185,7 @@ pnpm run package:desktop:mac:x64:unsigned
 
 ## 在 GitHub 托管 runner 上打未签名安装包
 
-`Package audit Desktop · unsigned` [工作流](../../../.github/workflows/audit-desktop-unsigned.yml)在 GitHub 托管的 `windows-2025`、`macos-15`（Apple Silicon）和 `macos-15-intel` runner 上运行[未签名 Windows](#unsigned-windows-test-installer) 与[本地 macOS](#local-macos-dmg-without-release-signing) 命令，不需要自托管机器、preset 或凭据。在 Actions 中点 **Run workflow**，选择 `all` 或单个目标；或推送名为 `audit-desktop-v*` 的 tag 打包全部目标。每个 job 上传包含 EXE 或 DMG 的 `cscec8b-audit-agent-<target>-unsigned-<run_id>`（保留 30 天）和 `packaging-logs-<target>-<run_id>-<run_attempt>`（保留 14 天）；运行摘要列出每个安装包的 SHA-256 和源码提交。该工作流不发布任何内容，产出的安装包不含更新源或强制更新策略。fork 仓库需由所有者先为仓库启用 Actions 才能运行。
+`Package audit Desktop · unsigned` [工作流](../../../.github/workflows/audit-desktop-unsigned.yml)在 GitHub 托管的 `windows-2025`、`macos-15`（Apple Silicon）和 `macos-15-intel` runner 上运行[未签名 Windows](#unsigned-windows-test-installer) 与[本地 macOS](#local-macos-dmg-without-release-signing) 命令，不需要自托管机器、preset 或凭据。在 Actions 中点 **Run workflow**，选择 `all` 或单个目标；或推送名为 `audit-desktop-v*` 的 tag 打包全部目标；修改该工作流文件的 PR 也会打包全部目标。每个 job 上传包含 EXE 或 DMG 的 `cscec8b-audit-agent-<target>-unsigned-<run_id>`（保留 30 天）和 `packaging-logs-<target>-<run_id>-<run_attempt>`（保留 14 天）；运行摘要列出每个安装包的 SHA-256 和源码提交。该工作流不发布任何内容，产出的安装包不含更新源或强制更新策略。fork 仓库需由所有者先为仓库启用 Actions 才能运行。
 
 <a id="macos-release-signing"></a>
 
