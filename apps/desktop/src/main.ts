@@ -297,7 +297,8 @@ function createWindow(preload: string, show = false, primary = false): BrowserWi
       sandbox: true,
       webSecurity: true,
       webviewTag: primary,
-      devTools: true,
+      // Audit builds expose no developer tools to users; development launches keep them for debugging.
+      devTools: !app.isPackaged,
     },
   })
   window.webContents.setWindowOpenHandler(({ url }) => {
@@ -1236,23 +1237,22 @@ async function main(): Promise<void> {
         app.relaunch()
         quitWithoutConfirmation()
       } },
+      { role: 'toggleDevTools' as const, label: currentDesktopLocale().messages.toggleDevToolsMenu },
+      { type: 'separator' as const },
     ] : [],
-    { role: 'toggleDevTools', label: currentDesktopLocale().messages.toggleDevToolsMenu },
-    { type: 'separator' },
     ...hideCommands,
     { role: 'quit', ...(darwin ? { label: currentDesktopLocale().messages.quitApplication }
       : process.platform === 'win32' ? { label: currentDesktopLocale().messages.exitApplication } : {}) },
   ]
-  const devToolsF12Shortcut: MenuItemConstructorOptions = { role: 'toggleDevTools', visible: false, accelerator: 'F12' }
-  const windowsDevToolsShortcuts: MenuItemConstructorOptions[] = [
-    { role: 'toggleDevTools', visible: false },
-    devToolsF12Shortcut,
-  ]
+  const devToolsF12Shortcut: MenuItemConstructorOptions[] = development
+    ? [{ role: 'toggleDevTools', visible: false, accelerator: 'F12' }] : []
+  const windowsDevToolsShortcuts: MenuItemConstructorOptions[] = development
+    ? [{ role: 'toggleDevTools', visible: false }, ...devToolsF12Shortcut] : []
   const refreshApplicationMenu = (): void => {
     Menu.setApplicationMenu(Menu.buildFromTemplate(process.platform === 'win32'
       ? windowsDevToolsShortcuts : [{
         label: darwin ? app.name : currentDesktopLocale().messages.application,
-        submenu: [...applicationItems(), devToolsF12Shortcut],
+        submenu: [...applicationItems(), ...devToolsF12Shortcut],
       }, ...platformMenus()]))
     tray?.relabel()
   }

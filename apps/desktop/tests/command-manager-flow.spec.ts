@@ -6,6 +6,7 @@ import { join } from 'node:path'
 import { afterEach, expect, it, onTestFinished, vi } from 'vitest'
 import type { ExecFileOptions } from 'node:child_process'
 import type { MessageBoxOptions, MessageBoxReturnValue } from 'electron'
+import { AUDIT_COMMAND_NAME } from '../src/audit-command.ts'
 import { DesktopCommandManager } from '../src/command-management.ts'
 import { en, zh, type DesktopMessages } from '../src/locale.ts'
 
@@ -52,9 +53,10 @@ async function fixture(options: {
   await writeFile(join(worker, 'package.json'), '{"type":"module"}\n')
   const state = {
     fingerprint: 'a'.repeat(64), managed: options.managed ?? false, available: true, kind: options.managed ? 'symlink' : 'file',
-    destination: join(root, process.platform === 'win32' ? 'dsh.cmd' : 'dsh'),
-    directory: root, launcher: join(root, 'desktop-dsh'),
-    activeCommand: options.managed && !options.shadowed ? join(root, process.platform === 'win32' ? 'dsh.cmd' : 'dsh') : join(root, 'other-dsh'),
+    destination: join(root, process.platform === 'win32' ? `${AUDIT_COMMAND_NAME}.cmd` : AUDIT_COMMAND_NAME),
+    directory: root, launcher: join(root, `desktop-${AUDIT_COMMAND_NAME}`),
+    activeCommand: options.managed && !options.shadowed
+      ? join(root, process.platform === 'win32' ? `${AUDIT_COMMAND_NAME}.cmd` : AUDIT_COMMAND_NAME) : join(root, `other-${AUDIT_COMMAND_NAME}`),
   }
   if (process.platform === 'darwin') {
     const shell = join(root, 'lookup-shell')

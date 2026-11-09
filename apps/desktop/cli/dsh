@@ -10,5 +10,10 @@ while [ -L "$launcher" ]; do
     *) launcher=$directory/$target ;;
   esac
 done
+# Keep audit sessions and settings apart from DeepSeek Harness in ~/.dsh, as the Desktop application does.
+if [ -z "${DSH_HOME:-}" ]; then
+  DSH_HOME=$HOME/.cscec8b-audit-agent
+  export DSH_HOME
+fi
 resources=$(CDPATH= cd -- "$(dirname -- "$launcher")/../../.." && pwd -P)
 ELECTRON_RUN_AS_NODE=1 exec "$resources/../MacOS/CSCEC8B Audit Agent" --expose-internals "$resources/app.asar/dsh/node_modules/@deepseek-ai/dsh-desktop-host/lib/cli.js" "$@"

@@ -52,8 +52,9 @@ function digest(value: unknown): string {
   return createHash('sha256').update(JSON.stringify(value)).digest('hex')
 }
 
+// Each command name owns its record, so another application's command in the same directory is never treated as managed.
 function receiptPath(options: FileCommandInstallation): string {
-  return join(dirname(options.destination), '.dsh-desktop-command.json')
+  return join(dirname(options.destination), `.${basename(options.destination)}-desktop-command.json`)
 }
 
 async function readEntry(path: string): Promise<Entry> {

@@ -5,6 +5,7 @@ import { isAbsolute, join, normalize, win32 } from 'node:path'
 import { userInfo } from 'node:os'
 import { promisify } from 'node:util'
 import type { MessageBoxOptions, MessageBoxReturnValue } from 'electron'
+import { AUDIT_COMMAND_NAME } from './audit-command.ts'
 import type { DesktopMessages } from './locale.ts'
 import type { UpdateDialogOptions } from './update-dialog.ts'
 
@@ -55,7 +56,7 @@ function parseState(value: unknown, platform: NodeJS.Platform): CommandState {
   if (!object(value) || typeof value.fingerprint !== 'string' || !/^[a-f0-9]{64}$/u.test(value.fingerprint)
     || typeof value.managed !== 'boolean' || typeof value.available !== 'boolean') throw new Error('Invalid command-manager response.')
   const destination = platform === 'win32' && typeof value.directory === 'string'
-    ? join(value.directory, 'dsh.cmd') : value.destination
+    ? join(value.directory, `${AUDIT_COMMAND_NAME}.cmd`) : value.destination
   const launcher = platform === 'win32' ? destination : value.launcher
   if (typeof destination !== 'string' || !isAbsolute(destination) || typeof launcher !== 'string' || !isAbsolute(launcher)) {
     throw new Error('Invalid command-manager locations.')
@@ -112,7 +113,7 @@ export function presentCommandManagement(
 async function shellCommand(): Promise<{ activeCommand?: string; selectionUnknown?: boolean }> {
   const shell = userInfo().shell
   if (shell === null) return { selectionUnknown: true }
-  const script = "printf '\\0DSH_COMMAND\\0'; command -v dsh; printf '\\0'"
+  const script = `printf '\\0DSH_COMMAND\\0'; command -v ${AUDIT_COMMAND_NAME}; printf '\\0'`
   const { stdout } = await promisify(execFile)(shell, ['-ilc', script], { timeout: 5000, maxBuffer: 65536 })
   const value = stdout.split('\0DSH_COMMAND\0')[1]?.split('\0')[0]?.trim()
   if (value === undefined) return { selectionUnknown: true }

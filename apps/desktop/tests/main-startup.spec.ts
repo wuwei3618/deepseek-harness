@@ -814,7 +814,7 @@ describe('desktop main startup', () => {
     ['darwin', 'en'], ['darwin', 'zh-CN'], ['win32', 'en'], ['win32', 'zh-CN'], ['linux', 'en'], ['linux', 'zh-CN'],
   ] as const).flatMap(([platform, locale]) => [
     [platform, locale, true] as const, [platform, locale, false] as const,
-  ]))('groups localized DevTools before quit on %s (%s, packaged=%s)', async (platform, locale, packaged) => {
+  ]))('offers localized DevTools only in development on %s (%s, packaged=%s)', async (platform, locale, packaged) => {
     vi.stubGlobal('process', { ...process, platform })
     harness.app.isPackaged = packaged
     vi.spyOn(harness.app, 'getPreferredSystemLanguages').mockReturnValue([locale])
@@ -825,22 +825,21 @@ describe('desktop main startup', () => {
     expect(visible.map(item => item.role === 'quit' ? 'quit' : item.label ?? item.type)).toEqual([
       messages.aboutMenu, 'separator', messages.checkUpdatesMenu, messages.clearBrowsingDataMenu,
       ...platform === 'linux' ? [] : [messages.cliCommandMenu], messages.auditPluginPackImportMenu,
-      'separator', ...packaged ? [] : [messages.reloadPageMenu, messages.restartAppHostMenu],
-      messages.toggleDevToolsMenu, 'separator',
+      'separator', ...packaged ? [] : [messages.reloadPageMenu, messages.restartAppHostMenu, messages.toggleDevToolsMenu, 'separator'],
       ...platform === 'darwin' ? [messages.hideApplication, messages.hideOtherApplications, messages.showAllApplications, 'separator'] : [],
       'quit',
     ])
-    expect(visible.filter(item => item.role === 'toggleDevTools')).toEqual([
+    expect(visible.filter(item => item.role === 'toggleDevTools')).toEqual(packaged ? [] : [
       { role: 'toggleDevTools', label: messages.toggleDevToolsMenu },
     ])
     if (platform === 'win32') {
-      expect(harness.menu.mock.calls[0]![0]).toEqual([
+      expect(harness.menu.mock.calls[0]![0]).toEqual(packaged ? [] : [
         { role: 'toggleDevTools', visible: false },
         { role: 'toggleDevTools', visible: false, accelerator: 'F12' },
       ])
       expect(menu.every(item => item.visible !== false)).toBe(true)
     } else {
-      expect(menu.filter(item => item.visible === false)).toEqual([
+      expect(menu.filter(item => item.visible === false)).toEqual(packaged ? [] : [
         { role: 'toggleDevTools', visible: false, accelerator: 'F12' },
       ])
     }
@@ -851,10 +850,10 @@ describe('desktop main startup', () => {
     )
     const refreshed = platform === 'win32' ? applicationMenuItems()
       : harness.menu.mock.lastCall![0][0]!.submenu as MenuItemConstructorOptions[]
-    expect(refreshed.filter(item => item.role === 'toggleDevTools' && item.visible !== false)).toEqual([
+    expect(refreshed.filter(item => item.role === 'toggleDevTools' && item.visible !== false)).toEqual(packaged ? [] : [
       { role: 'toggleDevTools', label: nextLocale === 'en' ? en.toggleDevToolsMenu : zh.toggleDevToolsMenu },
     ])
-    expect(harness.windows[0]!.options).toMatchObject({ webPreferences: { devTools: true } })
+    expect(harness.windows[0]!.options).toMatchObject({ webPreferences: { devTools: !packaged } })
   })
 
   it.each([
@@ -1161,10 +1160,7 @@ describe('desktop main startup', () => {
     } else if (platform === 'win32') {
       expect(window.options).toMatchObject({ titleBarStyle: 'hidden', titleBarOverlay: { height: WINDOWS_TITLEBAR_HEIGHT } })
       expect(window.options).not.toHaveProperty('vibrancy')
-      expect(harness.menu.mock.calls[0]![0]).toEqual([
-        { role: 'toggleDevTools', visible: false },
-        { role: 'toggleDevTools', visible: false, accelerator: 'F12' },
-      ])
+      expect(harness.menu.mock.calls[0]![0]).toEqual([])
     } else {
       expect(window.options).not.toHaveProperty('titleBarStyle')
       expect(window.options).not.toHaveProperty('vibrancy')
@@ -1345,8 +1341,8 @@ describe('desktop main startup', () => {
     expect(() => handler(event, 'application', NaN, 34)).toThrow('invalid popup request')
     const application = handler(event, 'application', 48, 34)
     expect(harness.menu.buildFromTemplate.mock.lastCall![0].map(item => item.label ?? item.type)).toEqual([
-      '关于八局审计智能体', 'separator', '检查更新…', '清除浏览器数据…', '管理 dsh 命令…', '导入审计插件包…', 'separator',
-      zh.toggleDevToolsMenu, 'separator', '退出',
+      '关于八局审计智能体', 'separator', '检查更新…', '清除浏览器数据…', '管理 cscec8b-audit 命令…', '导入审计插件包…', 'separator',
+      '退出',
     ])
     const importPack = harness.menu.buildFromTemplate.mock.lastCall![0].find(item => item.label === '导入审计插件包…')!.click as () => void
     importPack()
@@ -1398,9 +1394,8 @@ describe('desktop main startup', () => {
     const application = template[0]!.submenu as MenuItemConstructorOptions[]
     expect(application.filter(item => item.visible !== false).map(describeItem)).toEqual(platform === 'darwin'
       ? ['about', 'separator', en.checkUpdatesMenu, en.clearBrowsingDataMenu, en.cliCommandMenu, en.auditPluginPackImportMenu, 'separator',
-        'toggleDevTools', 'separator', 'hide', 'hideOthers', 'unhide', 'separator', 'quit']
-      : ['about', 'separator', en.checkUpdatesMenu, en.clearBrowsingDataMenu, en.auditPluginPackImportMenu, 'separator', 'toggleDevTools',
-        'separator', 'quit'])
+        'hide', 'hideOthers', 'unhide', 'separator', 'quit']
+      : ['about', 'separator', en.checkUpdatesMenu, en.clearBrowsingDataMenu, en.auditPluginPackImportMenu, 'separator', 'quit'])
     expect(harness.menu.setApplicationMenu).toHaveBeenCalledOnce()
   })
 
