@@ -31,7 +31,7 @@ kind: "package-reference"
 
 - **侧栏** — 镂空圆环和「審」字的实心印章，后接「八局审计智能体」。两者都跟随侧栏文字颜色，因此适配浅色和深色主题。收起侧栏时只显示印章。
 - **空白首页** — 印章位于标题前，鼠标悬停时轻轻摆动，沿用宿主为该标志提供的悬停动画。
-- **首页盖章** — 在首页空白处按下主键时，会在点击位置用蓝色印泥（`--dsw-alias-label-primary-bluish`）盖下印章：印章落下时阴影逐渐收拢，落定时轻微回弹，边缘泛开两圈印泥并溅出八滴墨点，带颗粒感的印迹停留后淡出，全程 2.4 秒。连续盖章时每次倾斜角度不同，最多同时显示三个。点击控件、输入卡片、portal 浮层，或在 frame 内结束文本选择的点击都不会盖章。开启减少动态效果时不显示印章。离开空白首页时清除所有印章。
+- **首页盖章** — 在首页空白处按下主键时，会在点击位置用蓝色印泥（`--dsw-alias-label-primary-bluish`）盖下印章：模糊的印章从上方加速落下，下方阴影随之收拢，短暂按压后减速抬起；刚盖下的印迹湿润偏深，印泥向外轻微晕开，随后变干转浅；带颗粒感的印迹停留后缓缓淡出，全程 2.8 秒。连续盖章时每次倾斜角度不同，最多同时显示三个。点击控件、输入卡片、portal 浮层，或在 frame 内结束文本选择的点击都不会盖章。开启减少动态效果时隐藏印章本体、阴影和晕开效果，印迹只在原处淡入淡出。离开空白首页时清除所有印章。
 
 -----
 
@@ -41,7 +41,7 @@ kind: "package-reference"
 <details>
 <summary>实现细节——点击展开</summary>
 
-浏览器部分是 [`src/client/index.ts`](src/client/index.ts)；node 部分是一个空的 Loader 占位。侧栏标志和名称作为一组感知声明的注册安装：嵌套的 `ctx.slots.inject()` 调用等待侧栏声明，因此无论本行在声明方之前还是之后激活都能生效，并一起撤回。`conversation.hero.brand.mark` 和 `conversation.hero.frame` 层各自等待自己的声明。frame 层渲染一个 `display: contents` 外框，并在 `hero` 为 true 时渲染一个负 `z-index` 的绝对定位层来承载印章；frame 约定把该层放在 Conversation 背景之上、内容之下。每个印章由一组 CSS 动画组成；印章元素自身的动画结束时移除，内层动画结束时不移除。层内的一个 SVG 滤镜让印迹边缘粗糙并加上印泥颗粒。[`src/client/artwork.ts`](src/client/artwork.ts) 中的图形由已确认的印章 logo 以 24 单位坐标描摹而来；字标是转成路径的 Noto Sans SC Medium，因此不依赖网页字体。浏览器标题属于构建环境（`DSH_CLIENT_TITLE`），不在 slot 系统中。
+浏览器部分是 [`src/client/index.ts`](src/client/index.ts)；node 部分是一个空的 Loader 占位。侧栏标志和名称作为一组感知声明的注册安装：嵌套的 `ctx.slots.inject()` 调用等待侧栏声明，因此无论本行在声明方之前还是之后激活都能生效，并一起撤回。`conversation.hero.brand.mark` 和 `conversation.hero.frame` 层各自等待自己的声明。frame 层渲染一个 `display: contents` 外框，并在 `hero` 为 true 时渲染一个负 `z-index` 的绝对定位层来承载印章；frame 约定把该层放在 Conversation 背景之上、内容之下。每个印章由共用一条时间线的一组 CSS 动画组成，各段缓动写在关键帧中；印章元素自身的动画结束时移除（减少动态效果时同样如此），内层动画结束时不移除。层内的一个 SVG 滤镜让印迹边缘粗糙并加上印泥颗粒。[`src/client/artwork.ts`](src/client/artwork.ts) 中的图形由已确认的印章 logo 以 24 单位坐标描摹而来；字标是转成路径的 Noto Sans SC Medium，因此不依赖网页字体。浏览器标题属于构建环境（`DSH_CLIENT_TITLE`），不在 slot 系统中。
 
 </details>
 
@@ -70,7 +70,6 @@ kind: "package-reference"
 <a id="known-limitations-and-deferred-work"></a>
 
 - **只能有一组占用者** — 本包与 `ui-brand-official` 占用相同的 slot；一个组合只挂载其中之一。
-- **减少动态效果时保留隐藏条目** — 开启减少动态效果时印章不会播放动画，因此最多三个隐藏条目会保留到首页关闭。
 - **字标在所有语言下都是中文** — 无论界面语言如何，侧栏都显示「八局审计智能体」。
 
 <a id="dev-note"></a>
