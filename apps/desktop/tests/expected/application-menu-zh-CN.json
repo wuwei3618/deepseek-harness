@@ -13,17 +13,10 @@
     "label": "清除浏览器数据…"
   },
   {
-    "label": "管理 dsh 命令…"
+    "label": "管理 cscec8b-audit 命令…"
   },
   {
     "label": "导入审计插件包…"
-  },
-  {
-    "type": "separator"
-  },
-  {
-    "role": "toggleDevTools",
-    "label": "开发者工具"
   },
   {
     "type": "separator"

@@ -63,6 +63,25 @@ describe.skipIf(process.platform === 'win32')('macOS command entry ownership', (
     expect(await readFile(f.options.launcher, 'utf8')).toBe('desktop\n')
   })
 
+  it('keeps another application command and its ownership record in the same directory', async () => {
+    const f = await fixture()
+    const other = { ...f.options, launcher: join(f.root, 'other-launcher') }
+    await writeFile(other.launcher, 'other\n', { mode: 0o755 })
+    await installFileCommand(other, (await inspectFileCommand(other)).fingerprint)
+    const otherReceipt = await readFile(join(f.root, '.dsh-desktop-command.json'), 'utf8')
+    const audit = { ...f.options, destination: join(f.root, 'cscec8b-audit') }
+    const before = await inspectFileCommand(audit)
+    expect(before).toMatchObject({ kind: 'missing', managed: false })
+    const installed = await installFileCommand(audit, before.fingerprint)
+    expect(installed.managed).toBe(true)
+    expect(installed.backup).toBeUndefined()
+    await removeFileCommand(audit, installed.fingerprint)
+    await expect(lstat(audit.destination)).rejects.toMatchObject({ code: 'ENOENT' })
+    expect(await readlink(f.options.destination)).toBe(other.launcher)
+    expect(await readFile(join(f.root, '.dsh-desktop-command.json'), 'utf8')).toBe(otherReceipt)
+    expect((await inspectFileCommand(other)).managed).toBe(true)
+  })
+
   it('preserves the raw target of an existing relative npm link and restores it', async () => {
     const f = await fixture()
     await writeFile(join(f.root, 'npm-cli'), 'npm\n', { mode: 0o755 })

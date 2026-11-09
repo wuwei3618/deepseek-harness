@@ -6,7 +6,7 @@ $identity = [Guid]::NewGuid().ToString('N')
 $keyRoot = 'Software\DeepSeekHarness\CommandTests\' + $identity
 $environmentKey = $keyRoot + '\Environment'
 $ownerKey = $keyRoot + '\Owner'
-$options = @{ EnvironmentKey=$environmentKey; OwnerKey=$ownerKey; MachinePath=''; MutexName=('Local\DshCommandTest-' + $identity) }
+$options = @{ Command='dsh'; EnvironmentKey=$environmentKey; OwnerKey=$ownerKey; MachinePath=''; MutexName=('Local\DshCommandTest-' + $identity) }
 function Require([bool]$Condition, [string]$Message) { if (-not $Condition) { throw $Message } }
 function UserPath {
     $key = [Microsoft.Win32.Registry]::CurrentUser.OpenSubKey($environmentKey)
@@ -92,6 +92,8 @@ try {
     Require ((UserPath) -eq ($desktop + ';' + $invalidPath)) 'a notification failure changed the committed PATH'
     [void](Apply 'remove' $desktop)
     Require ((UserPath) -eq $invalidPath) 'removal changed invalid user PATH entries'
+    $audit = @{ Command='cscec8b-audit'; EnvironmentKey=$environmentKey; OwnerKey=($keyRoot + '\AuditOwner'); MachinePath=''; MutexName=$options.MutexName }
+    Require ($null -eq (Invoke-DshCommandPath @audit -Request @{ operation='inspect'; directory=$desktop }).activeCommand) 'a command with another name was reported'
     'WINDOWS_COMMAND_PATH_OK'
 } finally {
     [Microsoft.Win32.Registry]::CurrentUser.DeleteSubKeyTree($keyRoot, $false)

@@ -3,6 +3,7 @@
 import { spawn } from 'node:child_process'
 import { dirname, join, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
+import { AUDIT_COMMAND_NAME } from './audit-command.ts'
 import { CommandInstallationError, inspectFileCommand, installFileCommand, removeFileCommand } from './command-installation.ts'
 
 const [operation, expected] = process.argv.slice(2)
@@ -15,7 +16,7 @@ try {
   if (!['inspect', 'install', 'remove'].includes(operation ?? '')) throw new CommandInstallationError('EINVAL', 'Invalid command-management operation.')
   if (operation !== 'inspect' && !/^[a-f0-9]{64}$/u.test(fingerprint)) throw new CommandInstallationError('EINVAL', 'Missing command confirmation.')
   if (process.platform === 'darwin') {
-    const options = { destination: '/usr/local/bin/dsh', launcher: join(resources, 'runtime', 'cli', 'bin', 'dsh'),
+    const options = { destination: join('/usr/local/bin', AUDIT_COMMAND_NAME), launcher: join(resources, 'runtime', 'cli', 'bin', AUDIT_COMMAND_NAME),
       linkHelper: join(resources, 'runtime', 'cli', 'link-entry') }
     const state = operation === 'inspect' ? await inspectFileCommand(options)
       : operation === 'install' ? await installFileCommand(options, fingerprint) : await removeFileCommand(options, fingerprint)
@@ -31,7 +32,7 @@ try {
       child.once('error', reject)
       child.once('close', accept)
     })
-    child.stdin.end(JSON.stringify({ operation, expected, directory: join(resources, 'runtime', 'cli', 'bin') }))
+    child.stdin.end(JSON.stringify({ operation, expected, command: AUDIT_COMMAND_NAME, directory: join(resources, 'runtime', 'cli', 'bin') }))
     process.exitCode = await exited ?? 1
   } else {
     throw new CommandInstallationError('EUNSUPPORTED', 'Command installation is supported on macOS and Windows.')

@@ -53,17 +53,17 @@ Desktop Host 的 Platform API 请求与更新策略请求用相同的 Platform �
 
 桌面麦克风访问仅允许主 `dsh-app://app` 页面发起的音频请求。macOS 使用系统麦克风授权、随包用途说明，以及主应用与 Helper 签名中的 `com.apple.security.device.audio-input` 权限。
 
-按 F12（多媒体功能键键盘上为 Fn+F12）、macOS 的 Command+Option+I 或 Windows 的 Ctrl+Shift+I，可切换当前获得焦点的应用页面的 DevTools，打包版本同样支持。应用菜单在隐藏和退出命令之前的独立分组中显示本地化的“开发者工具”命令。Windows 在标题栏的应用弹出菜单中显示开关，通过隐藏的原生应用菜单注册快捷键；macOS 和 Linux 的应用菜单保留隐藏的 F12 快捷键别名。更新遮罩和打包版本的内嵌浏览器禁用 DevTools。
+打包版本在应用窗口中禁用 DevTools，不提供对应的菜单命令或快捷键。开发启动时，按 F12（多媒体功能键键盘上为 Fn+F12）、macOS 的 Command+Option+I 或 Windows 的 Ctrl+Shift+I，可切换当前获得焦点的应用页面的 DevTools。开发版应用菜单在重新加载和重启之后、隐藏和退出命令之前显示本地化的“开发者工具”命令。Windows 在标题栏的应用弹出菜单中显示开关，通过隐藏的原生应用菜单注册快捷键；macOS 和 Linux 的应用菜单保留隐藏的 F12 快捷键别名。更新遮罩和打包版本的内嵌浏览器禁用 DevTools。
 
 <a id="terminal-command"></a>
 
 ## 终端命令
 
-应用菜单中的**管理 dsh 命令…**位于**检查更新…**下方，显示当前命令，并提供安装、修复和移除操作。命令复用 Desktop 已安装的运行时和普通 [dsh CLI](../cli/README.zh.md)，Desktop 应用关闭后也可以使用。安装后打开新终端，运行 `dsh --version`。
+应用菜单中的**管理 cscec8b-audit 命令…**位于**检查更新…**下方，显示当前命令，并提供安装、修复和移除操作。`cscec8b-audit` 命令复用 Desktop 已安装的运行时和普通 [dsh CLI](../cli/README.zh.md)，Desktop 应用关闭后也可以使用，并与应用一样默认把 `DSH_HOME` 设为 `~/.cscec8b-audit-agent`。它从不检查、链接或注册 `dsh`，同一台电脑上的 DeepSeek Harness 保留自己的 `dsh` 命令。安装后打开新终端，运行 `cscec8b-audit --version`。
 
-macOS 安装会创建 `/usr/local/bin/dsh`；目录权限需要时，系统会请求管理员认证，不会修改 shell 启动文件。Windows 管理对话框将命令注册到当前用户的 PATH。切换已有命令前会要求确认；修复当前已选中的 Desktop 命令不会重复要求切换确认。macOS 链接会保留并恢复被替换的启动器；Windows 会保留其他 PATH 条目，包括注册前就已存在的条目。若其他命令的 PATH 优先级更高，对话框会显示其位置。移动应用后，macOS 使用“修复”，Windows 从新位置使用“安装”。“移除”不会改动无关安装。
+macOS 安装会创建 `/usr/local/bin/cscec8b-audit`，并在 `/usr/local/bin/.cscec8b-audit-desktop-command.json` 记录归属；目录权限需要时，系统会请求管理员认证，不会修改 shell 启动文件。Windows 管理对话框将只含 `cscec8b-audit.cmd` 的应用命令目录注册到当前用户的 PATH，并在 `HKCU\Software\CSCEC8B\AuditAgent\Command` 记录归属。切换已有命令前会要求确认；修复当前已选中的 Desktop 命令不会重复要求切换确认。macOS 链接会保留并恢复被替换的启动器；Windows 会保留其他 PATH 条目，包括注册前就已存在的条目。若其他命令的 PATH 优先级更高，对话框会显示其位置。移动应用后，macOS 使用“修复”，Windows 从新位置使用“安装”。“移除”不会改动无关安装。
 
-命令注册是安装 Desktop 后的可选操作。卸载 Desktop 前，请通过**管理 dsh 命令… → 移除**删除其 CLI 注册；应用卸载程序不会移除该注册。更新或卸载 Desktop 前请结束 CLI 命令。CLI 运行时版本随已安装的 Desktop 版本变化。Desktop 插件命令与运行时限制见[内置命令运行时](#bundled-command-runtime)。
+命令注册是安装 Desktop 后的可选操作。卸载 Desktop 前，请通过**管理 cscec8b-audit 命令… → 移除**删除其 CLI 注册；应用卸载程序不会移除该注册。更新或卸载 Desktop 前请结束 CLI 命令。CLI 运行时版本随已安装的 Desktop 版本变化。Desktop 插件命令与运行时限制见[内置命令运行时](#bundled-command-runtime)。
 
 <a id="closing-the-window-and-quitting"></a>
 
@@ -387,7 +387,7 @@ node apps/desktop/node_modules/pnpm/bin/pnpm.mjs --dir apps/desktop run test:upd
 
 - 发布签名、公证、更新托管和跨上一版本的已安装产物验证需要生产发布环境。
 - 依赖的生命周期脚本遵循 pnpm 的构建权限；Desktop 不提供单独的审批对话框。
-- 桌面壳与 CLI dsh 共享 `$DSH_HOME` 下的会话、设置、凭据、工作区和存储，但可执行包、插件激活和锁文件彼此隔离。Desktop 在解析任何路径之前把 `DSH_HOME` 设为 `~/.cscec8b-audit-agent`（[`src/audit-home.ts`](src/audit-home.ts)），启动环境已提供非空值时除外；Host 和智能体进程继承该值，因此审计应用不会读取 `~/.dsh` 中的 DeepSeek Harness 数据。CLI dsh 只有在使用相同 `DSH_HOME` 运行时才共享这些数据。
+- 桌面壳与 CLI dsh 共享 `$DSH_HOME` 下的会话、设置、凭据、工作区和存储，但可执行包、插件激活和锁文件彼此隔离。Desktop 在解析任何路径之前把 `DSH_HOME` 设为 `~/.cscec8b-audit-agent`（[`src/audit-home.ts`](src/audit-home.ts)），启动环境已提供非空值时除外；Host 和智能体进程继承该值，因此审计应用不会读取 `~/.dsh` 中的 DeepSeek Harness 数据。Desktop 安装的 [`cscec8b-audit` 命令](#terminal-command)使用同一默认值；其他 CLI dsh 只有在使用相同 `DSH_HOME` 运行时才共享这些数据。
 - 在 Electron win32-arm64 宿主上，未打包启动现在可以成功，但载荷仍为 x64：`packages/skill/tool-workspace-dependencies/src/index.ts` 的架构校验会把载荷记录的架构与宿主 `process.arch` 比较，因此 `load_workspace_dependencies` 工具仍可能拒绝 primary runtime。
 
 仅向应用提供的 `dshOnboarding.hasApiKey()` preload 方法返回欢迎后端当前的 API Key 存在状态布尔值；原生登录与引导共用凭证发现逻辑，且只有受管理的应用主 frame 可以调用。

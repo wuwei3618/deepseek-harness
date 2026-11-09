@@ -1,6 +1,6 @@
 <# Per-user PATH ownership. The worker owns its mutex through registry publication. #>
 function Invoke-DshCommandPath {
-    param([hashtable]$Request, [string]$EnvironmentKey, [string]$OwnerKey, [string]$MachinePath, [string]$MutexName)
+    param([hashtable]$Request, [string]$Command, [string]$EnvironmentKey, [string]$OwnerKey, [string]$MachinePath, [string]$MutexName)
     $ErrorActionPreference = 'Stop'
     function Fail([string]$Code, [string]$Message) {
         $error = [InvalidOperationException]::new($Message)
@@ -17,6 +17,8 @@ function Invoke-DshCommandPath {
             return $expanded
         }
     }
+    if ($Command -cnotmatch '^[a-z0-9][a-z0-9-]*$') { Fail 'EINVAL' 'Invalid command name.' }
+    $launcher = $Command + '.cmd'
     $directory = [string]$Request.directory
     if (-not [IO.Path]::IsPathRooted($directory) -or $directory.Contains(';') -or $directory.Contains([char]0)) {
         Fail 'EUNSUPPORTED' 'The command directory cannot be represented in PATH.'
@@ -58,7 +60,7 @@ function Invoke-DshCommandPath {
             }
         }
         if ($Request.operation -eq 'install') {
-            if (-not (Test-Path -LiteralPath (Join-Path $directory 'dsh.cmd') -PathType Leaf)) { Fail 'ENOENT' 'The installed launcher is unavailable.' }
+            if (-not (Test-Path -LiteralPath (Join-Path $directory $launcher) -PathType Leaf)) { Fail 'ENOENT' 'The installed launcher is unavailable.' }
             $next = (@($directory) + $kept) -join ';'
             $environment = [Microsoft.Win32.Registry]::CurrentUser.CreateSubKey($EnvironmentKey)
             $owner = [Microsoft.Win32.Registry]::CurrentUser.CreateSubKey($OwnerKey)
@@ -96,7 +98,7 @@ function Invoke-DshCommandPath {
             $extensions = if ($env:PATHEXT) { @($env:PATHEXT.Split(';')) } else { @('.com','.exe','.bat','.cmd') }
             foreach ($extension in (@('.ps1') + $extensions)) {
                 try {
-                    $candidate = Join-Path $path ('dsh' + $extension)
+                    $candidate = Join-Path $path ($Command + $extension)
                     if (Test-Path -LiteralPath $candidate -PathType Leaf) { $active = $candidate; break }
                 } catch {
                     # Invalid or unavailable PATH candidates do not prevent checking later entries.
@@ -106,7 +108,7 @@ function Invoke-DshCommandPath {
             if ($active) { break }
         }
         $onPath = @(([string]$raw).Split(';') | Where-Object { (Comparable $_) -eq $current }).Count -gt 0
-        return [ordered]@{ fingerprint=$fingerprint; directory=$directory; ownedDirectory=$owned; managed=([bool]$owned -and (Comparable ([string]$owned)) -eq $current); activeCommand=$active; available=($onPath -and (Test-Path -LiteralPath (Join-Path $directory 'dsh.cmd') -PathType Leaf)) }
+        return [ordered]@{ fingerprint=$fingerprint; directory=$directory; ownedDirectory=$owned; managed=([bool]$owned -and (Comparable ([string]$owned)) -eq $current); activeCommand=$active; available=($onPath -and (Test-Path -LiteralPath (Join-Path $directory $launcher) -PathType Leaf)) }
     } finally {
         if ($locked) { $mutex.ReleaseMutex() }
         $mutex.Dispose()
@@ -133,11 +135,13 @@ if ($MyInvocation.InvocationName -ne '.') {
     try {
         $inputValue = [Console]::In.ReadToEnd() | ConvertFrom-Json
         $request = @{ operation=$inputValue.operation; directory=$inputValue.directory; expected=$inputValue.expected }
+        $command = [string]$inputValue.command
         $machine = [Microsoft.Win32.Registry]::LocalMachine.OpenSubKey('SYSTEM\CurrentControlSet\Control\Session Manager\Environment')
         try { $machinePath = [string]$machine.GetValue('Path', '', [Microsoft.Win32.RegistryValueOptions]::DoNotExpandEnvironmentNames) }
         finally { $machine.Dispose() }
         $sid = [Security.Principal.WindowsIdentity]::GetCurrent().User.Value
-        $state = Invoke-DshCommandPath -Request $request -EnvironmentKey 'Environment' -OwnerKey 'Software\DeepSeekHarness\Command' -MachinePath $machinePath -MutexName ('Global\DeepSeekHarness.Command.' + $sid)
+        # The owner key is this application's own, so registration never adopts or removes a DeepSeek Harness PATH directory.
+        $state = Invoke-DshCommandPath -Request $request -Command $command -EnvironmentKey 'Environment' -OwnerKey 'Software\CSCEC8B\AuditAgent\Command' -MachinePath $machinePath -MutexName ('Global\DeepSeekHarness.Command.' + $sid)
         if ($request.operation -ne 'inspect') {
             Send-DshCommandEnvironmentChange
         }
