@@ -37,6 +37,7 @@ Every package below exports a Cordis plugin that a bundle patch can name in a Lo
 |---|---|---|
 | `@deepseek-ai/dsh-audit-plugin-pack` | yes | Mounts the audit MCP servers and skills of an audit-plugins release unpacked under the Harness home inside the audit agent preset |
 | `@deepseek-ai/dsh-audit-skills` | yes | Bundled general-purpose audit skills registered as one skill provider |
+| `@deepseek-ai/dsh-audit-workbench` | yes | Host half of the Desktop audit workbench: reads the audit plugin pack, Project Archives, and System Login Status |
 
 ## boot
 
@@ -78,6 +79,7 @@ Every package below exports a Cordis plugin that a bundle patch can name in a Lo
 | `@deepseek-ai/dsh-client-ui-agent-team` | no | Web shared task board for a subagent tree |
 | `@deepseek-ai/dsh-client-ui-approval` | no | Approval composer takeover over the scoped Remote Event waterfall |
 | `@deepseek-ai/dsh-client-ui-attachment` | no | Dynamic attachment presentation plugin for conversation input, message-image, and trajectory image slots |
+| `@deepseek-ai/dsh-client-ui-audit-workbench` | no | Desktop audit workbench: system login status and the project archive of every audit project |
 | `@deepseek-ai/dsh-client-ui-brand-cscec8b` | no | CSCEC8B Audit Agent seal branding and click-triggered home stamp |
 | `@deepseek-ai/dsh-client-ui-brand-official` | no | Official DeepSeek Harness brand artwork and click-triggered home background |
 | `@deepseek-ai/dsh-client-ui-chat` | no | Chat Conversation target, node definitions, renderers, and details surface |
@@ -111,7 +113,7 @@ Every package below exports a Cordis plugin that a bundle patch can name in a Lo
 | `@deepseek-ai/dsh-client-ui-settings-agent-loop` | no | Settings page of the agent loop on the dsh web client's Plugins page: the parallel tool-call cap of the agent-loop namespace |
 | `@deepseek-ai/dsh-client-ui-settings-general` | no | Settings ownerless-copy and product onboarding plugin: the General section, shell trigger/header chrome content, settings dictionaries, and the versioned welcome notice |
 | `@deepseek-ai/dsh-client-ui-settings-models` | yes | Models settings and shared product-onboarding dialogs over existing settings and credential joins |
-| `@deepseek-ai/dsh-client-ui-settings-plugin-inventory` | no | Read-only Cordis Loader inventory tab in Web Plugins settings |
+| `@deepseek-ai/dsh-client-ui-settings-plugin-inventory` | yes | Read-only Cordis Loader inventory tab in Web Plugins settings |
 | `@deepseek-ai/dsh-client-ui-settings-plugins` | no | Built-in plugins settings section for the dsh web client: the Settings navigation entry and the tab chrome feature-owned tabs register into |
 | `@deepseek-ai/dsh-client-ui-settings-session-log` | no | General settings control for Session-log upload with DeepSeek API requests |
 | `@deepseek-ai/dsh-client-ui-settings-shell` | no | Settings page of the shell executor on the dsh web client's Plugins page: the command timeout and the per-stream output cap of the shell namespace |

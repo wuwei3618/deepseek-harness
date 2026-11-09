@@ -132,6 +132,13 @@ const SERVICE_ROLES: ServiceRole[] = [
     note: 'Supplies parsed task and run options to the headless runner and its sandbox-policy configuration.',
   },
   {
+    key: 'auditWorkbench',
+    pkg: 'audit-workbench',
+    title: 'Audit workbench reads',
+    mode: 'service',
+    note: 'Reads the audit plugin pack\'s workbench manifest and every Workspace\'s Project Archive, and checks System Login Status with one-shot calls to the pack\'s session tools.',
+  },
+  {
     key: 'cotTranslation',
     pkg: 'experimental-client-ui-cot-translation',
     title: 'Reasoning translation Remote',

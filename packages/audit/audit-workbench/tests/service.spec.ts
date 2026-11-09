@@ -122,7 +122,12 @@ async function withWorkbench(root: string, workspaces: FakeWorkspace[], body: (c
     await ctx.plugin(Loader)
     // The profile resolves the row name from its manifest; tests resolve it to the source module.
     const original = ctx.loader.import.bind(ctx.loader)
-    vi.spyOn(ctx.loader, 'import').mockImplementation((name, stack) => name === SERVER_ROW ? import('../src/server.ts') : original(name, stack))
+    const server: unknown = await import('../src/server.ts')
+    vi.spyOn(ctx.loader, 'import').mockImplementation(async (name, stack) => {
+      if (name === SERVER_ROW) return server
+      const loaded: unknown = await original(name, stack)
+      return loaded
+    })
     ctx.loader.builtins['group'] = Group
     ctx.loader.builtins['audit-workbench'] = AuditWorkbench
     await ctx.loader.create({ name: 'cordis:audit-workbench', config: { root } })
@@ -223,7 +228,7 @@ describe('AuditWorkbench', () => {
     })
     const invalid = await tempDir()
     await withWorkbench(invalid, [], async (ctx) => {
-      expect((await ctx.auditWorkbench.overview(signal())).pack).toMatchObject({ kind: 'invalid', root: invalid, message: expect.stringMatching(/no package\.json/) })
+      expect((await ctx.auditWorkbench.overview(signal())).pack).toMatchObject({ kind: 'invalid', root: invalid, message: expect.stringMatching(/no package\.json/) as string })
       expect(await ctx.auditWorkbench.checkSystem('dac', signal())).toMatchObject({ state: 'failed', reason: 'unavailable' })
     })
   })

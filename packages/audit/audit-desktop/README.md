@@ -39,6 +39,7 @@ Desktop reads the `audit-desktop` template from [`dsh-official-bundles`](../../u
 | `browser-use`, `browser-use-playwright-mcp` | inserted: [Playwright MCP](../../experimental/browser-use-playwright-mcp/README.md) in `attach` mode on Desktop's per-Session Sidebar browser endpoint; both rows stay off when `DSH_DESKTOP_BROWSER_CDP_ENDPOINT` is unset, as outside Desktop |
 | `ui-brand-official` → `ui-brand-cscec8b` | the official artwork is switched off; [`dsh-client-ui-brand-cscec8b`](../../client/ui-brand-cscec8b/README.md) shows the seal and 八局审计智能体 |
 | `ui-settings-plugin-inventory` | `showModuleName: false`: the Settings Plugin list hides the `@deepseek-ai/dsh-*` package names |
+| `audit-workbench`, `ui-audit-workbench` | inserted: the 审计工作台 Sidebar page with System Login Status and every audit project's Project Archive ([Host](../audit-workbench/README.md), [page](../../client/ui-audit-workbench/README.md)) |
 
 -----
 

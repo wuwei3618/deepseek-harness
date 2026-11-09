@@ -305,6 +305,8 @@
       "@deepseek-ai/dsh-client-ui-shortcuts": ["./packages/client/ui-shortcuts/src"],
       "@deepseek-ai/dsh-client-ui-layout": ["./packages/client/ui-layout/src"],
       "@deepseek-ai/dsh-client-ui-sidebar": ["./packages/client/ui-sidebar/src"],
+      "@deepseek-ai/dsh-client-ui-audit-workbench": ["./packages/client/ui-audit-workbench/src"],
+      "@deepseek-ai/dsh-client-ui-audit-workbench/client": ["./packages/client/ui-audit-workbench/src/client/index.ts"],
       "@deepseek-ai/dsh-client-ui-brand-cscec8b": ["./packages/client/ui-brand-cscec8b/src"],
       "@deepseek-ai/dsh-client-ui-brand-official": ["./packages/client/ui-brand-official/src"],
       "@deepseek-ai/dsh-client-ui-approval": ["./packages/client/ui-approval/src"],

@@ -516,6 +516,55 @@ export const SERVICE_API: readonly ServiceApiEntry[] = [
     ],
   },
   {
+    key: 'auditWorkbench',
+    summary: 'Remote reads and checks behind the workbench page.',
+    description: 'Remote reads and checks behind the workbench page.',
+    methods: [
+      {
+        signature: 'registerServer(launch: ServerLaunch): () => void',
+        description: 'Record the launch values of one mounted audit server.',
+        parameters: [{ name: 'launch', description: 'values the pack\'s MCP client row resolves to.' }],
+        returns: 'the disposer that forgets the server.',
+        throws: ['when a server of the same name is already recorded.'],
+      },
+      {
+        signature: '@Remote async overview(signal: AbortSignal): Promise<WorkbenchOverview>',
+        description: 'Read the pack, its workbench manifest, and the systems and Built-in Models it lists.',
+        parameters: [{ name: 'signal', description: 'caller cancellation.' }],
+        returns: 'the pack status with the manifest\'s systems, Built-in Models, and available prompts.',
+      },
+      {
+        signature: '@Remote async projects(signal: AbortSignal): Promise<ProjectEntry[]>',
+        description: 'Read the Project Archive of every Workspace.',
+        parameters: [{ name: 'signal', description: 'caller cancellation.' }],
+        returns: 'one entry per Workspace in registry order.',
+      },
+      {
+        signature: '@Remote async prompt(request: PromptRequest, signal: AbortSignal): Promise<string>',
+        description: 'Fill the manifest\'s prompt template for one request.',
+        parameters: [{ name: 'request', description: 'prompt kind and its Workspace, task, or Built-in Model.' }, { name: 'signal', description: 'caller cancellation.' }],
+        returns: 'the prompt text for a new Session draft.',
+      },
+      {
+        signature: '@Remote async checkSystem(id: string, signal: AbortSignal): Promise<SystemCheck>',
+        description: 'Check one system\'s System Login Status with its session tool.',
+        parameters: [{ name: 'id', description: 'manifest system id.' }, { name: 'signal', description: 'caller cancellation; aborting closes the server.' }],
+        returns: 'the reading, or why none was produced.',
+      },
+      {
+        signature: '@Remote async login(id: string, signal: AbortSignal): Promise<SystemCheck>',
+        description: 'Run one system\'s own login tool, which opens its browser for the person, then check again.',
+        parameters: [{ name: 'id', description: 'manifest system id.' }, { name: 'signal', description: 'caller cancellation; aborting closes the server.' }],
+        returns: 'the System Login Status after the login tool returns.',
+      },
+      {
+        signature: '@Remote async openOutput(request: OutputRequest, signal: AbortSignal): Promise<void>',
+        description: 'Open one recorded Kickoff Task output with the desktop\'s default application.',
+        parameters: [{ name: 'request', description: 'Workspace, task index, and output index in the Project Archive.' }, { name: 'signal', description: 'caller cancellation.' }],
+      },
+    ],
+  },
+  {
     key: 'authorization',
     summary: '`ctx.authorization`: a registry of credential-obtaining flows, one attempt at a time per key.',
     description: '`ctx.authorization`: a registry of credential-obtaining flows, one attempt at a time per key.',
@@ -5624,6 +5673,14 @@ export const TYPE_API: readonly TypeApiEntry[] = [
     declaration: 'export interface ApprovalRequestEvent {\n    readonly agent: Agent;\n    readonly toolName: string;\n    readonly callId?: ToolCallId;\n    readonly reason?: string;\n    readonly displayReason?: {\n        readonly en: string;\n        readonly [locale: string]: string;\n    };\n    readonly signal?: AbortSignal;\n}',
   },
   {
+    name: 'ArchiveRead',
+    declaration: 'export type ArchiveRead = {\n    readonly kind: \'missing\';\n} | {\n    readonly kind: \'unreadable\';\n    readonly reason: \'io\' | \'json\' | \'shape\';\n} | {\n    readonly kind: \'read\';\n    readonly newer: boolean;\n    readonly archive: ProjectArchive;\n};',
+  },
+  {
+    name: 'ArchiveReading',
+    declaration: 'export interface ArchiveReading {\n    readonly readAt: string;\n    readonly file: string;\n}',
+  },
+  {
     name: 'ArchiveSessionOptions',
     declaration: 'export interface ArchiveSessionOptions {\n    readonly stopActivity?: boolean;\n}',
   },
@@ -5710,6 +5767,10 @@ export const TYPE_API: readonly TypeApiEntry[] = [
   {
     name: 'AttachmentId',
     declaration: 'export type AttachmentId = Branded<\'AttachmentId\'>;',
+  },
+  {
+    name: 'Auditee',
+    declaration: 'export interface Auditee {\n    readonly name: string;\n    readonly kind: string;\n    readonly codes: readonly string[];\n}',
   },
   {
     name: 'AuthorizationEntry',
@@ -6920,6 +6981,14 @@ export const TYPE_API: readonly TypeApiEntry[] = [
     declaration: 'export type JsonValue = null | boolean | number | string | JsonValue[] | {\n    [key: string]: JsonValue;\n};',
   },
   {
+    name: 'KickoffTask',
+    declaration: 'export interface KickoffTask {\n    readonly type: string;\n    readonly taskId: string;\n    readonly summary: string;\n    readonly status: KickoffTaskStatus;\n    readonly statusText: string;\n    readonly outputs: readonly string[];\n    readonly startedAt: string;\n    readonly finishedAt: string;\n    readonly note: string;\n}',
+  },
+  {
+    name: 'KickoffTaskStatus',
+    declaration: 'export type KickoffTaskStatus = \'pending\' | \'running\' | \'done\' | \'failed\' | \'skipped\' | \'unknown\';',
+  },
+  {
     name: 'KnownSubagentCatalogFields',
     declaration: 'export type KnownSubagentCatalogFields = {\n    readonly mode: \'one-shot\';\n    readonly label?: string;\n} | {\n    readonly mode: \'external\';\n    readonly label?: string;\n    readonly name?: string;\n} | {\n    readonly mode: \'continuable\';\n    readonly label: string;\n    readonly name?: string;\n};',
   },
@@ -7090,6 +7159,10 @@ export const TYPE_API: readonly TypeApiEntry[] = [
   {
     name: 'ManagementError',
     declaration: 'export interface ManagementError {\n    code: ReadOnlyReason | \'unknown-plugin\' | \'invalid-spec\' | \'already-installed\' | \'ambiguous-install\' | \'not-bundle\' | \'not-removable\' | \'stop-profile\' | \'bundle-in-use\' | \'stale-approval\' | \'incompatible-version\' | \'unsupported-platform\' | \'operation-error\';\n    diagnostic?: string;\n    incompatible?: IncompatiblePlugin[];\n}',
+  },
+  {
+    name: 'ManifestStatus',
+    declaration: 'export type ManifestStatus = {\n    readonly kind: \'missing\';\n} | {\n    readonly kind: \'invalid\';\n    readonly message: string;\n} | {\n    readonly kind: \'ready\';\n};',
   },
   {
     name: 'ManualCompactAgentContext',
@@ -7392,6 +7465,10 @@ export const TYPE_API: readonly TypeApiEntry[] = [
     declaration: 'export type ModTier = \'prepend\' | \'user\' | \'append\' | \'builtin\' | \'core\';',
   },
   {
+    name: 'MonthSpan',
+    declaration: 'export interface MonthSpan {\n    readonly from: string;\n    readonly to: string;\n}',
+  },
+  {
     name: 'NativeFileApplication',
     declaration: 'export interface NativeFileApplication {\n    readonly id: string;\n    readonly name: string;\n    readonly default: boolean;\n    readonly icon: string | null;\n}',
   },
@@ -7452,6 +7529,10 @@ export const TYPE_API: readonly TypeApiEntry[] = [
     declaration: 'export type OTelEventScalar = string | number | boolean;',
   },
   {
+    name: 'OutputRequest',
+    declaration: 'export interface OutputRequest {\n    readonly workspaceId: WorkspaceId;\n    readonly task: number;\n    readonly output: number;\n}',
+  },
+  {
     name: 'OwnerIdentityRequest',
     declaration: 'export interface OwnerIdentityRequest {\n    readonly relay?: string;\n}',
   },
@@ -7478,6 +7559,10 @@ export const TYPE_API: readonly TypeApiEntry[] = [
   {
     name: 'PackageResult',
     declaration: 'export interface PackageResult {\n    exitCode: number;\n    output: string;\n    truncated: boolean;\n    logPath: string;\n    kind?: PluginInstallFailureKind;\n    timedOut?: boolean;\n    incompatible?: IncompatiblePlugin[];\n}',
+  },
+  {
+    name: 'PackStatus',
+    declaration: 'export type PackStatus = {\n    readonly kind: \'missing\';\n    readonly root: string;\n} | {\n    readonly kind: \'invalid\';\n    readonly root: string;\n    readonly message: string;\n} | {\n    readonly kind: \'loaded\';\n    readonly root: string;\n    readonly name: string;\n    readonly version: string;\n    readonly manifest: ManifestStatus;\n};',
   },
   {
     name: 'PaidTranslationProvider',
@@ -7712,6 +7797,14 @@ export const TYPE_API: readonly TypeApiEntry[] = [
     declaration: 'export interface ProfileReconciliation {\n    warnings: string[];\n    pending: PendingModule[];\n    restartReason?: \'module-comparison\' | \'package-moved\';\n}',
   },
   {
+    name: 'ProjectArchive',
+    declaration: 'export interface ProjectArchive {\n    readonly version?: number;\n    readonly createdAt: string;\n    readonly updatedAt: string;\n    readonly auditType: string;\n    readonly specialAudits: readonly string[];\n    readonly auditees: readonly Auditee[];\n    readonly period: MonthSpan;\n    readonly tenure: MonthSpan;\n    readonly focus: readonly {\n        readonly content: string;\n        readonly section: string;\n    }[];\n    readonly scope: {\n        readonly tablePath: string;\n        readonly tableVersion: string;\n        readonly confirmedAt: string;\n    };\n    readonly tasks: readonly KickoffTask[];\n    readonly precheck: ArchiveReading;\n    readonly freshness: ArchiveReading;\n    readonly changes: readonly {\n        readonly date: string;\n        readonly what: string;\n        readonly basis: string;\n    }[];\n}',
+  },
+  {
+    name: 'ProjectEntry',
+    declaration: 'export interface ProjectEntry {\n    readonly workspaceId: WorkspaceId;\n    readonly path: string;\n    readonly read: ArchiveRead;\n}',
+  },
+  {
     name: 'ProjectionChangeListener',
     declaration: 'export type ProjectionChangeListener = (session: Session, key: Extract<keyof SessionProjectionMap, string>, value: unknown, seq: SessionSeq) => void;',
   },
@@ -7766,6 +7859,10 @@ export const TYPE_API: readonly TypeApiEntry[] = [
   {
     name: 'PromptPresentation',
     declaration: 'export interface PromptPresentation {\n    sections: AssembledSection[];\n    contexts: AssembledContext[];\n    variables: Record<string, string | undefined>;\n}',
+  },
+  {
+    name: 'PromptRequest',
+    declaration: 'export type PromptRequest = {\n    readonly kind: \'kickoff\';\n    readonly workspaceId: WorkspaceId;\n} | {\n    readonly kind: \'backfill\';\n    readonly workspaceId: WorkspaceId;\n} | {\n    readonly kind: \'rerun\';\n    readonly workspaceId: WorkspaceId;\n    readonly task: number;\n} | {\n    readonly kind: \'model\';\n    readonly workspaceId: WorkspaceId;\n    readonly model: string;\n};',
   },
   {
     name: 'PromptSection',
@@ -8262,6 +8359,10 @@ export const TYPE_API: readonly TypeApiEntry[] = [
   {
     name: 'SerializedNode',
     declaration: 'export type SerializedNode = SerializedElement | string;',
+  },
+  {
+    name: 'ServerLaunch',
+    declaration: 'export interface ServerLaunch {\n    readonly serverName: string;\n    readonly command: string;\n    readonly args: readonly string[];\n    readonly cwd: string | undefined;\n    readonly env: Readonly<Record<string, string>>;\n}',
   },
   {
     name: 'ServerResponse',
@@ -9400,6 +9501,14 @@ export const TYPE_API: readonly TypeApiEntry[] = [
     declaration: 'export interface SurfaceSnapshot {\n    readonly generation: number;\n    readonly tree: readonly SerializedNode[] | null;\n}',
   },
   {
+    name: 'SystemCheck',
+    declaration: 'export type SystemCheck = {\n    readonly state: \'ready\';\n    readonly checkedAt: string;\n} | {\n    readonly state: \'login-required\';\n    readonly checkedAt: string;\n    readonly message: string;\n} | {\n    readonly state: \'failed\';\n    readonly checkedAt: string;\n    readonly reason: SystemCheckFailure;\n    readonly message: string;\n};',
+  },
+  {
+    name: 'SystemCheckFailure',
+    declaration: 'export type SystemCheckFailure = \'unavailable\' | \'timeout\' | \'call-failed\' | \'unreadable\';',
+  },
+  {
     name: 'SystemMessage',
     declaration: 'export interface SystemMessage extends MessageBase {\n    readonly role: \'system\';\n    readonly source: MessageSourceMap[\'system-prompt\'];\n}',
   },
@@ -10114,6 +10223,18 @@ export const TYPE_API: readonly TypeApiEntry[] = [
   {
     name: 'WeeklyScheduleRecord',
     declaration: 'export interface WeeklyScheduleRecord {\n    readonly id: ScheduleId;\n    readonly kind: \'weekly\';\n    readonly title: string;\n    readonly prompt: string;\n    readonly time: string;\n    readonly timeZone: string;\n    readonly weekdays: number[];\n    readonly scheduledAt: string;\n}',
+  },
+  {
+    name: 'WorkbenchModel',
+    declaration: 'export interface WorkbenchModel {\n    readonly id: string;\n    readonly title: string;\n    readonly description: string;\n}',
+  },
+  {
+    name: 'WorkbenchOverview',
+    declaration: 'export interface WorkbenchOverview {\n    readonly pack: PackStatus;\n    readonly systems: readonly WorkbenchSystem[];\n    readonly models: readonly WorkbenchModel[];\n    readonly prompts: {\n        readonly kickoff: boolean;\n        readonly backfill: boolean;\n        readonly rerun: boolean;\n    };\n}',
+  },
+  {
+    name: 'WorkbenchSystem',
+    declaration: 'export interface WorkbenchSystem {\n    readonly id: string;\n    readonly title: string;\n    readonly description: string;\n    readonly login: boolean;\n}',
   },
   {
     name: 'WorkflowAgentEndInfo',

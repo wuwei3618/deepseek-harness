@@ -235,7 +235,7 @@ export class AuditWorkbenchService extends TypertRemoteService {
   /**
    * Run one system's own login tool, which opens its browser for the person, then check again.
    * @param id - manifest system id.
-   * @param signal - caller cancellation; aborting closes the server and its login browser.
+   * @param signal - caller cancellation; aborting closes the server.
    * @returns the System Login Status after the login tool returns.
    */
   @Remote

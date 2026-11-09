@@ -178,6 +178,69 @@ interface SessionActivity {
 
 Generated from source by `scripts/gen-cordis-catalog.ts` (verified fresh by `pnpm run verify-cordis-catalog` in doc-sync; regenerate with `pnpm run gen-cordis-catalog`) — the language sides differ only in locale-specific paired document paths. Signature blocks use a `ts cordis-catalog` fence and keep the original source JSDoc; dispatch modes are defined in the [primer](../cordis-primer.zh.md#dispatch-modes), and the framework-inherited `ctx` API lives in [cordis-api/inherited.md](../cordis-api/inherited.md).
 
+<a id="ctxauditworkbench--auditworkbenchservice"></a>
+
+### `ctx.auditWorkbench` — `AuditWorkbenchService`
+
+Remote reads and checks behind the workbench page.
+
+```ts cordis-catalog
+/**
+ * Record the launch values of one mounted audit server.
+ * @param launch - values the pack's MCP client row resolves to.
+ * @returns the disposer that forgets the server.
+ * @throws when a server of the same name is already recorded.
+ */
+registerServer(launch: ServerLaunch): () => void
+
+/**
+ * Read the pack, its workbench manifest, and the systems and Built-in Models it lists.
+ * @param signal - caller cancellation.
+ * @returns the pack status with the manifest's systems, Built-in Models, and available prompts.
+ */
+@Remote async overview(signal: AbortSignal): Promise<WorkbenchOverview>
+
+/**
+ * Read the Project Archive of every Workspace.
+ * @param signal - caller cancellation.
+ * @returns one entry per Workspace in registry order.
+ */
+@Remote async projects(signal: AbortSignal): Promise<ProjectEntry[]>
+
+/**
+ * Fill the manifest's prompt template for one request.
+ * @param request - prompt kind and its Workspace, task, or Built-in Model.
+ * @param signal - caller cancellation.
+ * @returns the prompt text for a new Session draft.
+ */
+@Remote async prompt(request: PromptRequest, signal: AbortSignal): Promise<string>
+
+/**
+ * Check one system's System Login Status with its session tool.
+ * @param id - manifest system id.
+ * @param signal - caller cancellation; aborting closes the server.
+ * @returns the reading, or why none was produced.
+ */
+@Remote async checkSystem(id: string, signal: AbortSignal): Promise<SystemCheck>
+
+/**
+ * Run one system's own login tool, which opens its browser for the person, then check again.
+ * @param id - manifest system id.
+ * @param signal - caller cancellation; aborting closes the server.
+ * @returns the System Login Status after the login tool returns.
+ */
+@Remote async login(id: string, signal: AbortSignal): Promise<SystemCheck>
+
+/**
+ * Open one recorded Kickoff Task output with the desktop's default application.
+ * @param request - Workspace, task index, and output index in the Project Archive.
+ * @param signal - caller cancellation.
+ */
+@Remote async openOutput(request: OutputRequest, signal: AbortSignal): Promise<void>
+```
+
+Source: [`packages/audit/audit-workbench/src/service.ts`](../../packages/audit/audit-workbench/src/service.ts)
+
 <a id="ctxdirectorypicker--directorypicker-abstract-seam"></a>
 
 ### `ctx.directoryPicker` — `DirectoryPicker` (abstract seam)

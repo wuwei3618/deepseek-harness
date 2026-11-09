@@ -51,6 +51,7 @@ kind: "package-group"
 | [`resources/`](resources/README.zh.md) | 统一资源模型：`useResource` 会话标准钩子背后的协议提供方 | `ctx.resources` |
 | [`ui-sidebar-files/`](ui-sidebar-files/README.zh.md) | 工作区文件页，以及停靠与浮动文件预览旁每个分栏一棵的工作区目录树 | — |
 | [`ui-brand-cscec8b/`](ui-brand-cscec8b/README.zh.md) | 用八局印章填充浏览器品牌 slot 和首页 frame 层 | — |
+| [`ui-audit-workbench/`](ui-audit-workbench/README.zh.md) | 桌面端审计工作台页面，显示系统登录状态和每个审计项目的项目档案 | — |
 | [`ui-brand-official/`](ui-brand-official/README.zh.md) | 用官方名称与标记填充通用浏览器品牌 slot | — |
 | [`ui-workspace/`](ui-workspace/README.zh.md) | 提供工作区选择与创建界面 | — |
 | [`ui-conversation/`](ui-conversation/README.zh.md) | 展示当前对话及其输入界面 | — |

@@ -1,0 +1,19 @@
+# Bilingual-pair consistency record for 2026-11-09-audit-workbench.md (docs/i18n/README.md): per heading
+# section, a hash of its English and Chinese blocks outside code blocks and generated regions.
+# After editing either side, bring the other along and re-record with:
+#   pnpm run verify-translation-pairing --write .agents/notes/implemented/feature/2026-11-09-audit-workbench.md
+/agent-note-audit-workbench-reads-the-pack-and-the-project-archive:
+  en: 0c4958c6f52a0be0
+  zh: 2b9da16d877f3ba7
+/agent-note-audit-workbench-reads-the-pack-and-the-project-archive/problem:
+  en: b4735475db78ff97
+  zh: aeedc5900e967598
+/agent-note-audit-workbench-reads-the-pack-and-the-project-archive/decision:
+  en: bf25759f7b6514d5
+  zh: c9bc230c50231dad
+/agent-note-audit-workbench-reads-the-pack-and-the-project-archive/alternatives-considered:
+  en: a00f077ff5d7ce71
+  zh: 74f22361b2fe9d4d
+/agent-note-audit-workbench-reads-the-pack-and-the-project-archive/consequences:
+  en: 25d979e1521ea580
+  zh: 06bf5a8e537a2773
