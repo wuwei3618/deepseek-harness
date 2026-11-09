@@ -1,4 +1,4 @@
-/** Home frame layer: clicks on blank home space press a fading seal impression below the Conversation content. */
+/** Home frame layer: clicks on blank home space press a seal whose wet impression dries and fades below the Conversation content. */
 import { useEffect, useId, useRef, useState, type CSSProperties, type MouseEvent, type ReactNode } from 'react'
 import type { HeroFrameOwnerProps } from '@deepseek-ai/dsh-client-ui-conversation/client'
 import { SEAL_STAMP_PATH, SEAL_VIEWBOX } from './artwork.ts'
@@ -19,25 +19,25 @@ function tiltOf(id: number): number {
   return (id * 5) % 13 - 6
 }
 
-/** Ink droplets thrown from the rim as the seal lands. */
-const DROPLETS = 8
-
-/**
- * Direction and reach of one droplet, varied per impression so splashes differ.
- * @param id - the impression's sequence number.
- * @param index - the droplet's position around the rim.
- * @returns the droplet's angle in degrees and its travel in pixels.
- */
-function dropletOf(id: number, index: number): { angle: number; distance: number } {
-  return { angle: index * (360 / DROPLETS) + ((id * 7 + index * 11) % 17) - 8, distance: 14 + ((id * 3 + index * 5) % 4) * 4 }
-}
-
 /** One impression, positioned in the stamp layer's own coordinates. */
 interface Stamp {
   readonly id: number
   readonly x: number
   readonly y: number
   readonly tilt: number
+}
+
+/**
+ * One drawing of the seal face, shared by the impression, its wet-ink bleed, and the descending seal.
+ * @param props - the layer's class and the optional SVG filter reference for the path.
+ * @returns the seal face as a square SVG.
+ */
+function SealFace({ className, filter }: { readonly className: string | undefined; readonly filter?: string | undefined }) {
+  return (
+    <svg className={className} viewBox={`0 0 ${SEAL_VIEWBOX} ${SEAL_VIEWBOX}`} fill="none">
+      <path d={SEAL_STAMP_PATH} fill="currentColor" fillRule="evenodd" filter={filter} />
+    </svg>
+  )
 }
 
 /** Frame owner state and the wrapped content. */
@@ -102,15 +102,9 @@ export function SealStamp({ hero, children }: SealStampProps) {
               onAnimationEnd={(event) => { if (event.target === event.currentTarget) remove(stamp.id) }}
             >
               <span className={css.shadow} />
-              <span className={css.ripple} />
-              <span className={css.ripple} data-late="" />
-              {Array.from({ length: DROPLETS }, (_, index) => {
-                const { angle, distance } = dropletOf(stamp.id, index)
-                return <span key={index} className={css.droplet} style={{ '--seal-drop-angle': `${angle}deg`, '--seal-drop-distance': `${distance}px` } as CSSProperties} />
-              })}
-              <svg className={css.impression} viewBox={`0 0 ${SEAL_VIEWBOX} ${SEAL_VIEWBOX}`} fill="none">
-                <path d={SEAL_STAMP_PATH} fill="currentColor" fillRule="evenodd" filter={`url(#${inkId})`} />
-              </svg>
+              <SealFace className={css.impression} filter={`url(#${inkId})`} />
+              <SealFace className={css.bleed} />
+              <SealFace className={css.seal} />
             </span>
           ))}
         </div>

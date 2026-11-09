@@ -42,9 +42,8 @@ describe('seal stamp frame layer', () => {
     const filter = view.container.querySelector('[data-home-stamp] filter')!
     expect(impression?.getAttribute('filter')).toBe(`url(#${filter.id})`)
     expect(filter.id).toMatch(/^seal-stamp-ink-[^:]+$/u)
-    const droplets = [...stamp!.querySelectorAll<HTMLElement>('span')].filter(part => part.style.getPropertyValue('--seal-drop-angle') !== '')
-    expect(droplets.map(part => part.style.getPropertyValue('--seal-drop-angle'))).toEqual(['-8deg', '48deg', '87deg', '143deg', '182deg', '221deg', '277deg', '316deg'])
-    expect(droplets.map(part => part.style.getPropertyValue('--seal-drop-distance'))).toEqual(['14px', '18px', '22px', '26px', '14px', '18px', '22px', '26px'])
+    expect(stamp!.children).toHaveLength(4)
+    expect(stamp!.querySelectorAll('path[filter]')).toHaveLength(1)
   })
 
   it('ignores controls, the composer card, portaled overlays, and secondary clicks', () => {
