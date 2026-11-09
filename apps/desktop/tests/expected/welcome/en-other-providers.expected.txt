@@ -1,0 +1,6 @@
+CSCEC8B Audit Agent
+CSCEC8B Audit Agent
+Use models from other providers
+After you continue, open Settings > Models and choose Add model provider. Pick OpenAI, Anthropic, Kimi, or another built-in provider, or connect any OpenAI- or Anthropic-compatible API, such as a model deployed on your own network.
+Continue to workspace
+Back

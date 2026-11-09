@@ -3,20 +3,20 @@
 # After editing either side, bring the other along and re-record with:
 #   pnpm run verify-translation-pairing --write README.md
 /cscec8b-audit-agent:
-  en: 24a9eee6d796ade9
-  zh: 6a996e1871b4451e
+  en: 8863743ac696204a
+  zh: 28e4af6a4cd1a1ab
 /cscec8b-audit-agent/before-you-use-it:
-  en: a270ab7d647c7e02
-  zh: 1b7939c8c82eccdf
+  en: 6559554216bbfd84
+  zh: 36f5e52e50dc5607
 /cscec8b-audit-agent/run:
   en: 825b6c0a70089bfa
   zh: 78cae6d863597eaf
 /cscec8b-audit-agent/run/desktop-app:
-  en: 0913d766b6ca7272
-  zh: fbf54e247d41795e
+  en: 35af907eca19c21c
+  zh: cb972ed24a688d66
 /cscec8b-audit-agent/run/command-line:
-  en: acf3509d028a66f6
-  zh: ce0fcb033eaeb488
+  en: 9f10139086cda665
+  zh: b9c0f0b7da90eaca
 /cscec8b-audit-agent/run/run-from-source:
   en: 669ec2b3871bb2ba
   zh: bdbdeb48054cf902

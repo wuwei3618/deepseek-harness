@@ -2,4 +2,5 @@ CSCEC8B Audit Agent
 CSCEC8B Audit Agent
 Welcome to CSCEC8B Audit Agent
 Build potential. Explore intelligence.
-Add API Key
+Add DeepSeek API key
+Use another model provider

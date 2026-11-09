@@ -39,6 +39,7 @@ function mount(language = 'zh-CN', takeNotice = vi.fn<() => Promise<WelcomeNotic
       document.title, document.querySelector('img')!.alt, document.getElementById(heading)!.textContent,
       ...heading === 'welcome-heading' ? [document.querySelector('#welcome-description')!.textContent] : [],
       ...heading === 'key-title' ? [document.querySelector('#key-description')!.textContent, `${input.placeholder} [password]`] : [],
+      ...heading === 'providers-title' ? [document.querySelector('#providers-description')!.textContent] : [],
       ...[...document.querySelectorAll('button')].filter(item => item.closest('[hidden]') === null)
         .map(item => `${item.textContent || item.getAttribute('aria-label')}${item.disabled ? ' [disabled]' : ''}`),
       '',
@@ -57,6 +58,25 @@ describe('desktop welcome presentation', () => {
     expect(view.document.activeElement).toBe(view.input)
     expect(view.input.type).toBe('password')
     await expect(view.copy()).toMatchFileSnapshot(`./expected/welcome/${language}-api-key.expected.txt`)
+  })
+
+  it.each(['zh-CN', 'en'])('points the %s entry to other model providers and enters the workspace without a key', async (language) => {
+    const view = mount(language)
+    fireEvent.click(view.button('#other-providers'))
+    expect(view.document.querySelector('main')!.getAttribute('aria-labelledby')).toBe('providers-title')
+    await expect(view.copy()).toMatchFileSnapshot(`./expected/welcome/${language}-other-providers.expected.txt`)
+    fireEvent.click(view.button('#providers-continue'))
+    await vi.waitFor(() => { expect(view.api.skip).toHaveBeenCalledOnce() })
+    expect(view.api.saveApiKey).not.toHaveBeenCalled()
+  })
+
+  it('returns from the other-providers page to the entry', () => {
+    const view = mount()
+    fireEvent.click(view.button('#other-providers'))
+    fireEvent.click(view.button('#providers-back'))
+    expect(view.document.querySelector<HTMLElement>('#providers-page')!.hidden).toBe(true)
+    expect(view.document.activeElement).toBe(view.button('#api-key'))
+    expect(view.api.skip).not.toHaveBeenCalled()
   })
 
   it('sends one trimmed key, prevents competing actions, and clears it after saving', async () => {

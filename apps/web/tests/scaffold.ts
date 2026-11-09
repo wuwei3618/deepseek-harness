@@ -119,7 +119,7 @@ export const WELCOME_NOTICE_VERSION = '2026-11-08.1'
 export const WELCOME_NOTICE_COPY = {
   zh: {
     title: '使用须知',
-    body: '八局审计智能体是中国建筑第八工程局有限公司的内部审计辅助工具，基于开源项目 DeepSeek Harness 构建。对话内容和你提供给它的文件会发送到 DeepSeek 模型服务进行分析。\n\n智能体给出的结论仅供参考，请结合审计底稿和原始资料复核后再采用。',
+    body: '八局审计智能体是中国建筑第八工程局有限公司的内部审计辅助工具，基于开源项目 DeepSeek Harness 构建。对话内容和你提供给它的文件会发送到你配置的模型服务（默认为 DeepSeek）进行分析。\n\n智能体给出的结论仅供参考，请结合审计底稿和原始资料复核后再采用。',
     continueLabel: '继续',
   },
 } as const

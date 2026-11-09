@@ -1,4 +1,7 @@
-/** Desktop welcome presentation; the entry offers API-key setup only, and credential operations stay in the preload. */
+/**
+ * Desktop welcome presentation; the entry offers DeepSeek API-key setup or directions to other model providers,
+ * and credential operations stay in the preload.
+ */
 import { useEffect, useRef, useState } from 'react'
 import type { FormEvent } from 'react'
 import { Toast } from '@deepseek-ai/dsh-client-ui-primitives/src/Toast.tsx'
@@ -6,7 +9,7 @@ import { StateDot } from '@deepseek-ai/dsh-client-ui-primitives/src/StateDot.tsx
 import type { AccountView } from '@deepseek-ai/dsh-deepseek-account/types'
 import type { WelcomeApi } from '../welcome-api.ts'
 
-type Page = 'entry' | 'key' | 'account'
+type Page = 'entry' | 'key' | 'providers' | 'account'
 
 /**
  * Render the standalone welcome flow using shell-owned operations and localized copy.
@@ -169,7 +172,7 @@ export function Welcome({ api }: { api: WelcomeApi }) {
   const title = phase === 'initializing' ? m.welcomeAuthStarting
     : waiting ? m.welcomeAuthWaiting : phase === 'expired' ? m.welcomeAuthExpired
       : phase === 'failed' ? m.welcomeAuthFailed : m.welcomeAuthExchanging
-  const heading = page === 'entry' ? 'welcome-heading' : page === 'key' ? 'key-title' : 'auth-status'
+  const heading = page === 'entry' ? 'welcome-heading' : page === 'key' ? 'key-title' : page === 'providers' ? 'providers-title' : 'auth-status'
 
   return <>
     {expiryNotice && <Toast text={m.welcomeSessionExpired} onDone={() => { setExpiryNotice(false) }} />}
@@ -190,6 +193,11 @@ export function Welcome({ api }: { api: WelcomeApi }) {
           <p id="key-error" className="key-error" role="alert" hidden={error === ''}>{error}</p>
         </div>
       </form>
+      <section id="providers-page" className="key-heading" hidden={page !== 'providers'}>
+        <h1 id="providers-title">{m.welcomeProvidersTitle}</h1>
+        <p id="providers-description">{m.welcomeProvidersDescription}</p>
+        <p id="providers-error" role="alert" hidden={error === ''}>{error}</p>
+      </section>
       <section id="auth-page" className={`key-heading ${waiting ? 'auth-waiting' : phase === 'expired' ? 'auth-expired' : ''}`}
         hidden={page !== 'account'} aria-live="polite">
         <h1 id="auth-status">{title}</h1>
@@ -210,6 +218,14 @@ export function Welcome({ api }: { api: WelcomeApi }) {
       </div>
       <div id="entry-actions" className="actions" hidden={page !== 'entry'}>
         <button ref={keyButton} id="api-key" className="primary" type="button" onClick={() => { void api.analytics?.('auth_page_click', { button_name: 'api-key' }); navigate('key') }}>{m.welcomeApiKey}</button>
+        <button id="other-providers" className="secondary" type="button" onClick={() => { setError(''); navigate('providers') }}>{m.welcomeOtherProviders}</button>
+      </div>
+      <div id="providers-actions" className="actions" hidden={page !== 'providers'}>
+        <button id="providers-continue" className="primary" type="button" disabled={busy} onClick={() => { void skip() }}>{m.welcomeProvidersContinue}</button>
+        <button id="providers-back" className="back" type="button" disabled={busy} onClick={() => {
+          if (busyRef.current) return
+          setError(''); focusEntry.current = true; navigate('entry')
+        }}>{m.welcomeKeyBack}</button>
       </div>
       <div id="key-actions" className="actions" hidden={page !== 'key'}>
         <button id="save-key" className="primary" type="submit" form="key-form" disabled={busy || draft.trim() === ''}>{m.welcomeKeySave}</button>
