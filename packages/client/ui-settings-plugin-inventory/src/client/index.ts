@@ -12,6 +12,7 @@ import type {} from '@deepseek-ai/dsh-client-ui-agent-preset/client'
 import { presetDisplayText } from '@deepseek-ai/dsh-agent-preset-registry/display'
 import { PluginInventorySettingsTab, type PluginInventorySettingsTabInjected } from './PluginInventorySettingsTab.tsx'
 import { en, ja, es, fr, de, ru, pt, zh, type PluginInventoryLocaleKey } from './locales.ts'
+import { Config, CONFIG_GLOBAL } from '../config.ts'
 
 export type { PluginInventorySettingsTabInjected, PluginInventorySettingsTabProps } from './PluginInventorySettingsTab.tsx'
 export type { PluginInventoryLocaleKey } from './locales.ts'
@@ -29,8 +30,14 @@ export const NS = 'settings.pluginInventory'
 /** Services required by the Settings registration and generated Remote face. */
 export const inject = ['slots', 'locale', 'remote', 'remote.pluginInventory', 'modules']
 
-/** Contribute the lazy inventory tab to the Plugins settings section. */
+/**
+ * Contribute the lazy inventory tab to the Plugins settings section.
+ * @param ctx - plugin-owned Client context.
+ */
 export function apply(ctx: ClientContext): void {
+  // Pages served without the Host entry carry no global and keep the defaults.
+  const page = globalThis as Partial<Record<typeof CONFIG_GLOBAL, unknown>>
+  const { showModuleName } = Config(page[CONFIG_GLOBAL] ?? {})
   ctx.effect(() => ctx.locale.register(NS, { zh, en, ja, es, fr, de, ru, pt }), 'ui-settings-plugin-inventory: dictionaries')
 
   const t = ctx.locale.bind(NS)
@@ -47,7 +54,7 @@ export function apply(ctx: ClientContext): void {
   const presetName: PluginInventorySettingsTabInjected['presetName'] = preset =>
     presetDisplayText(preset, agentPresetCopy).name
   const injected = (): PluginInventorySettingsTabInjected => ({
-    list, presetName,
+    list, presetName, showModuleName,
     resolveText: text => ctx.locale.resolveText(text),
     hooks: { clientSync: ctx.modules.entries.state },
     retryClient: () => { void ctx.modules.entries.retry().catch((error: unknown) => { ctx.logger.error(error) }) },
