@@ -68,6 +68,13 @@ jobs:
       - uses: actions/setup-node@v7.0.0
         with:
           node-version: '24'
+      # The Icon Composer app icon needs Xcode 26 or later; the image's default Xcode may be older.
+      - name: Select the newest Xcode
+        if: runner.os == 'macOS'
+        run: |
+          xcode=$(ls -d /Applications/Xcode_*.app | sort -V | tail -n 1)
+          echo "DEVELOPER_DIR=$xcode/Contents/Developer" >> "$GITHUB_ENV"
+          DEVELOPER_DIR="$xcode/Contents/Developer" actool --version
       # PowerShell keeps Git Bash's GNU tar off PATH on Windows; it reads `D:` in absolute archive
       # paths as a remote host, while the system bsdtar that packaging expects does not.
       - name: Install locked dependencies

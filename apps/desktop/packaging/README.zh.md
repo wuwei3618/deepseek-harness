@@ -80,7 +80,7 @@ production 发布使用产品版本本身，不传 `--build-version`。其上传
 
 不选择机器 preset 时，打包、上传以及手动 macOS 签名检查（未签名构建除外）使用 `apps/desktop/.env.windows` 或 `.env.macos`，由目标平台选择。复制对应的 [Windows 模板](../.env.windows.example) 或 [macOS 模板](../.env.macos.example)，填写本机配置；Git 忽略这两个本地文件，安装产物也不包含它们。发布字段只从选定的配置文件读取，不回退到系统或 shell 中的同名变量；`PATH`、代理和构建工具环境仍保留。发布版本是命令参数而非发布字段，上传从打包写下的完成记录中读取它。文件使用 UTF-8，支持 BOM；相对证书、SignTool、Apple API Key 和钥匙串路径以 `apps/desktop` 为基准，变量值不做 shell 展开，包含 `#` 或空格的密码需要引号。Windows CI 读取相同的机器 preset。
 
-每条打包命令在构建与下载前检查应用 ID 以及该模式需要的更新与签名配置，随后探测本次运行要用的外部工具：归档读取工具，以及 Windows 目标的安装器编译器。macOS 检查身份、Team ID、一套完整公证凭据、`CSC_LINK` 指定的可读本地 p12 文件、显式配置的 `CSC_KEY_PASSWORD`，以及引用的 API Key 和钥匙串文件；Windows 检查公开代码签名证书、SignTool 文件、容器名称和 PIN 格式。仅准备 Windows 资源以及两个平台上的显式未签名打包均不要求签名凭据。配置检查不验证 PIN 是否正确、Token 是否登录、钥匙串是否解锁或 Apple 是否接受凭据；实际签名与公证负责这些检查。未选择机器 preset 时，`--build-version auto` 会访问目标 bucket，`--check` 下同样如此。单独运行相同检查：
+每条打包命令在构建与下载前检查应用 ID 以及该模式需要的更新与签名配置，随后探测本次运行要用的外部工具：归档读取工具、Windows 目标的安装器编译器，以及 macOS 目标用于编译应用图标的 Xcode 26 或更高版本 `actool`。macOS 检查身份、Team ID、一套完整公证凭据、`CSC_LINK` 指定的可读本地 p12 文件、显式配置的 `CSC_KEY_PASSWORD`，以及引用的 API Key 和钥匙串文件；Windows 检查公开代码签名证书、SignTool 文件、容器名称和 PIN 格式。仅准备 Windows 资源以及两个平台上的显式未签名打包均不要求签名凭据。配置检查不验证 PIN 是否正确、Token 是否登录、钥匙串是否解锁或 Apple 是否接受凭据；实际签名与公证负责这些检查。未选择机器 preset 时，`--build-version auto` 会访问目标 bucket，`--check` 下同样如此。单独运行相同检查：
 
 ```sh
 pnpm --dir apps/desktop run check:package
@@ -179,13 +179,13 @@ pnpm run package:desktop:mac:x64:unsigned
 
 添加 `--check` 仅验证本地配置和工具而不构建，或添加 `--dir` 只生成解包应用。DMG 路径为 `apps/desktop/.desktop-build/targets/<target>/unsigned-artifacts/cscec8b-audit-agent-<version>-mac-<arch>-unsigned.dmg`。所有检查通过后，命令打印 `DMG:` 及其绝对路径。打开后将应用复制到本地测试目录。
 
-这些命令忽略 `.env.macos` 和继承的发布配置，使用 `com.cscec8b.auditagent` 作为应用 ID，并省略自动更新和强制更新配置。构建工具、标准网络代理与 `DSH_DESKTOP_NPM_REGISTRY` 仍可从 shell 提供。它们跳过 Developer ID 签名、Apple 公证、临时签名钥匙串和公证代理修改。Electron 使用无需证书的本地 ad-hoc 签名，以便修改后的可执行文件能够运行；DMG 不签名。准备阶段和组装后的应用仍执行运行时完整性与冒烟检查。本地构建不生成更新源、ZIP 或发布完成记录，上传命令无法发布这些产物。macOS 可能要求在“系统设置 → 隐私与安全性”中批准打开未经公证的应用。这类构建不放入 Computer Use helper，Computer Use 准备时会报告 helper 缺失。
+应用图标是带浅色和深色两种外观的 Icon Composer 文件，因此构建需要 Xcode 26 或更高版本；`xcode-select -p` 指向 Command Line Tools 或旧版 Xcode 时，在命令前加 `DEVELOPER_DIR=/Applications/<Xcode>.app/Contents/Developer`。这些命令忽略 `.env.macos` 和继承的发布配置，使用 `com.cscec8b.auditagent` 作为应用 ID，并省略自动更新和强制更新配置。构建工具、标准网络代理与 `DSH_DESKTOP_NPM_REGISTRY` 仍可从 shell 提供。它们跳过 Developer ID 签名、Apple 公证、临时签名钥匙串和公证代理修改。Electron 使用无需证书的本地 ad-hoc 签名，以便修改后的可执行文件能够运行；DMG 不签名。准备阶段和组装后的应用仍执行运行时完整性与冒烟检查。本地构建不生成更新源、ZIP 或发布完成记录，上传命令无法发布这些产物。macOS 可能要求在“系统设置 → 隐私与安全性”中批准打开未经公证的应用。这类构建不放入 Computer Use helper，Computer Use 准备时会报告 helper 缺失。
 
 <a id="unsigned-hosted-actions"></a>
 
 ## 在 GitHub 托管 runner 上打未签名安装包
 
-`Package audit Desktop · unsigned` [工作流](../../../.github/workflows/audit-desktop-unsigned.yml)在 GitHub 托管的 `windows-2025`、`macos-15`（Apple Silicon）和 `macos-15-intel` runner 上运行[未签名 Windows](#unsigned-windows-test-installer) 与[本地 macOS](#local-macos-dmg-without-release-signing) 命令，不需要自托管机器、preset 或凭据。在 Actions 中点 **Run workflow**，选择 `all` 或单个目标；或推送名为 `audit-desktop-v*` 的 tag 打包全部目标；修改该工作流文件的 PR 也会打包全部目标。每个 job 上传包含 EXE 或 DMG 的 `cscec8b-audit-agent-<target>-unsigned-<run_id>`（保留 30 天）和 `packaging-logs-<target>-<run_id>-<run_attempt>`（保留 14 天）；运行摘要列出每个安装包的 SHA-256 和源码提交。该工作流不发布任何内容，产出的安装包不含更新源或强制更新策略。fork 仓库需由所有者先为仓库启用 Actions 才能运行。
+`Package audit Desktop · unsigned` [工作流](../../../.github/workflows/audit-desktop-unsigned.yml)在 GitHub 托管的 `windows-2025`、`macos-15`（Apple Silicon）和 `macos-15-intel` runner 上运行[未签名 Windows](#unsigned-windows-test-installer) 与[本地 macOS](#local-macos-dmg-without-release-signing) 命令，不需要自托管机器、preset 或凭据。在 Actions 中点 **Run workflow**，选择 `all` 或单个目标；或推送名为 `audit-desktop-v*` 的 tag 打包全部目标；修改该工作流文件的 PR 也会打包全部目标。每个 job 上传包含 EXE 或 DMG 的 `cscec8b-audit-agent-<target>-unsigned-<run_id>`（保留 30 天）和 `packaging-logs-<target>-<run_id>-<run_attempt>`（保留 14 天）；运行摘要列出每个安装包的 SHA-256 和源码提交。macOS job 把 `DEVELOPER_DIR` 设为 runner 上最新安装的 Xcode。该工作流不发布任何内容，产出的安装包不含更新源或强制更新策略。fork 仓库需由所有者先为仓库启用 Actions 才能运行。
 
 <a id="macos-release-signing"></a>
 
