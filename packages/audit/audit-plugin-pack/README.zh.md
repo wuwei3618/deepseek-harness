@@ -9,7 +9,7 @@ kind: "package-reference"
 
 ## 概述
 
-桌面端 `audit` preset 的 loader 分组。加载时它读取解压在 `$DSH_HOME/audit-plugins` 的 audit-plugins 发布包（`audit-plugins-<version>-dsh.zip`），并挂载该发布包的工具行：它的 Host 插件、技能提供方，以及每个审计 MCP 服务一条 [`dsh-mcp-client`](../../mcp/mcp-client/README.zh.md) 行。发布包与安装包分开分发，因此更新插件包只需替换该目录并重启，安装包里也不会带插件包的代码。没有该目录时，这一行不挂载任何内容，只记录一条警告。
+桌面端 `audit` preset 和命令行审计 profile 的 loader 分组。加载时它读取解压在 `$DSH_HOME/audit-plugins` 的 audit-plugins 发布包（`audit-plugins-<version>-dsh.zip`），并挂载该发布包的工具行：它的 Host 插件、技能提供方，以及每个审计 MCP 服务一条 [`dsh-mcp-client`](../../mcp/mcp-client/README.zh.md) 行。发布包与安装包分开分发，因此更新插件包只需替换该目录并重启，安装包里也不会带插件包的代码。没有该目录时，这一行不挂载任何内容，只记录一条警告。
 
 ## 目录
 
@@ -24,7 +24,7 @@ kind: "package-reference"
 <a id="use-this-package"></a>
 ## 使用此包
 
-[`dsh-audit-desktop`](../audit-desktop/README.zh.md) 把这一行放在 `audit` preset 的最后。桌面端把 `DSH_HOME` 设为 `~/.cscec8b-audit-agent`，所以插件包目录在 macOS 上是 `~/.cscec8b-audit-agent/audit-plugins`，在 Windows 上是 `%USERPROFILE%\.cscec8b-audit-agent\audit-plugins`。解压发布包，把顶层目录 `audit-plugins-<version>-dsh` 改名为 `audit-plugins`，移到上述位置，使其 `package.json` 直接位于该目录下，然后重启。MCP 服务通过 `uv` 启动，需要先安装 `uv`；第一次进入审计会话时，会按插件包自己的安装说明在 `$DSH_HOME/audit-runtime/venvs` 下建立它们的 Python 环境。
+[`dsh-audit-desktop`](../audit-desktop/README.zh.md) 把这一行放在 `audit` preset 的最后，[`dsh-audit-agent`](../audit-agent/README.zh.md) 以 `root: ~/.cscec8b-audit-agent/audit-plugins` 把它插入命令行审计 profile 的根上，因此解压一份插件包即可同时用于两者。桌面端把 `DSH_HOME` 设为 `~/.cscec8b-audit-agent`，所以插件包目录在 macOS 上是 `~/.cscec8b-audit-agent/audit-plugins`，在 Windows 上是 `%USERPROFILE%\.cscec8b-audit-agent\audit-plugins`。解压发布包，把顶层目录 `audit-plugins-<version>-dsh` 改名为 `audit-plugins`，移到上述位置，使其 `package.json` 直接位于该目录下，然后重启。MCP 服务通过 `uv` 启动，需要先安装 `uv`；第一次进入审计会话时，会按插件包自己的安装说明在 `$DSH_HOME/audit-runtime/venvs` 下建立它们的 Python 环境。
 
 ```yaml
 - id: audit-plugin-pack
@@ -72,7 +72,6 @@ MCP 服务连接后工具列表增长一次；晚连接的服务会改变之后�
 
 <a id="known-limitations-and-deferred-work"></a>
 
-- **只有桌面端挂载插件包** — 命令行审计 profile 不包含这一行。
 - **安装需要手动解压** — 桌面端没有导入页面；缺少插件包的警告只出现在 Host 日志中。
 - **不接管分组以外的行** — 如果新版本在其 preset 中 `audit-toolkit` 以外的位置加入工具，需要在 `dsh-audit-desktop` 中加入对应的行。
 

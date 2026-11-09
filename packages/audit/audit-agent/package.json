@@ -36,6 +36,7 @@
     }
   },
   "dependencies": {
+    "@deepseek-ai/dsh-audit-plugin-pack": "workspace:*",
     "@deepseek-ai/dsh-audit-skills": "workspace:*"
   },
   "peerDependencies": {

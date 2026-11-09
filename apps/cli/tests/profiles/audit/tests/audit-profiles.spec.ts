@@ -75,12 +75,21 @@ describe.each(['audit', 'audit-sdk', 'audit-acp', 'audit-desktop'])('the %s prof
 describe.each(['audit', 'audit-sdk', 'audit-acp'])('the command-line %s profile', (name) => {
   const rows = compose(name)
 
-  it('offers reading and new-file tools without edit or delegation', () => {
+  it('offers reading and new-file tools without edit, and spawned subagents and workflows without forks or teams', () => {
     expect(config(rows, 'tool-fs')).toMatchObject({ read: true, readImage: true, write: true, edit: false, applyPatch: false })
-    for (const id of ['tool-subagent-control', 'tool-subagent', 'tool-subagent-fork', 'tool-agent-team', 'tool-workflow']) {
-      expect(row(rows, id).disabled, id).toBe(true)
+    for (const id of ['tool-subagent-fork', 'tool-agent-team']) expect(row(rows, id).disabled, id).toBe(true)
+    for (const id of ['tool-bash', 'tool-web', 'tool-skill', 'tool-subagent-control', 'tool-subagent', 'workflow-ptc', 'tool-workflow']) {
+      expect(row(rows, id).disabled, id).not.toBe(true)
     }
-    for (const id of ['tool-bash', 'tool-web', 'tool-skill']) expect(row(rows, id).disabled, id).not.toBe(true)
+    expect(config(rows, 'tool-subagent')).toMatchObject({ provider: 'spawn', toolName: 'subagent' })
+  })
+
+  it('mounts the audit plugin pack that Desktop reads, with room for its long skills', () => {
+    expect(row(rows, 'audit-plugin-pack')).toMatchObject({
+      name: '@deepseek-ai/dsh-audit-plugin-pack', config: { root: '~/.cscec8b-audit-agent/audit-plugins' },
+    })
+    expect(row(rows, 'audit-plugin-pack').disabled).toBeUndefined()
+    expect(config(rows, 'tool-result-pruner')).toEqual({ thresholdChars: 40000, headChars: 20000, tailChars: 8000 })
   })
 
   it('replaces local skill discovery with the bundled audit skills', () => {

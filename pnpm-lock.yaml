@@ -2029,6 +2029,9 @@ importers:
 
   packages/audit/audit-agent:
     dependencies:
+      '@deepseek-ai/dsh-audit-plugin-pack':
+        specifier: workspace:*
+        version: link:../audit-plugin-pack
       '@deepseek-ai/dsh-audit-skills':
         specifier: workspace:*
         version: link:../audit-skills

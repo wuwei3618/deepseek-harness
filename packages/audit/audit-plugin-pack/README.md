@@ -9,7 +9,7 @@ English | [中文](README.zh.md)
 
 ## Summary
 
-A loader group for the Desktop `audit` preset. At load it reads the audit-plugins release (`audit-plugins-<version>-dsh.zip`) unpacked at `$DSH_HOME/audit-plugins` and mounts the toolkit rows of that release: its Host plugin, its skill provider, and one [`dsh-mcp-client`](../../mcp/mcp-client/README.md) row per audit MCP server. The release is distributed apart from the installer, so a person updates the pack by replacing the directory and restarting, and the installer never carries the pack's code. Without the directory the row mounts nothing and logs a warning.
+A loader group for the Desktop `audit` preset and the command-line audit profiles. At load it reads the audit-plugins release (`audit-plugins-<version>-dsh.zip`) unpacked at `$DSH_HOME/audit-plugins` and mounts the toolkit rows of that release: its Host plugin, its skill provider, and one [`dsh-mcp-client`](../../mcp/mcp-client/README.md) row per audit MCP server. The release is distributed apart from the installer, so a person updates the pack by replacing the directory and restarting, and the installer never carries the pack's code. Without the directory the row mounts nothing and logs a warning.
 
 ## Table of Contents
 
@@ -24,7 +24,7 @@ A loader group for the Desktop `audit` preset. At load it reads the audit-plugin
 <a id="use-this-package"></a>
 ## Use this package
 
-[`dsh-audit-desktop`](../audit-desktop/README.md) lists the row last in the `audit` preset. Desktop sets `DSH_HOME` to `~/.cscec8b-audit-agent`, so the pack directory is `~/.cscec8b-audit-agent/audit-plugins` on macOS and `%USERPROFILE%\.cscec8b-audit-agent\audit-plugins` on Windows. Unpack the release zip, rename its top directory `audit-plugins-<version>-dsh` to `audit-plugins`, move it there so that its `package.json` sits directly inside, and restart. The MCP servers start through `uv`, which must be installed; the first audit session builds their Python environments under `$DSH_HOME/audit-runtime/venvs`, as the pack's own installation guide describes.
+[`dsh-audit-desktop`](../audit-desktop/README.md) lists the row last in the `audit` preset, and [`dsh-audit-agent`](../audit-agent/README.md) inserts it at the root of the command-line audit profiles with `root: ~/.cscec8b-audit-agent/audit-plugins`, so one unpacked pack serves both. Desktop sets `DSH_HOME` to `~/.cscec8b-audit-agent`, so the pack directory is `~/.cscec8b-audit-agent/audit-plugins` on macOS and `%USERPROFILE%\.cscec8b-audit-agent\audit-plugins` on Windows. Unpack the release zip, rename its top directory `audit-plugins-<version>-dsh` to `audit-plugins`, move it there so that its `package.json` sits directly inside, and restart. The MCP servers start through `uv`, which must be installed; the first audit session builds their Python environments under `$DSH_HOME/audit-runtime/venvs`, as the pack's own installation guide describes.
 
 ```yaml
 - id: audit-plugin-pack
@@ -72,7 +72,6 @@ The tool list grows once when the MCP servers connect; a server that connects la
 
 <a id="known-limitations-and-deferred-work"></a>
 
-- **Only Desktop mounts the pack** — the command-line audit profiles do not list the row.
 - **Installation is a manual unpack** — Desktop offers no import page; the missing-pack warning appears only in the Host log.
 - **Rows outside the toolkit are not taken over** — a release that adds tools to its preset outside `audit-toolkit` needs a matching row in `dsh-audit-desktop`.
 
