@@ -1,6 +1,6 @@
 - banner:
   - button "Open right sidebar"
-- text: Nothing escapes scrutiny Preview
+- text: Rigor in pursuit of truth Preview
 - button "Choose workspace": workspace
 - button "Standard mode"
 - textbox "Describe what you want to build, / commands, @ files or sessions":

@@ -15,8 +15,8 @@
 - button "Context injection runtime-context"
 - button "Context injection time-context"
 - paragraph: partial
-- status: Reviewing
-- text: Reviewing for {{duration}} ···
+- status: Auditing
+- text: Auditing for {{duration}} ···
 - list:
   - listitem:
     - text: Keep working until I stop you again.

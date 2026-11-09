@@ -15,8 +15,8 @@
 - button "Context injection runtime-context"
 - button "Context injection time-context"
 - paragraph: partial
-- status: Reviewing
-- text: Reviewing for {{duration}} ···
+- status: Auditing
+- text: Auditing for {{duration}} ···
 - region "To-dos":
   - button "To-dos 1 completed · 1 in progress"
 - text: Ongoing Goal Keep the composer context panels aligned
