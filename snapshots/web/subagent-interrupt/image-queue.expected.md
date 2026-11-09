@@ -27,8 +27,8 @@
 - text: {{clock}} Keep working until I stop you again. {{clock}}
 - button "Copy"
 - paragraph: partial
-- status: Deep diving
-- text: Deep diving for {{duration}} ···
+- status: Reviewing
+- text: Reviewing for {{duration}} ···
 - button "3 queued messages" [expanded]
 - list:
   - listitem:

@@ -12,8 +12,8 @@
 - button "Context injection runtime-context"
 - button "Context injection time-context"
 - paragraph: partial
-- status: Deep diving
-- text: Deep diving for {{duration}} ···
+- status: Reviewing
+- text: Reviewing for {{duration}} ···
 - textbox "Message or run a task, / commands, @ files or sessions":
   - paragraph: Queue this follow-up while the current turn is running.
 - button "Add files or run commands"

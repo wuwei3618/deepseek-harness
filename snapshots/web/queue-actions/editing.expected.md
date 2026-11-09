@@ -12,8 +12,8 @@
 - button "Context injection runtime-context"
 - button "Context injection time-context"
 - paragraph: partial
-- status: Deep diving
-- text: Deep diving for {{duration}} ···
+- status: Reviewing
+- text: Reviewing for {{duration}} ···
 - button "2 queued messages" [disabled] [expanded]
 - list:
   - listitem:
