@@ -68,11 +68,16 @@ jobs:
       - uses: actions/setup-node@v7.0.0
         with:
           node-version: '24'
+      # PowerShell keeps Git Bash's GNU tar off PATH on Windows; it reads `D:` in absolute archive
+      # paths as a remote host, while the system bsdtar that packaging expects does not.
       - name: Install locked dependencies
+        shell: pwsh
         run: pnpm install --frozen-lockfile
       - name: Check packaging configuration and toolchain
+        shell: pwsh
         run: pnpm --filter @deepseek-ai/dsh-desktop run package ${{ matrix.target }} --unsigned --check
       - name: Build unsigned installer
+        shell: pwsh
         run: pnpm --filter @deepseek-ai/dsh-desktop run package ${{ matrix.target }} --unsigned
       - name: Record installer checksums
         run: |
