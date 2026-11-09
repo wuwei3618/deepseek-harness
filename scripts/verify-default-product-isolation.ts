@@ -1,7 +1,8 @@
 /**
  * Keep experimental packages outside default installations, runtime imports, and shipped compositions.
  * The one declared exception is a bundle the launcher names in `OPTIONAL_BUNDLES`: shipped for the person to
- * switch on, selected by no shipped template, its own dependency graph outside the default product's.
+ * switch on, selected by no shipped template, its own dependency graph outside the default product's. The audit fork's
+ * exceptions live in `audit-product-isolation.ts`.
  */
 
 import { existsSync, globSync, readFileSync, statSync } from 'node:fs'
@@ -21,28 +22,15 @@ import {
 } from './verify-client-packages.ts'
 
 import { isExperimentalPackageName } from './experimental-package-policy.ts'
+import {
+  AUDIT_DESKTOP_BROWSER_PACKAGES, AUDIT_DESKTOP_BUNDLE, AUDIT_DESKTOP_BUNDLE_DIRECTORY, AUDIT_DESKTOP_OPTIONAL_BUNDLES,
+} from './audit-product-isolation.ts'
 // The independently published entry package owns platform-engine dependencies.
 const EXTERNAL_KIT_PACKAGES = new Set(['@deepseek-ai/libreoffice-kit'])
 const PROFILE_SOURCE = 'packages/util/official-bundles/src/bundles.ts'
 const PRESET_PATTERN = 'packages/bundle/web-app/presets/*.patch.yml'
-/**
- * Optional bundles the audit Desktop template switches on. The audit fork ships them always on in its Desktop
- * product; they stay optional bundles for every other template and keep their own dependency graphs.
- */
-const AUDIT_DESKTOP_OPTIONAL_BUNDLES = new Set([
-  '@deepseek-ai/dsh-experimental-session-search',
-  '@deepseek-ai/dsh-experimental-voice-input-bundle',
-])
-/**
- * Experimental packages the audit Desktop bundle mounts so its agent can operate the Desktop Sidebar browser,
- * accepted only when the reference comes from that bundle or from these packages themselves.
- */
-const AUDIT_DESKTOP_BROWSER_PACKAGES = new Map([
-  ['@deepseek-ai/dsh-experimental-browser-use-playwright-mcp', 'packages/experimental/browser-use-playwright-mcp/'],
-  ['@deepseek-ai/dsh-experimental-browser-use-runtime', 'packages/experimental/browser-use-runtime/'],
-])
 const AUDIT_DESKTOP_BROWSER_ORIGINS = [
-  '@deepseek-ai/dsh-audit-desktop ', 'packages/audit/audit-desktop/',
+  `${AUDIT_DESKTOP_BUNDLE} `, AUDIT_DESKTOP_BUNDLE_DIRECTORY,
   ...[...AUDIT_DESKTOP_BROWSER_PACKAGES].flatMap(([name, directory]) => [`${name} `, directory]),
 ]
 const RUNTIME_SECTIONS = ['dependencies', 'optionalDependencies', 'peerDependencies'] as const
