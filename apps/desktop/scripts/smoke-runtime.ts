@@ -13,7 +13,9 @@ import { createPluginProfile } from '../src/project-manager.ts'
 import type { DesktopRuntimeDescriptor } from '../src/runtime-tree.ts'
 
 /**
- * Check CLI package operations, Host startup, its frontend, external plugins and real Office-to-PDF conversion.
+ * Check the audit release lock, Host startup, its frontend, an external plugin and real Office-to-PDF conversion.
+ * Every Desktop package is a locked audit release, so the CLI must refuse plugin management, the Host restores the
+ * template bundle list, and Plugin Manager is disabled; the smoke plugin therefore loads through the profile patch layer.
  * @param root - Materialized dsh resources.
  * @param node - Prepared target Electron executable.
  * @param runtime - Verified resource descriptor.
@@ -44,32 +46,22 @@ export async function smokeDesktopRuntime(
     const pluginName = 'desktop-runtime-smoke-plugin'
     const plugin = join(home, pluginName)
     mkdirSync(plugin, { recursive: true })
-    const installedName = 'desktop-installed-smoke-plugin'
-    const installedPlugin = join(home, installedName)
-    mkdirSync(installedPlugin)
-    writeFileSync(join(installedPlugin, 'package.json'), JSON.stringify({
-      name: installedName, version: '1.0.0', type: 'module', exports: './index.js', dsh: { bundle: { patch: './bundle.yml' } },
-    }))
-    writeFileSync(join(installedPlugin, 'index.js'), `
-export function apply(ctx) {
-  ctx.effect(() => ctx.webServer.register({ kind: 'exact', path: '/desktop-smoke-installed',
-    handler(_request, response) { response.end('installed plugin ready') } }))
-}
-`)
-    writeFileSync(join(installedPlugin, 'bundle.yml'), `- insert:\n    - id: ${installedName}\n      name: ${installedName}\n      inject: [webServer]\n`)
+    const refusedName = 'desktop-refused-smoke-plugin'
+    const refusedPlugin = join(home, refusedName)
+    mkdirSync(refusedPlugin)
+    writeFileSync(join(refusedPlugin, 'package.json'), JSON.stringify({ name: refusedName, version: '1.0.0', type: 'module' }))
     appendFileSync(join(profile, 'pnpm-workspace.yaml'), 'offline: true\nupdateNotifier: false\n')
     const cli = join(root, 'node_modules', '@deepseek-ai', 'dsh-desktop-host', 'lib', 'cli.js')
-    const runCli = (args: string[]) => promisify(execFile)(node,
-      ['--expose-internals', cli, 'plugin', '--profile', 'desktop', ...args],
+    const refusal = await promisify(execFile)(node,
+      ['--expose-internals', cli, 'plugin', '--profile', 'desktop', 'add', `file:${refusedPlugin}`, '--offline', '--ignore-scripts'],
       { cwd: home, env: { ...hostEnvironment, ELECTRON_RUN_AS_NODE: '1' }, timeout: 120_000, windowsHide: true })
-    await runCli(['add', `file:${installedPlugin}`, '--offline', '--ignore-scripts'])
-    const installedEntry = join(profile, 'node_modules', installedName, 'index.js')
-    if (readFileSync(installedEntry, 'utf8') !== readFileSync(join(installedPlugin, 'index.js'), 'utf8')) {
-      throw new Error('desktop runtime: CLI did not install the local plugin')
+      .then(() => undefined, (error: unknown) => error)
+    const refusalOutput = refusal instanceof Error && 'stderr' in refusal && typeof refusal.stderr === 'string' ? refusal.stderr : ''
+    if (!refusalOutput.includes('plugin management is unavailable in this audit release')) {
+      throw new Error(`desktop runtime: locked CLI did not refuse plugin management: ${refusal instanceof Error ? refusal.message : 'exited 0'}`)
     }
-    await runCli(['remove', installedName])
-    if (existsSync(installedEntry)) throw new Error('desktop runtime: CLI did not remove the local plugin')
-    console.log('desktop runtime: CLI offline plugin installation and removal passed')
+    if (existsSync(join(profile, 'node_modules', refusedName))) throw new Error('desktop runtime: locked CLI installed a plugin')
+    console.log('desktop runtime: locked CLI refused plugin management')
     const primary = join(resourcesRuntime, 'primary-runtime')
     const dependencies = workspaceDependencyPaths(primary, await readPrimaryRuntime(primary))
     await promisify(execFile)(dependencies.python, ['-I', '-B',
@@ -81,7 +73,7 @@ export function apply(ctx) {
     if (cordis === undefined) throw new Error('desktop runtime: missing shared Cordis package')
     writeFileSync(join(plugin, 'package.json'), JSON.stringify({
       name: pluginName, version: '1.0.0', type: 'module', exports: './index.js',
-      peerDependencies: { '@deepseek-ai/cordis': cordis.version }, dsh: { bundle: { patch: './bundle.yml' } },
+      peerDependencies: { '@deepseek-ai/cordis': cordis.version },
     }))
     writeFileSync(join(plugin, 'index.js'), `
 import { Context } from '@deepseek-ai/cordis'
@@ -92,15 +84,6 @@ export function apply(ctx) {
   if (!(ctx instanceof Context)) throw new Error('desktop runtime: external plugin loaded another Cordis instance')
   ctx.effect(() => ctx.webServer.register({ kind: 'exact', path: '/desktop-smoke',
     handler(_request, response) { response.end('plugin route ready') } }))
-  ctx.effect(() => ctx.webServer.register({ kind: 'exact', path: '/desktop-smoke-install',
-    async handler(_request, response) {
-      try {
-        response.end(JSON.stringify(await ctx.pluginManager.installBundle(${JSON.stringify(installedPlugin)})))
-      } catch (error) {
-        response.statusCode = 500
-        response.end(inspect(error, { depth: 5 }))
-      }
-    } }))
   ctx.effect(() => ctx.webServer.register({ kind: 'exact', path: '/desktop-smoke-office-cli',
     async handler(_request, response) {
       try {
@@ -135,16 +118,12 @@ export function apply(ctx) {
   }
 }
 `)
-    writeFileSync(join(plugin, 'bundle.yml'), '- insert:\n    - id: desktop-runtime-smoke-plugin\n      name: desktop-runtime-smoke-plugin\n      inject: [webServer, officeToPdf, skills, pluginManager]\n')
     cpSync(plugin, join(profile, 'node_modules', pluginName), { recursive: true })
-    const manifest = JSON.parse(readFileSync(join(profile, 'package.json'), 'utf8')) as {
-      dependencies?: Record<string, string>
-      dsh: { profile: { bundles: string[] } }
-    }
+    const manifest = JSON.parse(readFileSync(join(profile, 'package.json'), 'utf8')) as { dependencies?: Record<string, string> }
     manifest.dependencies = { ...manifest.dependencies, [pluginName]: `file:${plugin}` }
-    manifest.dsh.profile.bundles.push(pluginName)
     writeFileSync(join(profile, 'package.json'), JSON.stringify(manifest))
-    writeFileSync(join(profile, 'cordis.patch.yml'), '- id: webserver\n  config:\n    host: 127.0.0.1\n    port: 0\n')
+    writeFileSync(join(profile, 'cordis.patch.yml'), '- id: webserver\n  config:\n    host: 127.0.0.1\n    port: 0\n'
+      + `- insert:\n    - id: ${pluginName}\n      name: ${pluginName}\n      inject: [webServer, officeToPdf, skills]\n`)
     const ready = await Promise.race([host.start(), new Promise<never>((_, reject) => {
       timer = setTimeout(() => { reject(new Error('desktop runtime: Host readiness exceeded 120 seconds')) }, 120_000)
     })])
@@ -157,14 +136,6 @@ export function apply(ctx) {
     }
     const pluginResponse = await fetch(new URL('/desktop-smoke', ready.url), { headers: { cookie } })
     if (await pluginResponse.text() !== 'plugin route ready') throw new Error('desktop runtime: plugin HTTP route failed')
-    const installation = await fetch(new URL('/desktop-smoke-install', ready.url), {
-      headers: { cookie }, signal: AbortSignal.timeout(120_000),
-    })
-    const installationResult = await installation.text()
-    const installed = await fetch(new URL('/desktop-smoke-installed', ready.url), { headers: { cookie } })
-    if (!installation.ok || !installed.ok || await installed.text() !== 'installed plugin ready') {
-      throw new Error(`desktop runtime: bundled pnpm plugin installation failed: ${installationResult}`)
-    }
     for (const { extension } of inputs) {
       const converted = await fetch(new URL(`/desktop-smoke-office/${extension}`, ready.url), {
         headers: { cookie }, signal: AbortSignal.timeout(120_000),
