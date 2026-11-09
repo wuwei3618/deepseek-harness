@@ -1,0 +1,119 @@
+name: Package audit Desktop · unsigned
+
+# Builds the internally distributed, unsigned CSCEC8B Audit Agent installers on GitHub-hosted runners.
+# Every package is a locked audit release with the official brand profile and no update service
+# (apps/desktop/packaging/README.md#unsigned-windows-test-installer). Nothing is published; the
+# installers are run artifacts for manual distribution. A pull request that changes this file packages
+# every target so the workflow is exercised before it reaches the default branch.
+
+on:
+  workflow_dispatch:
+    inputs:
+      targets:
+        description: 'Targets to package'
+        type: choice
+        options: [all, win-x64, mac-arm64, mac-x64]
+        default: all
+        required: true
+  push:
+    tags: ['audit-desktop-v*']
+  pull_request:
+    paths: ['.github/workflows/audit-desktop-unsigned.yml']
+
+permissions:
+  contents: read
+
+concurrency:
+  group: audit-desktop-unsigned-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  select:
+    runs-on: ubuntu-24.04
+    outputs:
+      matrix: ${{ steps.targets.outputs.matrix }}
+    steps:
+      - name: Select targets
+        id: targets
+        env:
+          REQUESTED: ${{ github.event_name == 'workflow_dispatch' && inputs.targets || 'all' }}
+        run: |
+          all='[{"target":"win-x64","runner":"windows-2025","artifact":"exe"},{"target":"mac-arm64","runner":"macos-15","artifact":"dmg"},{"target":"mac-x64","runner":"macos-15-intel","artifact":"dmg"}]'
+          echo "matrix=$(jq -c --arg requested "$REQUESTED" \
+            '{include: [.[] | select($requested == "all" or .target == $requested)]}' <<< "$all")" >> "$GITHUB_OUTPUT"
+
+  package:
+    name: package ${{ matrix.target }}
+    needs: select
+    strategy:
+      fail-fast: false
+      matrix: ${{ fromJSON(needs.select.outputs.matrix) }}
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 180
+    env:
+      DSH_TELEMETRY_DISABLED: '1'
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - name: Allow long Windows paths
+        if: runner.os == 'Windows'
+        run: git config --system core.longpaths true
+      - uses: actions/checkout@v7.0.1
+        with:
+          persist-credentials: false
+      - uses: pnpm/action-setup@v5.0.0
+        with:
+          dest: ${{ runner.temp }}/setup-pnpm-${{ github.run_id }}-${{ github.run_attempt }}
+      - uses: actions/setup-node@v7.0.0
+        with:
+          node-version: '24'
+      # The Icon Composer app icon needs Xcode 26 or later; the image's default Xcode may be older.
+      - name: Select the newest Xcode
+        if: runner.os == 'macOS'
+        run: |
+          xcode=$(ls -d /Applications/Xcode_*.app | sort -V | tail -n 1)
+          echo "DEVELOPER_DIR=$xcode/Contents/Developer" >> "$GITHUB_ENV"
+          DEVELOPER_DIR="$xcode/Contents/Developer" actool --version
+      # PowerShell keeps Git Bash's GNU tar off PATH on Windows; it reads `D:` in absolute archive
+      # paths as a remote host, while the system bsdtar that packaging expects does not.
+      - name: Install locked dependencies
+        shell: pwsh
+        run: pnpm install --frozen-lockfile
+      - name: Check packaging configuration and toolchain
+        shell: pwsh
+        run: pnpm --filter @deepseek-ai/dsh-desktop run package ${{ matrix.target }} --unsigned --check
+      - name: Build unsigned installer
+        shell: pwsh
+        run: pnpm --filter @deepseek-ai/dsh-desktop run package ${{ matrix.target }} --unsigned
+      - name: Record installer checksums
+        run: |
+          cd apps/desktop/.desktop-build/targets/${{ matrix.target }}/unsigned-artifacts
+          {
+            echo "### ${{ matrix.target }}"
+            echo
+            echo "Commit: ${GITHUB_SHA}"
+            echo
+            echo '```'
+            for file in *.${{ matrix.artifact }}; do
+              if command -v sha256sum > /dev/null; then sha256sum "$file"; else shasum -a 256 "$file"; fi
+            done
+            echo '```'
+          } | tee -a "$GITHUB_STEP_SUMMARY"
+      - uses: actions/upload-artifact@v7.0.1
+        with:
+          name: cscec8b-audit-agent-${{ matrix.target }}-unsigned-${{ github.run_id }}
+          path: apps/desktop/.desktop-build/targets/${{ matrix.target }}/unsigned-artifacts/*.${{ matrix.artifact }}
+          if-no-files-found: error
+          compression-level: 0
+          retention-days: 30
+      - name: Retain packaging diagnostics
+        if: always()
+        continue-on-error: true
+        uses: actions/upload-artifact@v7.0.1
+        with:
+          name: packaging-logs-${{ matrix.target }}-${{ github.run_id }}-${{ github.run_attempt }}
+          include-hidden-files: true
+          path: apps/desktop/.desktop-build/packaging-runs/
+          if-no-files-found: warn
+          retention-days: 14

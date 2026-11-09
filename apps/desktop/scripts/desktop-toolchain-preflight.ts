@@ -9,7 +9,7 @@
  */
 
 import { execFile } from 'node:child_process'
-import { mkdtemp, rm, writeFile } from 'node:fs/promises'
+import { access, cp, mkdtemp, rm, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { basename, dirname, join } from 'node:path'
 import { promisify } from 'node:util'
@@ -37,6 +37,44 @@ async function probeTar(): Promise<string | undefined> {
   }
   catch (error) {
     return error instanceof Error ? error.message : String(error)
+  }
+  finally {
+    await rm(directory, { recursive: true, force: true })
+  }
+}
+
+/** Oldest actool that compiles an Icon Composer `.icon` into the light, dark, and tinted macOS icons. */
+const MINIMUM_ACTOOL_MAJOR = 26
+const MACOS_ICON = join(import.meta.dirname, '../resources/icon-macos.icon')
+
+async function probeIconCompiler(environment: NodeJS.ProcessEnv): Promise<string | undefined> {
+  // electron-builder runs bare `actool` for `resources/icon-macos.icon`; the /usr/bin shim honors DEVELOPER_DIR.
+  const remedy = `install Xcode ${MINIMUM_ACTOOL_MAJOR} or later, or set DEVELOPER_DIR to its Contents/Developer directory`
+  let version: string | undefined
+  try {
+    const { stdout } = await run('actool', ['--version'], { env: environment, timeout: 30_000 })
+    version = /<key>short-bundle-version<\/key>\s*<string>([^<]+)<\/string>/u.exec(stdout)?.[1]
+  }
+  catch (error) {
+    return `${error instanceof Error ? error.message : String(error)}; ${remedy}`
+  }
+  if (version === undefined) return `actool --version printed no short-bundle-version; ${remedy}`
+  if (Number.parseInt(version, 10) < MINIMUM_ACTOOL_MAJOR) return `actool ${version} cannot compile the macOS .icon app icon; ${remedy}`
+  // actool rejects some icon.json values that Icon Composer accepts, so compile the shipped icon now.
+  const directory = await mkdtemp(join(tmpdir(), 'dsh-actool-probe-'))
+  try {
+    const icon = join(directory, 'Icon.icon')
+    await cp(MACOS_ICON, icon, { recursive: true })
+    await run('actool', [icon, '--compile', directory, '--app-icon', 'Icon', '--platform', 'macosx',
+      '--target-device', 'mac', '--minimum-deployment-target', '26.0',
+      '--output-format', 'human-readable-text', '--output-partial-info-plist', join(directory, 'partial.plist')],
+    { env: environment, timeout: 120_000 })
+    await access(join(directory, 'Assets.car'))
+    return undefined
+  }
+  catch (error) {
+    const output = error instanceof Error && 'stdout' in error && typeof error.stdout === 'string' ? error.stdout.trim() : ''
+    return `actool ${version} could not compile ${MACOS_ICON}: ${output || (error instanceof Error ? error.message : String(error))}`
   }
   finally {
     await rm(directory, { recursive: true, force: true })
@@ -71,7 +109,7 @@ async function probeWindowsInstallerToolchain(environment: NodeJS.ProcessEnv): P
 /**
  * Probe every external tool one packaging run needs.
  * @param platform - Target platform; a Windows target already requires a Windows build host.
- * @param environment - Packaging environment used to locate Windows tooling.
+ * @param environment - Packaging environment used to locate Windows tooling and the macOS `actool`.
  * @returns Every probe that failed, empty when the host can run the packaging sequence.
  */
 export async function probeDesktopToolchain(
@@ -82,13 +120,17 @@ export async function probeDesktopToolchain(
   const tar = await probeTar()
   if (tar !== undefined) failures.push({ tool: 'tar', detail: tar })
   if (platform === 'win32') failures.push(...await probeWindowsInstallerToolchain(environment))
+  if (platform === 'darwin') {
+    const actool = await probeIconCompiler(environment)
+    if (actool !== undefined) failures.push({ tool: 'actool', detail: actool })
+  }
   return failures
 }
 
 /**
  * Probe the toolchain and fail with every problem the host has.
  * @param platform - Target platform; a Windows target already requires a Windows build host.
- * @param environment - Packaging environment used to locate Windows tooling.
+ * @param environment - Packaging environment used to locate Windows tooling and the macOS `actool`.
  * @returns Resolves when every probe passes.
  */
 export async function requireDesktopToolchain(
