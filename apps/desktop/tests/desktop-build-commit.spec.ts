@@ -47,11 +47,19 @@ describe('desktop build commit', () => {
   })
 })
 
-async function fakeActool(version: string): Promise<NodeJS.ProcessEnv> {
+async function fakeActool(version: string, compile = 'touch "$3/Assets.car"'): Promise<NodeJS.ProcessEnv> {
   const directory = await mkdtemp(join(tmpdir(), 'dsh-fake-actool-'))
   directories.push(directory)
   const tool = join(directory, 'actool')
-  await writeFile(tool, `#!/bin/sh\nprintf '<plist><dict><key>com.apple.actool.version</key><dict><key>short-bundle-version</key><string>${version}</string></dict></dict></plist>\\n'\n`)
+  await writeFile(tool, [
+    '#!/bin/sh',
+    'if [ "$1" = --version ]; then',
+    `  printf '<plist><dict><key>com.apple.actool.version</key><dict><key>short-bundle-version</key><string>${version}</string></dict></dict></plist>\\n'`,
+    '  exit 0',
+    'fi',
+    compile,
+    '',
+  ].join('\n'))
   await chmod(tool, 0o755)
   return { ...process.env, PATH: `${directory}${delimiter}${process.env.PATH ?? ''}` }
 }
@@ -66,6 +74,12 @@ describe('desktop toolchain preflight', () => {
     expect(failures.map(failure => failure.tool)).toEqual(['actool'])
     expect(failures[0]?.detail).toContain('actool 16.4 cannot compile the macOS .icon app icon')
     expect(failures[0]?.detail).toContain('DEVELOPER_DIR')
+  })
+
+  it.skipIf(process.platform === 'win32')('reports an app icon that actool cannot compile', async () => {
+    const failures = await probeDesktopToolchain('darwin', await fakeActool('27.2', 'echo "error: Icon export exited with status 255"; exit 1'))
+    expect(failures.map(failure => failure.tool)).toEqual(['actool'])
+    expect(failures[0]?.detail).toContain('icon-macos.icon: error: Icon export exited with status 255')
   })
 
   it('reports the archive reader and the icon compiler when they cannot run', async () => {
