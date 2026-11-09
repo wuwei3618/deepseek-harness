@@ -12,8 +12,8 @@
 - button "Context injection runtime-context"
 - button "Context injection time-context"
 - paragraph: partial
-- status: Deep diving
-- text: Deep diving for {{duration}} ···
+- status: Auditing
+- text: Auditing for {{duration}} ···
 - list:
   - listitem:
     - img "Queued message image"
