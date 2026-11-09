@@ -2,13 +2,13 @@
 
 English | [中文](README.zh.md)
 
-CSCEC8B Audit Agent (八局审计智能体) is the internal audit assistant of China Construction Eighth Engineering Division Corp., Ltd. It reads the working papers and source records in a local folder, analyzes them with the DeepSeek model service, and helps auditors draft findings, check figures and organize evidence.
+CSCEC8B Audit Agent (八局审计智能体) is the internal audit assistant of China Construction Eighth Engineering Division Corp., Ltd. It reads the working papers and source records in a local folder, analyzes them with DeepSeek models by default or with another model provider you configure, and helps auditors draft findings, check figures and organize evidence.
 
 It is built on [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness), an open-source agent harness developed by [DeepSeek AI](https://deepseek.com). Commands, packages and configuration directories keep the upstream `dsh` names.
 
 ## Before you use it
 
-Conversations and the files you share with the agent are sent to the DeepSeek model service for analysis. Treat its conclusions as a starting point and verify them against working papers and source records before relying on them.
+Conversations and the files you share with the agent are sent for analysis to the model service you configure, DeepSeek by default. Treat its conclusions as a starting point and verify them against working papers and source records before relying on them.
 
 Review the [safety notice](SAFETY.md) before running the project.
 
@@ -20,13 +20,13 @@ Review the [safety notice](SAFETY.md) before running the project.
 
 ### Desktop app
 
-The desktop app runs on Windows and macOS. Install the package that your administrator distributes, open CSCEC8B Audit Agent, enter a DeepSeek API key on the welcome page, then choose a local folder as the workspace. Updates are distributed manually; automatic update is off.
+The desktop app runs on Windows and macOS. Install the package that your administrator distributes, open CSCEC8B Audit Agent, enter a DeepSeek API key on the welcome page, then choose a local folder as the workspace. To use OpenAI, Anthropic, Kimi, or any OpenAI- or Anthropic-compatible API, such as a model deployed on your own network, choose **Use another model provider** on the welcome page, then add the provider under **Settings > Models > Add model provider**. Updates are distributed manually; automatic update is off.
 
 <a id="command-line"></a>
 
 ### Command line
 
-The desktop app can install the `dsh` command from its application menu. Run `dsh --help` to list the available profiles and options; [CLI help](docs/cli-help.md) records the full output.
+The desktop app can install the `dsh` command from its application menu. Run `dsh --help` to list the available profiles and options; [CLI help](docs/cli-help.md) records the full output. The command line uses DeepSeek by default; to use another model provider, add a route to `llm-pi-ai` and select it in `agent-default-model` in the `audit` profile's `cordis.patch.yml` ([provider routes](packages/llm/llm-pi-ai/README.md)).
 
 <a id="run-from-source"></a>
 

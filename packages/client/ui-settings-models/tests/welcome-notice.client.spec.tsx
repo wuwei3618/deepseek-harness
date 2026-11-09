@@ -109,7 +109,7 @@ describe('WelcomeNotice', () => {
   it('uses the exact owner copy in both GUI locales', () => {
     expect(WELCOME_NOTICE_COPY.en).toEqual({
       title: 'Before you start',
-      body: 'CSCEC8B Audit Agent is the internal audit assistant of China Construction Eighth Engineering Division Corp., Ltd., built on the open-source DeepSeek Harness. Conversations and the files you share with it are sent to the DeepSeek model service for analysis.\n\nTreat its conclusions as a starting point: verify them against working papers and source records before relying on them.',
+      body: 'CSCEC8B Audit Agent is the internal audit assistant of China Construction Eighth Engineering Division Corp., Ltd., built on the open-source DeepSeek Harness. Conversations and the files you share with it are sent for analysis to the model service you configure, DeepSeek by default.\n\nTreat its conclusions as a starting point: verify them against working papers and source records before relying on them.',
       continueLabel: 'Continue',
     })
     expect(en.welcomeBody).toBe(WELCOME_NOTICE_COPY.en.body)

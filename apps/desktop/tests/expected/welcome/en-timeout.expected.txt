@@ -2,5 +2,5 @@ CSCEC8B Audit Agent
 CSCEC8B Audit Agent
 Sign in timed out
 Sign in again
-Add API Key
+Add DeepSeek API key
 Sign in again to continue

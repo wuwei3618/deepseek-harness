@@ -2,13 +2,13 @@
 
 [English](README.md) | 中文
 
-八局审计智能体（CSCEC8B Audit Agent）是中国建筑第八工程局有限公司的内部审计辅助工具。它读取本地文件夹中的审计底稿和原始资料，借助 DeepSeek 模型服务进行分析，帮助审计人员起草审计发现、核对数据和整理证据。
+八局审计智能体（CSCEC8B Audit Agent）是中国建筑第八工程局有限公司的内部审计辅助工具。它读取本地文件夹中的审计底稿和原始资料，默认借助 DeepSeek 模型进行分析，也可以改用你配置的其他模型提供商，帮助审计人员起草审计发现、核对数据和整理证据。
 
 它基于 [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness) 构建，这是由 [DeepSeek AI](https://deepseek.com) 开发的开源 agent harness。命令、软件包和配置目录沿用上游的 `dsh` 名称。
 
 ## 使用须知
 
-对话内容和你提供给智能体的文件会发送到 DeepSeek 模型服务进行分析。智能体给出的结论仅供参考，请结合审计底稿和原始资料复核后再采用。
+对话内容和你提供给智能体的文件会发送到你配置的模型服务（默认为 DeepSeek）进行分析。智能体给出的结论仅供参考，请结合审计底稿和原始资料复核后再采用。
 
 运行本项目前，请阅读[安全说明](SAFETY.zh.md)。
 
@@ -20,13 +20,13 @@
 
 ### 桌面应用
 
-桌面应用支持 Windows 和 macOS。安装管理员分发的安装包，打开八局审计智能体，在欢迎页输入 DeepSeek API Key，然后选择一个本地文件夹作为工作区。更新通过人工分发，自动更新已关闭。
+桌面应用支持 Windows 和 macOS。安装管理员分发的安装包，打开八局审计智能体，在欢迎页输入 DeepSeek API Key，然后选择一个本地文件夹作为工作区。要使用 OpenAI、Anthropic、Kimi，或任何兼容 OpenAI 或 Anthropic 协议的接口（例如内网部署的模型），在欢迎页选择 **使用其他模型提供商**，进入后在 **设置 › 模型 › 添加模型提供商** 中添加。更新通过人工分发，自动更新已关闭。
 
 <a id="command-line"></a>
 
 ### 命令行
 
-桌面应用可以从应用菜单安装 `dsh` 命令。运行 `dsh --help` 可列出可用的 profile 和选项；完整输出见 [CLI 帮助](docs/cli-help.zh.md)。
+桌面应用可以从应用菜单安装 `dsh` 命令。运行 `dsh --help` 可列出可用的 profile 和选项；完整输出见 [CLI 帮助](docs/cli-help.zh.md)。命令行默认使用 DeepSeek；要使用其他模型提供商，在 `audit` profile 的 `cordis.patch.yml` 中为 `llm-pi-ai` 添加路由，并在 `agent-default-model` 中选用它（[提供商路由](packages/llm/llm-pi-ai/README.zh.md)）。
 
 <a id="run-from-source"></a>
 
