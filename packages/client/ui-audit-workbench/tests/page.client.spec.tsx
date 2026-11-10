@@ -429,6 +429,17 @@ describe('project detail', () => {
     expect(props.openSession).toHaveBeenCalledWith('s-new')
   })
 
+  it('keeps each view\'s head in the window drag row above the scrolling content', () => {
+    mount()
+    const overviewHead = screen.getByRole('heading', { level: 1, name: '审计工作台' }).closest('[data-window-drag]')
+    expect(overviewHead).not.toBeNull()
+    expect(overviewHead!.contains(screen.getByRole('heading', { name: '系统登录' }))).toBe(false)
+    fireEvent.click(within(card('示例公司离任审计')).getByRole('button', { name: '查看项目' }))
+    const detailHead = screen.getByRole('heading', { level: 1, name: '示例公司离任审计' }).closest('[data-window-drag]')
+    expect(detailHead!.contains(screen.getByRole('button', { name: '审计工作台' }))).toBe(true)
+    expect(detailHead!.contains(screen.getByRole('heading', { name: '本项目的会话' }))).toBe(false)
+  })
+
   it('refreshes the archives and returns to the overview', () => {
     const { props } = openAlpha()
     fireEvent.click(screen.getByRole('button', { name: '刷新' }))

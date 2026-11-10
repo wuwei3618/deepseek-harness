@@ -20,6 +20,19 @@ import css from './WorkbenchPage.module.css'
 /** Highest Archive Version this page shows in full; the Host reader's `KNOWN_ARCHIVE_VERSION`. */
 const KNOWN_ARCHIVE_VERSION = 1
 
+/** Project head props: what the head row names and the actions it offers. */
+export interface ProjectHeadProps {
+  readonly workspaceId: WorkspaceId
+  /** The project's latest read; absent while the first read runs or after its Workspace was removed. */
+  readonly project: ProjectEntry | undefined
+  readonly workspaces: WorkspaceSnapshot
+  readonly models: WorkbenchOverview['models']
+  readonly t: Translate
+  readonly onBack: () => void
+  readonly onRefresh: () => void
+  readonly onRunModel: () => void
+}
+
 /** Project detail props. */
 export interface ProjectDetailProps {
   readonly workspaceId: WorkspaceId
@@ -31,9 +44,6 @@ export interface ProjectDetailProps {
   readonly models: WorkbenchOverview['models']
   readonly prompts: WorkbenchOverview['prompts']
   readonly t: Translate
-  readonly onBack: () => void
-  readonly onRefresh: () => void
-  readonly onRunModel: () => void
   /** Run a recorded Kickoff Task again, by its type and its index in the archive. */
   readonly onRerun: (type: string, index: number) => void
   readonly onBackfill: () => void
@@ -41,27 +51,23 @@ export interface ProjectDetailProps {
   readonly openSession: (sessionId: SessionId) => void
 }
 
-const OPEN_FAILURE_KEYS = { refused: 'open.refused', 'not-found': 'open.notFound', failed: 'open.failed' } as const
+/** The project's directory and title, from its read or its Workspace. */
+function projectNames(workspaceId: WorkspaceId, project: ProjectEntry | undefined, workspaces: WorkspaceSnapshot) {
+  const workspace = workspaces.items.find(item => item.workspaceId === workspaceId)
+  const path = project?.path ?? workspace?.path ?? ''
+  return { workspace, path, title: workspace?.title ?? baseName(path) }
+}
 
 /**
- * Render one project's archive, Kickoff Tasks, change log, and Sessions.
- * @param props - the project read, Workspace and Session lists, copy, and actions.
- * @returns the detail view.
+ * Render the detail view's head row: the way back, the project's title and directory, and its actions.
+ * @param props - the project read, Workspace list, copy, and actions.
+ * @returns the breadcrumb and head.
  */
-export function ProjectDetail(props: ProjectDetailProps) {
-  const { workspaceId, project, workspaces, t } = props
-  const [openNotice, setOpenNotice] = useState<string | undefined>(undefined)
-  const workspace = workspaces.items.find(item => item.workspaceId === workspaceId)
-  const archivedIds = workspaces.archivedSessionIds
-  const path = project?.path ?? workspace?.path ?? ''
-  const title = workspace?.title ?? baseName(path)
-  const read = project?.read
+export function ProjectHead(props: ProjectHeadProps) {
+  const { t } = props
+  const { path, title } = projectNames(props.workspaceId, props.project, props.workspaces)
+  const read = props.project?.read
   const archive = read?.kind === 'read' ? read.archive : undefined
-  const openOutput = async (task: number, output: number): Promise<void> => {
-    setOpenNotice(undefined)
-    const outcome = await props.openOutput({ workspaceId, task, output })
-    if (outcome !== 'opened') setOpenNotice(t(OPEN_FAILURE_KEYS[outcome]))
-  }
   return (
     <>
       <nav className={css.breadcrumb} aria-label={t('title')}>
@@ -82,6 +88,31 @@ export function ProjectDetail(props: ProjectDetailProps) {
           )}
         </div>
       </header>
+    </>
+  )
+}
+
+const OPEN_FAILURE_KEYS = { refused: 'open.refused', 'not-found': 'open.notFound', failed: 'open.failed' } as const
+
+/**
+ * Render one project's archive, Kickoff Tasks, change log, and Sessions.
+ * @param props - the project read, Workspace and Session lists, copy, and actions.
+ * @returns the detail view below the head row.
+ */
+export function ProjectDetail(props: ProjectDetailProps) {
+  const { workspaceId, project, workspaces, t } = props
+  const [openNotice, setOpenNotice] = useState<string | undefined>(undefined)
+  const { workspace } = projectNames(workspaceId, project, workspaces)
+  const archivedIds = workspaces.archivedSessionIds
+  const read = project?.read
+  const archive = read?.kind === 'read' ? read.archive : undefined
+  const openOutput = async (task: number, output: number): Promise<void> => {
+    setOpenNotice(undefined)
+    const outcome = await props.openOutput({ workspaceId, task, output })
+    if (outcome !== 'opened') setOpenNotice(t(OPEN_FAILURE_KEYS[outcome]))
+  }
+  return (
+    <>
       {project === undefined && (props.loading
         ? <Spinner />
         : <div className={css.notice} role="status">{t('detail.missing')}</div>)}

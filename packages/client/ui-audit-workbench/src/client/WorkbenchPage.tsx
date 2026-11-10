@@ -11,7 +11,7 @@ import type { WorkspaceId } from '@deepseek-ai/dsh-workspace/types'
 import type { OutputRequest, PackStatus, PromptRequest } from '@deepseek-ai/dsh-audit-workbench/types'
 import type { OpenFailure, PromptResult, WorkbenchSnapshot } from './source.ts'
 import { Overview } from './Overview.tsx'
-import { ProjectDetail } from './ProjectDetail.tsx'
+import { ProjectDetail, ProjectHead } from './ProjectDetail.tsx'
 import { ModelsDialog, NewProjectDialog, PromptDialog, type NewProjectState, type PromptDialogState } from './dialogs.tsx'
 import type { Translate } from './format.ts'
 import css from './WorkbenchPage.module.css'
@@ -128,53 +128,71 @@ export function WorkbenchPage(props: WorkbenchPageProps) {
   const models = overview?.models ?? []
   return (
     <div className={css.page}>
-      <div className={css.body}>
-        {selected === undefined
-          ? (
-            <>
+      <div className={css.bar} data-window-drag>
+        <div className={css.barColumn}>
+          {selected === undefined
+            ? (
               <header className={css.head}>
                 <div className={css.headText}>
                   <h1 className={css.heading}>{t('title')}</h1>
                   <p className={css.subtitle}>{t('subtitle')}</p>
                 </div>
               </header>
-              {snapshot.overview.status === 'error' && <PageNotice t={t} onRetry={props.onRefresh} />}
-              {overview !== undefined && <PackNotice pack={overview.pack} t={t} onRetry={props.onRefresh} />}
-              <Overview
-                snapshot={snapshot}
-                workspaceTitle={title}
+            )
+            : (
+              <ProjectHead
+                workspaceId={selected}
+                project={project}
+                workspaces={workspaces}
+                models={models}
                 t={t}
-                onRefresh={props.onRefresh}
-                onRefreshProjects={props.onRefreshProjects}
-                onCheck={props.onCheck}
-                onLogin={props.onLogin}
-                onOpenProject={setSelected}
-                onBackfill={(workspaceId) => { askPrompt({ kind: 'backfill', workspaceId }, t('prompt.backfillTitle')) }}
-                onNewProject={() => { setDialog({ kind: 'new', state: { phase: 'empty' } }) }}
+                onBack={() => { setSelected(undefined) }}
+                onRefresh={props.onRefreshProjects}
+                onRunModel={() => { setDialog({ kind: 'models', workspaceId: selected }) }}
               />
-            </>
-          )
-          : (
-            <ProjectDetail
-              workspaceId={selected}
-              project={project}
-              loading={snapshot.projects.status === 'loading'}
-              workspaces={workspaces}
-              sessions={sessions}
-              models={models}
-              prompts={overview?.prompts ?? { kickoff: false, backfill: false, rerun: false }}
-              t={t}
-              onBack={() => { setSelected(undefined) }}
-              onRefresh={props.onRefreshProjects}
-              onRunModel={() => { setDialog({ kind: 'models', workspaceId: selected }) }}
-              onRerun={(task, index) => {
-                askPrompt({ kind: 'rerun', workspaceId: selected, task: index }, t('prompt.rerunTitle', { task }))
-              }}
-              onBackfill={() => { askPrompt({ kind: 'backfill', workspaceId: selected }, t('prompt.backfillTitle')) }}
-              openOutput={props.openOutput}
-              openSession={props.openSession}
-            />
-          )}
+            )}
+        </div>
+      </div>
+      <div className={css.scroller}>
+        <div className={css.body}>
+          {selected === undefined
+            ? (
+              <>
+                {snapshot.overview.status === 'error' && <PageNotice t={t} onRetry={props.onRefresh} />}
+                {overview !== undefined && <PackNotice pack={overview.pack} t={t} onRetry={props.onRefresh} />}
+                <Overview
+                  snapshot={snapshot}
+                  workspaceTitle={title}
+                  t={t}
+                  onRefresh={props.onRefresh}
+                  onRefreshProjects={props.onRefreshProjects}
+                  onCheck={props.onCheck}
+                  onLogin={props.onLogin}
+                  onOpenProject={setSelected}
+                  onBackfill={(workspaceId) => { askPrompt({ kind: 'backfill', workspaceId }, t('prompt.backfillTitle')) }}
+                  onNewProject={() => { setDialog({ kind: 'new', state: { phase: 'empty' } }) }}
+                />
+              </>
+            )
+            : (
+              <ProjectDetail
+                workspaceId={selected}
+                project={project}
+                loading={snapshot.projects.status === 'loading'}
+                workspaces={workspaces}
+                sessions={sessions}
+                models={models}
+                prompts={overview?.prompts ?? { kickoff: false, backfill: false, rerun: false }}
+                t={t}
+                onRerun={(task, index) => {
+                  askPrompt({ kind: 'rerun', workspaceId: selected, task: index }, t('prompt.rerunTitle', { task }))
+                }}
+                onBackfill={() => { askPrompt({ kind: 'backfill', workspaceId: selected }, t('prompt.backfillTitle')) }}
+                openOutput={props.openOutput}
+                openSession={props.openSession}
+              />
+            )}
+        </div>
       </div>
       {dialog.kind === 'prompt' && (
         <PromptDialog state={dialog.state} t={t} onClose={closeDialog} onConfirm={confirmPrompt} />

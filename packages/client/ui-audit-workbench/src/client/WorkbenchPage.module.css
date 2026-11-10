@@ -1,17 +1,38 @@
-/* Audit workbench page: one scroller holding the head, the overview sections or one project's detail.
+/* Audit workbench page: a fixed head row above one scroller holding the overview sections or one project's detail.
    Cards use the settings card material; hover affordances sit under @media (hover: hover). */
 
 .page {
   --workbench-inset: clamp(24px, 4vw, 48px);
 
+  display: flex;
+  flex-direction: column;
   box-sizing: border-box;
   height: 100%;
-  overflow-x: hidden;
-  overflow-y: auto;
+  overflow: hidden;
   color: var(--dsw-alias-label-primary);
   background: var(--dsw-alias-bg-base);
 }
 
+/* The head row spans the page's full width and stays in place while the content scrolls. On macOS
+   it owns the window drag over its own box, top clearance included (ui-web base.css holds the rule;
+   its controls subtract themselves). Both rows reserve the same scrollbar gutter, so their columns line up. */
+.bar {
+  flex: none;
+  overflow: hidden;
+  scrollbar-gutter: stable;
+  padding-bottom: 16px;
+  background: var(--dsw-alias-bg-base);
+}
+
+.scroller {
+  flex: 1;
+  min-height: 0;
+  overflow-x: hidden;
+  overflow-y: auto;
+  scrollbar-gutter: stable;
+}
+
+.barColumn,
 .body {
   display: flex;
   flex-direction: column;
@@ -19,7 +40,11 @@
   box-sizing: border-box;
   max-width: 1040px;
   margin: 0 auto;
-  padding: 0 var(--workbench-inset) 48px;
+  padding: 0 var(--workbench-inset);
+}
+
+.body {
+  padding: 8px var(--workbench-inset) 48px;
 }
 
 @media (max-width: 767px) {
