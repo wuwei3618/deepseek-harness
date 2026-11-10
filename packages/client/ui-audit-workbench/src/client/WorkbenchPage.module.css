@@ -455,6 +455,12 @@
   white-space: nowrap;
 }
 
+/* The modal card neither scrolls nor grows past the window, so a long pack model list scrolls here. */
+.modelList {
+  max-height: 360px;
+  overflow-y: auto;
+}
+
 .modelRow {
   flex-direction: column;
   gap: 2px;
