@@ -1,0 +1,6 @@
+{
+  "meta": {
+    "title": "Audit-Arbeitsplatz-Dienst",
+    "description": "Liest Prüfprojekte, ihre Projektakten und den Anmeldestatus der Systeme für den Audit-Arbeitsplatz von Desktop."
+  }
+}

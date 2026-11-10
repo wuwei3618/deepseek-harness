@@ -1,0 +1,6 @@
+{
+  "meta": {
+    "title": "Painel de auditoria",
+    "description": "Adiciona à barra lateral um painel de auditoria que resume o estado de login de cada sistema e o dossiê de cada projeto de auditoria."
+  }
+}

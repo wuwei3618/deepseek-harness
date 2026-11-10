@@ -1,0 +1,6 @@
+{
+  "meta": {
+    "title": "Audit workbench",
+    "description": "Adds an audit workbench to the sidebar that summarizes system login status and the project archive of every audit project."
+  }
+}

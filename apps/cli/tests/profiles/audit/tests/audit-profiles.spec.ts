@@ -163,6 +163,11 @@ describe('the audit-desktop profile', () => {
     expect(row(rows, 'ui-brand-cscec8b').name).toBe('@deepseek-ai/dsh-client-ui-brand-cscec8b')
     expect(row(rows, 'ui-brand-cscec8b').disabled).toBeUndefined()
   })
+
+  it('mounts the audit workbench Host reads and its sidebar page', () => {
+    expect(row(rows, 'audit-workbench')).toEqual({ id: 'audit-workbench', name: '@deepseek-ai/dsh-audit-workbench' })
+    expect(row(rows, 'ui-audit-workbench')).toEqual({ id: 'ui-audit-workbench', name: '@deepseek-ai/dsh-client-ui-audit-workbench' })
+  })
 })
 
 describe('the audit agent persona', () => {

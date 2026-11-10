@@ -1,0 +1,6 @@
+{
+  "meta": {
+    "title": "Audit workbench service",
+    "description": "Read audit projects, their project archives, and system login status for the Desktop audit workbench."
+  }
+}

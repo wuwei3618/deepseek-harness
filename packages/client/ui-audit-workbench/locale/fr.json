@@ -1,0 +1,6 @@
+{
+  "meta": {
+    "title": "Poste d’audit",
+    "description": "Ajoute à la barre latérale un poste d’audit qui résume l’état de connexion de chaque système et le dossier de chaque projet d’audit."
+  }
+}

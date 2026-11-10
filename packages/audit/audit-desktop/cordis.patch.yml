@@ -235,3 +235,14 @@
 - insert:
     - id: ui-brand-cscec8b
       name: '@deepseek-ai/dsh-client-ui-brand-cscec8b'
+
+# ── audit workbench ─────────────────────────────────────────────────────────
+
+# The 审计工作台 sidebar page: the Host row reads the audit plugin pack's
+# workbench manifest, the project archive of every workspace, and each
+# system's login status; the browser row shows them and fills new sessions.
+- insert:
+    - id: audit-workbench
+      name: '@deepseek-ai/dsh-audit-workbench'
+    - id: ui-audit-workbench
+      name: '@deepseek-ai/dsh-client-ui-audit-workbench'

@@ -1,0 +1,6 @@
+{
+  "meta": {
+    "title": "Panel de auditoría",
+    "description": "Añade a la barra lateral un panel de auditoría que resume el estado de inicio de sesión de cada sistema y el expediente de cada proyecto de auditoría."
+  }
+}

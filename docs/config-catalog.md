@@ -455,6 +455,26 @@ export interface Config {
 ```
 <!-- END GENERATED config-catalog:@deepseek-ai/dsh-audit-skills -->
 
+<!-- BEGIN GENERATED config-catalog:@deepseek-ai/dsh-audit-workbench -->
+<a id="deepseek-aidsh-audit-workbench"></a>
+
+## `@deepseek-ai/dsh-audit-workbench`
+
+- `source`: [`packages/audit/audit-workbench/src/index.ts:21`](../packages/audit/audit-workbench/src/index.ts)
+
+```ts config-catalog
+/** Workbench row configuration. */
+export interface Config {
+  /** Pack directory; absolute or `~`-prefixed. Defaults to `audit-plugins` under the Harness home, as for the pack row. */
+  root?: string
+  /** Deadline in milliseconds for one session check, server start included. */
+  checkTimeoutMs: number
+  /** Deadline in milliseconds for one login tool call, which waits for the person to log in. */
+  loginTimeoutMs: number
+}
+```
+<!-- END GENERATED config-catalog:@deepseek-ai/dsh-audit-workbench -->
+
 <!-- BEGIN GENERATED config-catalog:@deepseek-ai/dsh-bash-local -->
 <a id="deepseek-aidsh-bash-local"></a>
 
@@ -691,6 +711,25 @@ export interface Config {
 }
 ```
 <!-- END GENERATED config-catalog:@deepseek-ai/dsh-client-ui-settings-models -->
+
+<!-- BEGIN GENERATED config-catalog:@deepseek-ai/dsh-client-ui-settings-plugin-inventory -->
+<a id="deepseek-aidsh-client-ui-settings-plugin-inventory"></a>
+
+## `@deepseek-ai/dsh-client-ui-settings-plugin-inventory`
+
+- `source`: [`packages/client/ui-settings-plugin-inventory/src/config.ts:5`](../packages/client/ui-settings-plugin-inventory/src/config.ts)
+
+```ts config-catalog
+/** Inventory card choices a deployment sets on the plugin's Loader entry. */
+export interface Config {
+  /**
+   * Show each card's module specifier (for example `@deepseek-ai/dsh-tool-bash`)
+   * in its details, title hover text, and search matches.
+   */
+  showModuleName: boolean
+}
+```
+<!-- END GENERATED config-catalog:@deepseek-ai/dsh-client-ui-settings-plugin-inventory -->
 
 <!-- BEGIN GENERATED config-catalog:@deepseek-ai/dsh-client-ui-sidebar-documentpreview -->
 <a id="deepseek-aidsh-client-ui-sidebar-documentpreview"></a>
@@ -4941,6 +4980,7 @@ These load from a `cordis.yml` entry with no `config:` block; they declare no co
 | `@deepseek-ai/dsh-client-ui-agent-team` | — | [`packages/client/ui-agent-team/src/index.ts`](../packages/client/ui-agent-team/src/index.ts) |
 | `@deepseek-ai/dsh-client-ui-approval` | — | [`packages/client/ui-approval/src/index.ts`](../packages/client/ui-approval/src/index.ts) |
 | `@deepseek-ai/dsh-client-ui-attachment` | — | [`packages/client/ui-attachment/src/index.ts`](../packages/client/ui-attachment/src/index.ts) |
+| `@deepseek-ai/dsh-client-ui-audit-workbench` | — | [`packages/client/ui-audit-workbench/src/index.ts`](../packages/client/ui-audit-workbench/src/index.ts) |
 | `@deepseek-ai/dsh-client-ui-brand-cscec8b` | — | [`packages/client/ui-brand-cscec8b/src/index.ts`](../packages/client/ui-brand-cscec8b/src/index.ts) |
 | `@deepseek-ai/dsh-client-ui-brand-official` | — | [`packages/client/ui-brand-official/src/index.ts`](../packages/client/ui-brand-official/src/index.ts) |
 | `@deepseek-ai/dsh-client-ui-chat` | — | [`packages/client/ui-chat/src/index.ts`](../packages/client/ui-chat/src/index.ts) |
@@ -4974,7 +5014,6 @@ These load from a `cordis.yml` entry with no `config:` block; they declare no co
 | `@deepseek-ai/dsh-client-ui-settings` | — | [`packages/client/ui-settings/src/index.ts`](../packages/client/ui-settings/src/index.ts) |
 | `@deepseek-ai/dsh-client-ui-settings-agent-loop` | — | [`packages/client/ui-settings-agent-loop/src/index.ts`](../packages/client/ui-settings-agent-loop/src/index.ts) |
 | `@deepseek-ai/dsh-client-ui-settings-general` | — | [`packages/client/ui-settings-general/src/index.ts`](../packages/client/ui-settings-general/src/index.ts) |
-| `@deepseek-ai/dsh-client-ui-settings-plugin-inventory` | — | [`packages/client/ui-settings-plugin-inventory/src/index.ts`](../packages/client/ui-settings-plugin-inventory/src/index.ts) |
 | `@deepseek-ai/dsh-client-ui-settings-plugins` | — | [`packages/client/ui-settings-plugins/src/index.ts`](../packages/client/ui-settings-plugins/src/index.ts) |
 | `@deepseek-ai/dsh-client-ui-settings-session-log` | — | [`packages/client/ui-settings-session-log/src/index.ts`](../packages/client/ui-settings-session-log/src/index.ts) |
 | `@deepseek-ai/dsh-client-ui-settings-shell` | — | [`packages/client/ui-settings-shell/src/index.ts`](../packages/client/ui-settings-shell/src/index.ts) |
