@@ -212,8 +212,8 @@ describe('AuditWorkbench', () => {
 
   it.each([
     ['a pack without a manifest', () => pack(null, null), { kind: 'missing' }],
-    ['a manifest that cannot be read', () => pack(null), { kind: 'invalid', message: expect.stringMatching(/^cannot read/) as unknown }],
-    ['a manifest in another format', () => pack({ version: 9 }), { kind: 'invalid', message: expect.stringMatching(/^version/) as unknown }],
+    ['a manifest that cannot be read', () => pack(null), { kind: 'invalid', message: expect.stringMatching(/^cannot read/) as string }],
+    ['a manifest in another format', () => pack({ version: 9 }), { kind: 'invalid', message: expect.stringMatching(/^version/) as string }],
   ])('reports %s without systems or prompts', async (_label, make, manifest) => {
     await withWorkbench(await make(), [], async (ctx) => {
       expect(await ctx.auditWorkbench.overview(signal())).toMatchObject({

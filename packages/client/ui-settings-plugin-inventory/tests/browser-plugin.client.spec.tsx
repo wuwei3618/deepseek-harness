@@ -53,6 +53,12 @@ function declare(slots: SlotRegistry): () => void {
   } as never, () => null)
 }
 
+
+/** Call a settings tab entry's `inject` factory. */
+function injectedOf(entry: { inject?: object }): PluginInventorySettingsTabInjected {
+  return (entry.inject as unknown as () => PluginInventorySettingsTabInjected)()
+}
+
 describe('ui-settings-plugin-inventory browser plugin', () => {
   it('publishes the validated card choices in the page bootstrap until disposal', async () => {
     const ctx = new Context()
@@ -84,7 +90,7 @@ describe('ui-settings-plugin-inventory browser plugin', () => {
     expect(resolveSlotLabel(entry.options.label)).toBe('插件列表')
     expect(b.list).not.toHaveBeenCalled()
 
-    const injected = (entry.inject as unknown as () => PluginInventorySettingsTabInjected)()
+    const injected = injectedOf(entry)
     const text = { en: 'Local tools', zh: '本地工具' }
     expect(injected.resolveText(text)).toBe('本地工具')
     b.locale.setLocale('en')
@@ -120,7 +126,7 @@ describe('ui-settings-plugin-inventory browser plugin', () => {
     declare(b.slots)
     await b.ctx.plugin({ inject: [...inject], apply }).await()
     const entry = b.slots.entries('settings.plugins.tab')[0]!
-    const injected = (entry.inject as unknown as () => PluginInventorySettingsTabInjected)()
+    const injected = injectedOf(entry)
     expect(injected.showModuleName).toBe(shown)
     await b.ctx.fiber.dispose()
   })
