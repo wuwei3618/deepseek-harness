@@ -978,6 +978,29 @@ button.twisty:disabled {
   background: var(--dsw-alias-bg-layer-1);
 }
 
+.problems {
+  box-sizing: border-box;
+  padding: 10px 14px;
+  border-radius: var(--dsw-radius-md);
+  font-size: 13px;
+  line-height: 20px;
+  color: var(--dsw-alias-state-error-primary);
+  background: var(--dsw-alias-bg-layer-1);
+  overflow-wrap: anywhere;
+}
+
+.problems summary {
+  cursor: pointer;
+}
+
+.problems ul {
+  max-height: 240px;
+  margin: 8px 0 0;
+  padding-inline-start: 20px;
+  overflow-y: auto;
+  color: var(--dsw-alias-label-secondary);
+}
+
 .legend {
   display: flex;
   flex-wrap: wrap;

@@ -7,12 +7,17 @@ export type ScopeFilter = 'all' | 'in' | 'other' | 'out' | 'conflict'
 
 /** One Organization Scope indexed by code. */
 export interface ScopeIndex {
+  /** The starting node. */
   readonly root: OrgScopeNode
+  /** Top-level codes in file order, the starting node first. */
+  readonly tops: readonly string[]
   readonly byCode: ReadonlyMap<string, OrgScopeNode>
   /** Child codes in file order. */
   readonly children: ReadonlyMap<string, readonly string[]>
   /** Number of all descendants of each node. */
   readonly descendants: ReadonlyMap<string, number>
+  /** Recorded parent of each node the reader moved to the top level because no earlier node holds that parent. */
+  readonly detached: ReadonlyMap<string, string>
 }
 
 /** Node counts the filter chips show. */
@@ -44,28 +49,33 @@ export interface ScopeRows {
 }
 
 /**
- * Index an Organization Scope whose nodes are in preorder with the starting node first.
- * @param scope - the read scope; the Host reader guarantees a root and parents before children.
+ * Index an Organization Scope whose nodes list each parent before its children with the starting node first.
+ * @param scope - the read scope; the Host reader guarantees a starting node and parents before children.
  * @returns the index.
  */
 export function indexScope(scope: OrgScope): ScopeIndex {
   const byCode = new Map<string, OrgScopeNode>()
   const children = new Map<string, string[]>()
+  const tops: string[] = []
   for (const node of scope.nodes) {
     byCode.set(node.code, node)
-    if (node.parent === '') continue
+    if (node.parent === '') {
+      tops.push(node.code)
+      continue
+    }
     const siblings = children.get(node.parent)
     if (siblings === undefined) children.set(node.parent, [node.code])
     else siblings.push(node.code)
   }
   const descendants = new Map<string, number>()
-  // Preorder lists every child after its parent, so a reverse pass sees each subtree complete.
+  // The file lists every child after its parent, so a reverse pass sees each subtree complete.
   for (const node of scope.nodes.toReversed()) {
     const own = descendants.get(node.code) ?? 0
     descendants.set(node.code, own)
     if (node.parent !== '') descendants.set(node.parent, (descendants.get(node.parent) ?? 0) + own + 1)
   }
-  return { root: scope.nodes[0] as OrgScopeNode, byCode, children, descendants }
+  const detached = new Map(scope.problems.flatMap(problem => problem.kind === 'detached' ? [[problem.code, problem.parent] as const] : []))
+  return { root: scope.nodes[0] as OrgScopeNode, tops, byCode, children, descendants, detached }
 }
 
 /**
@@ -133,10 +143,10 @@ function matchesQuery(node: OrgScopeNode, query: string): boolean {
 }
 
 /**
- * Ancestor codes of a node from the starting node down to its parent.
+ * Ancestor codes of a node from its top-level node down to its parent.
  * @param index - the indexed scope.
  * @param code - a code the scope holds.
- * @returns the codes, empty for the starting node.
+ * @returns the codes, empty for a top-level node.
  */
 export function ancestors(index: ScopeIndex, code: string): string[] {
   const chain: string[] = []
@@ -145,8 +155,8 @@ export function ancestors(index: ScopeIndex, code: string): string[] {
 }
 
 /**
- * The rows of the tree view in preorder. Without a filter or query only expanded nodes show their children; with one,
- * every matching node shows with its ancestors expanded and the other nodes are left out.
+ * The rows of the tree view in preorder, top-level nodes in file order. Without a filter or query only expanded nodes
+ * show their children; with one, every matching node shows with its ancestors expanded and the other nodes are left out.
  * @param index - the indexed scope.
  * @param view - expanded codes, the filter, the query (already trimmed), and the row limit.
  * @returns the rows up to `limit`, and whether more rows were cut.
@@ -181,7 +191,7 @@ export function visibleRows(index: ScopeIndex, view: {
     rows.push({ node, depth, expandable: children.length > 0, expanded, hit: hits.has(code) })
     if (expanded) for (const child of children) walk(child, depth + 1)
   }
-  if (!narrowing || kept.has(index.root.code)) walk(index.root.code, 0)
+  for (const top of index.tops) if (!narrowing || kept.has(top)) walk(top, 0)
   return { rows, truncated }
 }
 

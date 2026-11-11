@@ -197,7 +197,7 @@ export type OrgScopeOwnership =
 export interface OrgScopeNode {
   readonly code: string
   readonly name: string
-  /** Parent node code; empty for the starting node. */
+  /** Parent node code; empty for a top-level node, which the starting node always is. */
   readonly parent: string
   /** Owning second-level unit; may be empty. */
   readonly unit: string
@@ -218,16 +218,31 @@ export interface OrgScope {
   readonly exportedAt: string
   /** File name of the members table the scope was taken from, in the scope file's directory; may be empty. */
   readonly membersTable: string
-  /** Nodes in preorder; a parent precedes its children. */
+  /** Nodes in file order, the starting node first; a parent precedes its children. */
   readonly nodes: readonly OrgScopeNode[]
+  /** Nodes the file lists but the reader left out or moved to the top level, in file order. */
+  readonly problems: readonly OrgScopeProblem[]
 }
+
+/** One node of an Organization Scope file that cannot be shown where the file puts it; `index` counts from 0 in the file. */
+export type OrgScopeProblem =
+  /** The node lacks a required field or has an unknown value at `field`; it is left out, and `code` may be empty. */
+  | { readonly kind: 'invalid'; readonly index: number; readonly code: string; readonly field: string }
+  /** The node repeats the code of an earlier node; it is left out. */
+  | { readonly kind: 'duplicate'; readonly index: number; readonly code: string }
+  /** No earlier node holds the node's recorded parent; the node is read as a top-level node. */
+  | { readonly kind: 'detached'; readonly index: number; readonly code: string; readonly parent: string }
 
 /** The Organization Scope of one Auditee. */
 export type OrgScopeRead =
   /** The archive records no Organization Scope file for the Auditee. */
   | { readonly kind: 'missing' }
-  /** The recorded file lies outside the Project Directory, cannot be read, is not JSON, or does not follow the format. */
-  | { readonly kind: 'unreadable'; readonly reason: 'outside' | 'io' | 'json' | 'shape'; readonly message: string }
+  /**
+   * The recorded file cannot be shown. `message` holds the recorded path for `outside` (the file lies outside the
+   * Project Directory), the system message for `io` and `json`, the dotted path of the header field at fault for
+   * `shape`, and the first node's code for `origin` (the first node is not 起点).
+   */
+  | { readonly kind: 'unreadable'; readonly reason: 'outside' | 'io' | 'json' | 'shape' | 'origin'; readonly message: string }
   | { readonly kind: 'read'; readonly scope: OrgScope }
 
 /** One Auditee of a Workspace's Project Archive, by index. */

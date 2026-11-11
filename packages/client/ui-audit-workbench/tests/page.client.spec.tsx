@@ -7,7 +7,7 @@ import type { SessionListState, SessionSummary } from '@deepseek-ai/dsh-api-sess
 import type { WorkspaceSnapshot } from '@deepseek-ai/dsh-api-workspace-controller/client'
 import type { SessionId } from '@deepseek-ai/dsh-session/types'
 import type { WorkspaceId } from '@deepseek-ai/dsh-workspace/types'
-import type { OrgScopeRead, ProjectArchive, ProjectEntry, WorkbenchOverview } from '@deepseek-ai/dsh-audit-workbench/types'
+import type { OrgScope, OrgScopeRead, ProjectArchive, ProjectEntry, WorkbenchOverview } from '@deepseek-ai/dsh-audit-workbench/types'
 import { WorkbenchPage, type PromptOutcome, type WorkbenchPageProps } from '../src/client/WorkbenchPage.tsx'
 import { ModelsDialog } from '../src/client/dialogs.tsx'
 import { scopeKey, type Load, type WorkbenchSnapshot } from '../src/client/source.ts'
@@ -698,6 +698,33 @@ describe('organization scope view', () => {
     expect(within(nodeDetail()).getByText('由第二分公司管辖')).toBeTruthy()
   })
 
+  it('shows every top-level node and lists the nodes the file could not place', async () => {
+    const scope: OrgScope = {
+      ...ORG_SCOPE,
+      nodes: [node('R', '', { name: '总部' }), node('A', 'R', { name: '分部' }), node('T', '', { name: '轨道分公司' }), node('D', '', { name: '封存项目' })],
+      problems: [
+        { kind: 'invalid', index: 2, code: '', field: '' },
+        { kind: 'duplicate', index: 4, code: 'A' },
+        { kind: 'detached', index: 5, code: 'D', parent: 'Z' },
+        { kind: 'invalid', index: 6, code: 'B', field: '归属' },
+      ],
+    }
+    openScope(withScope({ status: 'ready', value: { kind: 'read', scope } }))
+    expect(treeRows()).toEqual(['总部R', '分部A', '轨道分公司T', '封存项目D上一级缺失'])
+    expect(screen.getByText('4 个节点未能按文件中的位置显示')).toBeTruthy()
+    expect([...document.querySelectorAll('details li')].map(item => item.textContent)).toEqual([
+      '第 3 个节点（无编码）的「节点内容」缺失或取值不符合格式，未予显示',
+      '第 5 个节点（A）与前面的节点编码重复，未予显示',
+      '第 6 个节点（D）记录的上一级 Z 不在其前面，已作为顶层节点显示',
+      '第 7 个节点（B）的「归属」缺失或取值不符合格式，未予显示',
+    ])
+    expect(screen.getByText('文件中记录的上一级不在本节点之前，已作为顶层节点显示')).toBeTruthy()
+    fireEvent.click(screen.getByRole('button', { name: /^封存项目/ }))
+    expect(within(nodeDetail()).getByText('文件中记录的上一级 Z 不在本节点之前，现作为顶层节点显示')).toBeTruthy()
+    await act(async () => { fireEvent.change(screen.getByRole('searchbox', { name: '按名称或编码查找' }), { target: { value: '轨道' } }) })
+    expect(treeRows()).toEqual(['轨道分公司T'])
+  })
+
   it('keeps the tree to its row limit and says how to narrow it', () => {
     const many = { ...ORG_SCOPE, nodes: [node('R', '', { name: '总部' }), ...Array.from({ length: 250 }, (_, at) => node(`N${at}`, 'R'))] }
     openScope(withScope({ status: 'ready', value: { kind: 'read', scope: many } }))
@@ -729,10 +756,18 @@ describe('organization scope view', () => {
     fireEvent.click(screen.getByRole('button', { name: '取消' }))
     for (const [reason, message] of [
       ['outside', '组织范围文件不在项目目录内，未予读取'], ['io', '组织范围文件无法读取，文件可能已被移动或删除'],
-      ['json', '组织范围文件不是有效的 JSON，可能经过手工修改或未写完整'], ['shape', '组织范围文件的格式不符合要求，请在项目会话中重新导出'],
+      ['json', '组织范围文件不是有效的 JSON，可能经过手工修改或未写完整'],
     ] as const) {
       await act(async () => { store.set(withScope({ status: 'ready', value: { kind: 'unreadable', reason, message: `细节 ${reason}` } })) })
       expect(screen.getByRole('alert').textContent).toBe(`${message}细节 ${reason}`)
+    }
+    for (const [reason, detail, message] of [
+      ['shape', '起点.编码', '组织范围文件中「起点.编码」一项缺失或取值不符合格式，工作台无法读取。重新导出通常不能解决，请将此提示反馈给审计插件的维护人员'],
+      ['shape', '', '组织范围文件的内容不是 JSON 对象，工作台无法读取。请将此提示反馈给审计插件的维护人员'],
+      ['origin', 'C002', '组织范围文件的第一个节点（C002）不是起点，工作台无法确定组织树从何处开始。请将此提示反馈给审计插件的维护人员'],
+    ] as const) {
+      await act(async () => { store.set(withScope({ status: 'ready', value: { kind: 'unreadable', reason, message: detail } })) })
+      expect(screen.getByRole('alert').textContent).toBe(message)
     }
     expect(screen.getByText('示例公司')).toBeTruthy()
   })

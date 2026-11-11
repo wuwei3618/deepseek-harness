@@ -92,6 +92,7 @@ export const ORG_SCOPE: OrgScope = {
   origin: { code: 'C001', name: '示例公司' },
   exportedAt: '2026-11-09 20:40',
   membersTable: '名下编码_C001.xlsx',
+  problems: [],
   nodes: [
     node('C001', '', { name: '示例公司', source: '组织架构对照表', profitCenters: ['L001', 'L002'] }),
     node('C002', 'C001', { name: '第一分公司', profitCenters: ['L003'] }),
