@@ -48,6 +48,8 @@ function registerPage(ctx: Context): void {
     onLogin: (id) => { void source.login(id) },
     preparePrompt: request => source.prompt(request),
     openOutput: request => source.openOutput(request),
+    readScope: (request) => { void source.readScope(request) },
+    openMembersTable: request => source.openMembersTable(request),
     startSession: (workspaceId, prompt) => { ctx.uiWorkspace.startSession(workspaceId, { prompt, whenDraftExists: 'append' }) },
     openSession: (sessionId) => { ctx.uiWorkspace.openSession(sessionId) },
     pickDirectory: () => ctx.uiWorkspace.pickDirectory(),

@@ -7,13 +7,13 @@ import type { SessionListState, SessionSummary } from '@deepseek-ai/dsh-api-sess
 import type { WorkspaceSnapshot } from '@deepseek-ai/dsh-api-workspace-controller/client'
 import type { SessionId } from '@deepseek-ai/dsh-session/types'
 import type { WorkspaceId } from '@deepseek-ai/dsh-workspace/types'
-import type { ProjectArchive, ProjectEntry, WorkbenchOverview } from '@deepseek-ai/dsh-audit-workbench/types'
+import type { OrgScopeRead, ProjectArchive, ProjectEntry, WorkbenchOverview } from '@deepseek-ai/dsh-audit-workbench/types'
 import { WorkbenchPage, type PromptOutcome, type WorkbenchPageProps } from '../src/client/WorkbenchPage.tsx'
 import { ModelsDialog } from '../src/client/dialogs.tsx'
-import type { WorkbenchSnapshot } from '../src/client/source.ts'
+import { scopeKey, type Load, type WorkbenchSnapshot } from '../src/client/source.ts'
 import { zh } from '../src/client/locales.ts'
 import { clockTime } from '../src/client/format.ts'
-import { ALPHA, ARCHIVE, BETA, OVERVIEW, PROJECTS, READY, task } from './fixtures.ts'
+import { ALPHA, ARCHIVE, BETA, node, ORG_SCOPE, OVERVIEW, PROJECTS, READY, task } from './fixtures.ts'
 
 const t = makeTranslate(zh)
 const NOW = Date.now()
@@ -54,6 +54,7 @@ function ready(overview: WorkbenchOverview = OVERVIEW, projects: readonly Projec
     overview: { status: 'ready', value: overview },
     projects: { status: 'ready', value: projects },
     systems: { dac: { busy: 'idle', check: READY } },
+    scopes: {},
   }
 }
 
@@ -77,6 +78,8 @@ function mount(initial: WorkbenchSnapshot = ready(), overrides: Partial<Workbenc
     onLogin: vi.fn(),
     preparePrompt: vi.fn<WorkbenchPageProps['preparePrompt']>(async () => ({ ok: true, prompt: '请按技能开工' })),
     openOutput: vi.fn<WorkbenchPageProps['openOutput']>(async () => 'opened'),
+    readScope: vi.fn(),
+    openMembersTable: vi.fn<WorkbenchPageProps['openMembersTable']>(async () => 'opened'),
     startSession: vi.fn(),
     openSession: vi.fn(),
     pickDirectory: vi.fn<WorkbenchPageProps['pickDirectory']>(async () => '/projects/new'),
@@ -170,7 +173,7 @@ describe('workbench overview', () => {
 
   it('shows empty values for an archive without facts and no tasks', () => {
     const bare: ProjectArchive = {
-      ...ARCHIVE, updatedAt: '', auditType: '', auditees: [{ name: '', kind: '', codes: [] }], period: { from: '', to: '' },
+      ...ARCHIVE, updatedAt: '', auditType: '', auditees: [{ name: '', kind: '', codes: [], scopeFile: '' }], period: { from: '', to: '' },
       scope: { ...ARCHIVE.scope, confirmedAt: '' }, tasks: [task({ status: 'skipped' })],
     }
     mount(ready(OVERVIEW, [{ workspaceId: ALPHA, path: '/projects/alpha', read: { kind: 'read', newer: false, archive: bare } }]))
@@ -182,14 +185,14 @@ describe('workbench overview', () => {
   })
 
   it('reports the overview and project reads while they load or fail', () => {
-    const { props, view } = mount({ overview: { status: 'error' }, projects: { status: 'loading' }, systems: {} })
+    const { props, view } = mount({ overview: { status: 'error' }, projects: { status: 'loading' }, systems: {}, scopes: {} })
     expect(screen.getByText('未能读取审计工作台信息')).toBeTruthy()
     expect(view.container.querySelector('[aria-busy="true"]')).not.toBeNull()
     expect(screen.queryByRole('button', { name: '新建审计项目' })).toBeNull()
     fireEvent.click(screen.getByRole('button', { name: '重试' }))
     expect(props.onRefresh).toHaveBeenCalledTimes(1)
     cleanup()
-    const failed = mount({ overview: { status: 'loading' }, projects: { status: 'error' }, systems: {} })
+    const failed = mount({ overview: { status: 'loading' }, projects: { status: 'error' }, systems: {}, scopes: {} })
     expect(screen.getByText('未能读取项目档案')).toBeTruthy()
     fireEvent.click(screen.getByRole('button', { name: '重试' }))
     expect(failed.props.onRefreshProjects).toHaveBeenCalledTimes(1)
@@ -356,18 +359,19 @@ describe('new audit project', () => {
   })
 })
 
+function openAlpha(initial: WorkbenchSnapshot = ready(), overrides: Partial<WorkbenchPageProps> = {}) {
+  const mounted = mount(initial, overrides)
+  fireEvent.click(within(card('示例公司离任审计')).getByRole('button', { name: '查看项目' }))
+  return mounted
+}
+
 describe('project detail', () => {
-  function openAlpha(initial: WorkbenchSnapshot = ready(), overrides: Partial<WorkbenchPageProps> = {}) {
-    const mounted = mount(initial, overrides)
-    fireEvent.click(within(card('示例公司离任审计')).getByRole('button', { name: '查看项目' }))
-    return mounted
-  }
 
   it('shows the archive facts, the scope, and the readings', () => {
     openAlpha()
     expect(screen.getByText('项目目录 /projects/alpha')).toBeTruthy()
     expect(screen.getByText('档案更新于 2026-11-09 14:32')).toBeTruthy()
-    expect(screen.getByText('机构 · C001 · C002')).toBeTruthy()
+    expect(screen.getByText('机构 · 名下编码 2 个')).toBeTruthy()
     expect(screen.getByText('示例项目部')).toBeTruthy()
     expect(screen.getByText('专项一、专项二')).toBeTruthy()
     expect(screen.getByText('2021-03 至 —')).toBeTruthy()
@@ -378,7 +382,8 @@ describe('project detail', () => {
     expect(screen.getByText('读数时间 2026-11-05 10:02')).toBeTruthy()
     expect(screen.getByText('审计方案/会话预检.json')).toBeTruthy()
     expect(screen.getByText('尚未读数')).toBeTruthy()
-    expect(screen.getByText('开工会议')).toBeTruthy()
+    expect(screen.getAllByText('2 项，分 2 个板块')).toHaveLength(2)
+    expect(screen.getByText('未标明板块')).toBeTruthy()
   })
 
   it('lists Kickoff Tasks with their status, outputs, and actions', async () => {
@@ -513,5 +518,238 @@ describe('project detail', () => {
       source.set({ ...store, projects: { status: 'ready', value: [] } })
     })
     expect(screen.queryByText(/项目目录/)).toBeNull()
+  })
+})
+
+const READ_SCOPE: Load<OrgScopeRead> = { status: 'ready', value: { kind: 'read', scope: ORG_SCOPE } }
+
+/** A snapshot whose Alpha archive is `archive` and whose first Auditee's scope read is `scope`. */
+function withScope(scope: Load<OrgScopeRead> | undefined, archive: ProjectArchive = ARCHIVE): WorkbenchSnapshot {
+  const base = ready(OVERVIEW, [{ workspaceId: ALPHA, path: '/projects/alpha', read: { kind: 'read', newer: false, archive } }, ...PROJECTS.slice(1)])
+  return { ...base, scopes: scope === undefined ? {} : { [scopeKey(ALPHA, 0)]: scope } }
+}
+
+function openScope(initial: WorkbenchSnapshot = withScope(READ_SCOPE), overrides: Partial<WorkbenchPageProps> = {}) {
+  const mounted = openAlpha(initial, overrides)
+  fireEvent.click(screen.getAllByRole('button', { name: '查看组织范围' })[0]!)
+  return mounted
+}
+
+const treeRows = (): string[] => within(screen.getByRole('region', { name: '组织机构树' })).queryAllByRole('listitem').map(item => item.textContent)
+const nodeDetail = (): HTMLElement => screen.getByRole('complementary', { name: '节点详情' })
+
+describe('project detail cards', () => {
+  it('reads each recorded scope, summarizes it on the Auditee, and links to it', () => {
+    const { props } = openAlpha(withScope(READ_SCOPE))
+    expect(props.readScope).toHaveBeenCalledTimes(1)
+    expect(props.readScope).toHaveBeenCalledWith({ workspaceId: ALPHA, auditee: 0 })
+    expect(screen.getByText('机构 · 名下编码 3 个，利润中心 3 个')).toBeTruthy()
+    expect(screen.getAllByRole('button', { name: '查看组织范围' })).toHaveLength(1)
+  })
+
+  it('shows the first focus items of each section and the rest on request', () => {
+    const scrollIntoView = vi.fn()
+    Element.prototype.scrollIntoView = scrollIntoView
+    const focus = ['一', '二', '三', '四', '五'].map(content => ({ content, section: '财务' })).concat([{ content: '六', section: '采购' }])
+    openAlpha(withScope(undefined, { ...ARCHIVE, focus }))
+    expect(screen.getAllByText('6 项，分 2 个板块')).toHaveLength(2)
+    fireEvent.click(screen.getByRole('button', { name: '查看' }))
+    expect(scrollIntoView).toHaveBeenCalledWith({ block: 'start' })
+    const finance = screen.getByRole('region', { name: '财务' })
+    expect(within(finance).getByText('5 项')).toBeTruthy()
+    expect(within(finance).getByText('重点-3')).toBeTruthy()
+    expect(within(finance).queryByText('四')).toBeNull()
+    fireEvent.click(within(finance).getByRole('button', { name: '另有 2 项' }))
+    expect(within(finance).getByText('四')).toBeTruthy()
+    expect(screen.getByRole('button', { name: '全部收起' })).toBeTruthy()
+    fireEvent.click(within(finance).getByRole('button', { name: '收起' }))
+    expect(within(finance).queryByText('四')).toBeNull()
+    fireEvent.click(screen.getByRole('button', { name: '全部展开' }))
+    expect(within(finance).getByText('五')).toBeTruthy()
+    fireEvent.click(screen.getByRole('button', { name: '全部收起' }))
+    expect(within(finance).queryByText('五')).toBeNull()
+    expect(within(screen.getByRole('region', { name: '采购' })).queryByRole('button')).toBeNull()
+  })
+
+  it('lists the change log newest first, five at a time, with the basis on request', () => {
+    const changes = [1, 2, 3, 4, 5, 6].map(day => ({ date: `2026-11-0${day} 10:00`, what: `第 ${day} 次修改`, basis: day === 6 ? '' : `依据 ${day}` }))
+    openAlpha(withScope(undefined, { ...ARCHIVE, changes }))
+    const log = screen.getByRole('heading', { name: '修改记录' }).closest('section')!
+    expect(within(log).getByText('共 6 条，最近 2026-11-06 10:00')).toBeTruthy()
+    expect(within(log).getAllByRole('listitem').map(item => item.textContent)).toEqual([
+      '11-06 10:00第 6 次修改', '11-05 10:00第 5 次修改', '11-04 10:00第 4 次修改', '11-03 10:00第 3 次修改', '11-02 10:00第 2 次修改',
+    ])
+    expect(within(log).queryByRole('button', { name: /第 6 次修改/ })).toBeNull()
+    fireEvent.click(within(log).getByRole('button', { name: /第 5 次修改/ }))
+    expect(within(log).getByText('依据 5')).toBeTruthy()
+    expect(within(log).getByRole('button', { name: /第 5 次修改/ }).getAttribute('aria-expanded')).toBe('true')
+    fireEvent.click(within(log).getByRole('button', { name: /第 5 次修改/ }))
+    expect(within(log).queryByText('依据 5')).toBeNull()
+    fireEvent.click(within(log).getByRole('button', { name: '查看全部 6 条' }))
+    expect(within(log).getAllByRole('listitem')).toHaveLength(6)
+    fireEvent.click(within(log).getByRole('button', { name: '只看最近 5 条' }))
+    expect(within(log).getAllByRole('listitem')).toHaveLength(5)
+  })
+})
+
+describe('organization scope view', () => {
+  it('heads the view with the way back, the Auditee, and the export', () => {
+    openScope()
+    expect(screen.getByRole('heading', { level: 1, name: '组织范围' })).toBeTruthy()
+    expect(screen.getByText('示例公司 · 取自开工时导出的名下编码表 · 导出于 2026-11-09 20:40')).toBeTruthy()
+    expect(screen.getByRole('heading', { level: 1, name: '组织范围' }).closest('[data-window-drag]')).not.toBeNull()
+    fireEvent.click(screen.getByRole('button', { name: '示例公司离任审计' }))
+    expect(screen.getByRole('heading', { level: 1, name: '示例公司离任审计' })).toBeTruthy()
+    fireEvent.click(screen.getByRole('button', { name: '查看组织范围' }))
+    fireEvent.click(screen.getByRole('button', { name: '审计工作台' }))
+    expect(screen.getByRole('heading', { level: 1, name: '审计工作台' })).toBeTruthy()
+  })
+
+  it('reads the scope on opening and again on refresh, and opens the members table', async () => {
+    const openMembersTable = vi.fn<WorkbenchPageProps['openMembersTable']>()
+      .mockResolvedValueOnce('refused').mockResolvedValueOnce('not-found').mockResolvedValueOnce('failed').mockResolvedValueOnce('opened')
+    const { props } = openScope(withScope(READ_SCOPE), { openMembersTable })
+    expect(props.readScope).toHaveBeenLastCalledWith({ workspaceId: ALPHA, auditee: 0 })
+    const reads = vi.mocked(props.readScope).mock.calls.length
+    fireEvent.click(screen.getByRole('button', { name: '刷新' }))
+    expect(props.onRefreshProjects).toHaveBeenCalledTimes(1)
+    expect(props.readScope).toHaveBeenCalledTimes(reads + 1)
+    const open = screen.getByRole('button', { name: '打开名下编码表' })
+    await act(async () => { fireEvent.click(open) })
+    expect(openMembersTable).toHaveBeenCalledWith({ workspaceId: ALPHA, auditee: 0 })
+    expect(screen.getByRole('alert').textContent).toBe('名下编码表不在项目目录内或已不存在，未予打开')
+    await act(async () => { fireEvent.click(open) })
+    expect(screen.getByRole('alert').textContent).toBe('组织范围文件未记录名下编码表，请刷新后重试')
+    await act(async () => { fireEvent.click(open) })
+    expect(screen.getByRole('alert').textContent).toBe('未能打开名下编码表')
+    await act(async () => { fireEvent.click(open) })
+    expect(screen.queryByRole('alert')).toBeNull()
+  })
+
+  it('counts each ownership, filters by it, and lets a second press clear the filter', () => {
+    openScope()
+    const chips = screen.getByRole('group', { name: '按归属筛选' })
+    expect(within(chips).getByRole('button', { name: '全部节点 7' }).getAttribute('aria-pressed')).toBe('true')
+    expect(within(chips).getByText('利润中心')).toBeTruthy()
+    expect(treeRows()).toEqual(['示例公司C001', '第一分公司C002下级 2', '空壳公司C005未纳入', '停用部门C006下级 1归属不明'])
+    fireEvent.click(within(chips).getByRole('button', { name: '归属别家 2' }))
+    expect(treeRows()).toEqual(['示例公司C001', '第一分公司C002', '安装公司C004归属别家来源不一致', '停用部门C006归属不明', '—C007归属别家'])
+    expect(screen.getByRole('button', { name: '展开一层' })).toHaveProperty('disabled', true)
+    fireEvent.click(within(chips).getByRole('button', { name: '归属别家 2' }))
+    expect(treeRows()).toEqual(['示例公司C001', '第一分公司C002下级 2', '空壳公司C005未纳入', '停用部门C006下级 1归属不明'])
+    fireEvent.click(within(chips).getByRole('button', { name: '未纳入 2' }))
+    expect(treeRows()).toEqual(['示例公司C001', '空壳公司C005未纳入', '停用部门C006归属不明'])
+  })
+
+  it('finds nodes by name or code and marks the match', async () => {
+    openScope()
+    await act(async () => { fireEvent.change(screen.getByRole('searchbox', { name: '按名称或编码查找' }), { target: { value: ' 项目 ' } }) })
+    expect(treeRows()).toEqual(['示例公司C001', '第一分公司C002', '华东项目部C003'])
+    expect(screen.getByText('项目', { selector: 'mark' })).toBeTruthy()
+    await act(async () => { fireEvent.change(screen.getByRole('searchbox'), { target: { value: '没有这个' } }) })
+    expect(screen.getByText('没有符合条件的节点')).toBeTruthy()
+  })
+
+  it('expands and collapses branches, one level at a time or all at once', () => {
+    openScope()
+    fireEvent.click(screen.getByRole('button', { name: '收起 示例公司' }))
+    expect(treeRows()).toEqual(['示例公司C001下级 6'])
+    fireEvent.click(screen.getByRole('button', { name: '展开 示例公司' }))
+    expect(treeRows()).toEqual(['示例公司C001', '第一分公司C002下级 2', '空壳公司C005未纳入', '停用部门C006下级 1归属不明'])
+    fireEvent.click(screen.getByRole('button', { name: '展开一层' }))
+    expect(treeRows()).toHaveLength(7)
+    fireEvent.click(screen.getByRole('button', { name: '全部收起' }))
+    expect(treeRows()).toEqual(['示例公司C001', '第一分公司C002下级 2', '空壳公司C005未纳入', '停用部门C006下级 1归属不明'])
+  })
+
+  it('shows the chosen node with its verdict, sources, children, and profit centers', () => {
+    openScope()
+    expect(within(nodeDetail()).getByRole('heading', { name: '示例公司' })).toBeTruthy()
+    expect(within(nodeDetail()).getByText('在本次取数范围内')).toBeTruthy()
+    expect(within(nodeDetail()).getByText('组织架构对照表')).toBeTruthy()
+    expect(within(nodeDetail()).getByText('3 个（全部下级 6 个）')).toBeTruthy()
+    expect(within(nodeDetail()).getByText('L002')).toBeTruthy()
+    fireEvent.click(screen.getByRole('button', { name: /^第一分公司/ }))
+    expect(screen.getByRole('button', { name: /^第一分公司/ }).getAttribute('aria-current')).toBe('true')
+    expect(treeRows()).toContain('华东项目部C003')
+    fireEvent.click(screen.getByRole('button', { name: /^华东项目部/ }))
+    expect(within(nodeDetail()).getByText('项目已完工')).toBeTruthy()
+    expect(within(nodeDetail()).getAllByText('无')).toHaveLength(2)
+    fireEvent.click(screen.getByRole('button', { name: /^安装公司/ }))
+    expect(within(nodeDetail()).getByText('归属示例安装公司，不纳入本次范围')).toBeTruthy()
+    expect(within(nodeDetail()).getByText('来源不一致：报账树归本单位；组织主数据归示例安装公司')).toBeTruthy()
+    fireEvent.click(screen.getByRole('button', { name: /^空壳公司/ }))
+    expect(within(nodeDetail()).getByText('经范围表确认，不纳入本次范围')).toBeTruthy()
+    fireEvent.click(screen.getByRole('button', { name: /^停用部门/ }))
+    expect(within(nodeDetail()).getByText('归属不明，未纳入本次范围')).toBeTruthy()
+    fireEvent.click(screen.getByRole('button', { name: /^—C007/ }))
+    expect(within(nodeDetail()).getByText('归属其他二级单位，不纳入本次范围')).toBeTruthy()
+    fireEvent.click(screen.getByRole('button', { name: '全部收起' }))
+    fireEvent.click(within(nodeDetail()).getByRole('button', { name: '停用部门' }))
+    expect(treeRows()).toContain('—C007归属别家')
+    expect(within(nodeDetail()).getByRole('heading', { name: '停用部门' })).toBeTruthy()
+  })
+
+  it('keeps the tree to its row limit and says how to narrow it', () => {
+    const many = { ...ORG_SCOPE, nodes: [node('R', '', { name: '总部' }), ...Array.from({ length: 250 }, (_, at) => node(`N${at}`, 'R'))] }
+    openScope(withScope({ status: 'ready', value: { kind: 'read', scope: many } }))
+    expect(treeRows()).toHaveLength(200)
+    expect(screen.getByText(/仅显示前 200 行/)).toBeTruthy()
+    expect(screen.queryByRole('button', { name: '打开名下编码表' })).not.toBeNull()
+  })
+
+  it('falls back to the starting node when a refreshed scope no longer holds the chosen one', async () => {
+    const { store } = openScope()
+    fireEvent.click(screen.getByRole('button', { name: /^空壳公司/ }))
+    const smaller = { ...ORG_SCOPE, exportedAt: '', membersTable: '', nodes: ORG_SCOPE.nodes.slice(0, 4) }
+    await act(async () => { store.set(withScope({ status: 'ready', value: { kind: 'read', scope: smaller } })) })
+    expect(within(nodeDetail()).getByRole('heading', { name: '示例公司' })).toBeTruthy()
+    expect(screen.getByText('示例公司 · 取自开工时导出的名下编码表')).toBeTruthy()
+    expect(screen.queryByRole('button', { name: '打开名下编码表' })).toBeNull()
+  })
+
+  it('says why no tree is shown', async () => {
+    const { store, props } = openScope(withScope(undefined))
+    expect(document.querySelector('[aria-busy="true"]')).not.toBeNull()
+    await act(async () => { store.set(withScope({ status: 'error' })) })
+    fireEvent.click(screen.getByRole('button', { name: '重试' }))
+    expect(props.readScope).toHaveBeenLastCalledWith({ workspaceId: ALPHA, auditee: 0 })
+    await act(async () => { store.set(withScope({ status: 'ready', value: { kind: 'missing' } })) })
+    expect(screen.getByRole('heading', { name: '尚无组织范围文件' })).toBeTruthy()
+    await act(async () => { fireEvent.click(screen.getByRole('button', { name: '回填项目档案' })) })
+    expect(props.preparePrompt).toHaveBeenCalledWith({ kind: 'backfill', workspaceId: ALPHA })
+    fireEvent.click(screen.getByRole('button', { name: '取消' }))
+    for (const [reason, message] of [
+      ['outside', '组织范围文件不在项目目录内，未予读取'], ['io', '组织范围文件无法读取，文件可能已被移动或删除'],
+      ['json', '组织范围文件不是有效的 JSON，可能经过手工修改或未写完整'], ['shape', '组织范围文件的格式不符合要求，请在项目会话中重新导出'],
+    ] as const) {
+      await act(async () => { store.set(withScope({ status: 'ready', value: { kind: 'unreadable', reason, message: `细节 ${reason}` } })) })
+      expect(screen.getByRole('alert').textContent).toBe(`${message}细节 ${reason}`)
+    }
+    expect(screen.getByText('示例公司')).toBeTruthy()
+  })
+
+  it('offers no backfill without its prompt and reports a gone Auditee, archive, or project', async () => {
+    const missing = withScope({ status: 'ready', value: { kind: 'missing' } })
+    const { store } = openScope({ ...missing, overview: { status: 'ready', value: { ...OVERVIEW, prompts: { ...OVERVIEW.prompts, backfill: false } } } })
+    expect(screen.queryByRole('button', { name: '回填项目档案' })).toBeNull()
+    await act(async () => { store.set(withScope(undefined, { ...ARCHIVE, auditees: [] })) })
+    expect(screen.getByText('该被审计单位已不在项目档案中')).toBeTruthy()
+    expect(screen.queryByText(/取自开工时/)).toBeNull()
+    await act(async () => { store.set({ ...missing, projects: { status: 'loading' } }) })
+    expect(document.querySelector('[aria-busy="true"]')).not.toBeNull()
+    await act(async () => { store.set({ ...missing, projects: { status: 'ready', value: [] } }) })
+    expect(screen.getByText('该工作区已不存在')).toBeTruthy()
+  })
+
+  it('switches between Auditees that have a scope', () => {
+    const archive: ProjectArchive = { ...ARCHIVE, auditees: [ARCHIVE.auditees[0]!, { name: '', kind: '机构', codes: ['D001'], scopeFile: '' }, ARCHIVE.auditees[1]!] }
+    const { props } = openScope(withScope(READ_SCOPE, archive))
+    const units = screen.getByRole('group', { name: '被审计单位' })
+    expect(within(units).getAllByRole('button').map(button => button.textContent)).toEqual(['示例公司', '—'])
+    fireEvent.click(within(units).getByRole('button', { name: '—' }))
+    expect(props.readScope).toHaveBeenLastCalledWith({ workspaceId: ALPHA, auditee: 1 })
+    expect(within(units).getByRole('button', { name: '—' }).getAttribute('aria-pressed')).toBe('true')
+    expect(document.querySelector('[aria-busy="true"]')).not.toBeNull()
   })
 })

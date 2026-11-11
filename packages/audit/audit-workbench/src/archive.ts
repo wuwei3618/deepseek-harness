@@ -89,6 +89,7 @@ export function projectArchive(data: Fields): ProjectArchive {
       name: text(item['确认的全称']) || text(item['用户说的名称']),
       kind: text(item['对象类型']),
       codes: texts(item['编码']),
+      scopeFile: text(item['组织范围文件']),
     })),
     period: span(data['审计期间']),
     tenure: span(data['任期']),

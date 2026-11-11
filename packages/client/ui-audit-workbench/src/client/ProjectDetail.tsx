@@ -1,21 +1,30 @@
 /** One audit project: its Project Archive, the Kickoff Tasks with their outputs, and the project's Sessions. */
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState, type Ref } from 'react'
 import clsx from 'clsx'
 import {
-  Button, IconChevronLeftOutlineRegular, IconFolderOpenOutlineRegular, IconPlayOutlineRegular, IconRefreshOutlineRegular,
-  relativeTime, Tag,
+  Button, IconChevronDownOutlineRegular, IconChevronLeftOutlineRegular, IconChevronRightOutlineRegular, IconFolderOpenOutlineRegular,
+  IconPlayOutlineRegular, IconRefreshOutlineRegular, relativeTime, Tag,
 } from '@deepseek-ai/dsh-client-ui-primitives'
 import type { SessionListState } from '@deepseek-ai/dsh-api-session-controller/client'
 import type { WorkspaceSnapshot } from '@deepseek-ai/dsh-api-workspace-controller/client'
 import type { SessionId } from '@deepseek-ai/dsh-session/types'
 import type { WorkspaceId } from '@deepseek-ai/dsh-workspace/types'
 import type {
-  ArchiveReading, KickoffTask, OutputRequest, ProjectArchive, ProjectEntry, WorkbenchModel, WorkbenchOverview,
+  ArchiveReading, KickoffTask, OrgScopeRequest, OutputRequest, ProjectArchive, ProjectEntry, WorkbenchModel, WorkbenchOverview,
 } from '@deepseek-ai/dsh-audit-workbench/types'
-import type { OpenFailure } from './source.ts'
+import { scopeKey, type OpenFailure, type WorkbenchSnapshot } from './source.ts'
 import { Spinner } from './dialogs.tsx'
-import { baseName, spanText, statusLabel, statusTone, text, type Translate } from './format.ts'
+import {
+  baseName, groupFocus, hasScope, newestChanges, shortDate, spanText, statusLabel, statusTone, text, type Translate,
+} from './format.ts'
+import { tallyScope } from './orgtree.ts'
 import css from './WorkbenchPage.module.css'
+
+/** Focus items each section shows before the person expands it. */
+const FOCUS_SHOWN = 3
+
+/** Change log entries shown before the person asks for all of them. */
+const CHANGES_SHOWN = 5
 
 /** Highest Archive Version this page shows in full; the Host reader's `KNOWN_ARCHIVE_VERSION`. */
 const KNOWN_ARCHIVE_VERSION = 1
@@ -49,10 +58,22 @@ export interface ProjectDetailProps {
   readonly onBackfill: () => void
   readonly openOutput: (request: OutputRequest) => Promise<'opened' | OpenFailure>
   readonly openSession: (sessionId: SessionId) => void
+  /** Organization Scope reads of every project, by `scopeKey`. */
+  readonly scopes: WorkbenchSnapshot['scopes']
+  /** Read one Auditee's Organization Scope again. */
+  readonly readScope: (request: OrgScopeRequest) => void
+  /** Show one Auditee's organization scope view. */
+  readonly onOpenScope: (auditee: number) => void
 }
 
-/** The project's directory and title, from its read or its Workspace. */
-function projectNames(workspaceId: WorkspaceId, project: ProjectEntry | undefined, workspaces: WorkspaceSnapshot) {
+/**
+ * The project's Workspace, directory, and title, from its read or its Workspace.
+ * @param workspaceId - the project's Workspace.
+ * @param project - its latest read, if any.
+ * @param workspaces - the Workspace list.
+ * @returns the Workspace if listed, the directory, and the title.
+ */
+export function projectNames(workspaceId: WorkspaceId, project: ProjectEntry | undefined, workspaces: WorkspaceSnapshot) {
   const workspace = workspaces.items.find(item => item.workspaceId === workspaceId)
   const path = project?.path ?? workspace?.path ?? ''
   return { workspace, path, title: workspace?.title ?? baseName(path) }
@@ -106,6 +127,12 @@ export function ProjectDetail(props: ProjectDetailProps) {
   const archivedIds = workspaces.archivedSessionIds
   const read = project?.read
   const archive = read?.kind === 'read' ? read.archive : undefined
+  const { readScope } = props
+  // Each archive read may follow a rewritten scope file, so each one reads the recorded scopes again.
+  useEffect(() => {
+    archive?.auditees.forEach((auditee, index) => { if (auditee.scopeFile !== '') readScope({ workspaceId, auditee: index }) })
+  }, [archive, workspaceId, readScope])
+  const focusCard = useRef<HTMLElement>(null)
   const openOutput = async (task: number, output: number): Promise<void> => {
     setOpenNotice(undefined)
     const outcome = await props.openOutput({ workspaceId, task, output })
@@ -136,9 +163,17 @@ export function ProjectDetail(props: ProjectDetailProps) {
       {archive !== undefined && (
         <>
           <div className={css.detailGrid}>
-            <KickoffCard archive={archive} t={t} />
+            <KickoffCard
+              archive={archive}
+              scopes={props.scopes}
+              workspaceId={workspaceId}
+              t={t}
+              onOpenScope={props.onOpenScope}
+              onShowFocus={() => { focusCard.current?.scrollIntoView({ block: 'start' }) }}
+            />
             <ScopeCard archive={archive} t={t} />
           </div>
+          {archive.focus.length > 0 && <FocusCard cardRef={focusCard} focus={archive.focus} t={t} />}
           <TaskTable
             archive={archive}
             models={props.models}
@@ -161,7 +196,17 @@ export function ProjectDetail(props: ProjectDetailProps) {
   )
 }
 
-function KickoffCard({ archive, t }: { readonly archive: ProjectArchive; readonly t: Translate }) {
+interface KickoffCardProps {
+  readonly archive: ProjectArchive
+  readonly scopes: WorkbenchSnapshot['scopes']
+  readonly workspaceId: WorkspaceId
+  readonly t: Translate
+  readonly onOpenScope: (auditee: number) => void
+  readonly onShowFocus: () => void
+}
+
+function KickoffCard({ archive, scopes, workspaceId, t, onOpenScope, onShowFocus }: KickoffCardProps) {
+  const sections = useMemo(() => new Set(archive.focus.map(item => item.section)).size, [archive.focus])
   return (
     <section className={css.card} aria-labelledby="audit-workbench-kickoff">
       <h2 id="audit-workbench-kickoff" className={css.cardHeading}>{t('detail.kickoff')}</h2>
@@ -169,11 +214,22 @@ function KickoffCard({ archive, t }: { readonly archive: ProjectArchive; readonl
         <dt>{t('field.auditees')}</dt>
         <dd>
           {archive.auditees.length === 0 ? t('empty') : archive.auditees.map((auditee, index) => {
-            const facts = [auditee.kind, ...auditee.codes].filter(fact => fact !== '')
+            const scope = scopes[scopeKey(workspaceId, index)]
+            const read = scope?.status === 'ready' && scope.value.kind === 'read' ? tallyScope(scope.value.scope) : undefined
+            const counts = read !== undefined
+              ? t('auditee.counts', { codes: read.in, centers: read.profitCenters })
+              : auditee.codes.length > 0 ? t('auditee.codes', { codes: auditee.codes.length }) : ''
+            const facts = [auditee.kind, counts].filter(fact => fact !== '')
             return (
-              <span key={index} className={css.fieldLine}>
+              <span key={index} className={css.auditee}>
                 {text(auditee.name, t)}
-                {facts.length > 0 && <span className={css.caption}>{facts.join(' · ')}</span>}
+                {facts.length > 0 && <span className={css.caption}>{facts.join(t('metaSeparator'))}</span>}
+                {hasScope(auditee) && (
+                  <button type="button" className={css.textLink} onClick={() => { onOpenScope(index) }}>
+                    {t('auditee.viewScope')}
+                    <IconChevronRightOutlineRegular size={14} />
+                  </button>
+                )}
               </span>
             )
           })}
@@ -186,20 +242,76 @@ function KickoffCard({ archive, t }: { readonly archive: ProjectArchive; readonl
         <dd>{spanText(archive.period, t)}</dd>
         <dt>{t('field.tenure')}</dt>
         <dd>{spanText(archive.tenure, t)}</dd>
+        {archive.focus.length > 0 && (
+          <>
+            <dt>{t('field.focus')}</dt>
+            <dd>
+              {t('focus.summary', { n: archive.focus.length, sections })}
+              {' '}
+              <button type="button" className={css.textLink} onClick={onShowFocus}>
+                {t('focus.show')}
+                <IconChevronDownOutlineRegular size={14} />
+              </button>
+            </dd>
+          </>
+        )}
       </dl>
-      {archive.focus.length > 0 && (
-        <>
-          <h3 className={css.subHeading}>{t('field.focus')}</h3>
-          <ul className={css.bullets}>
-            {archive.focus.map((item, index) => (
-              <li key={index}>
-                {text(item.content, t)}
-                {item.section !== '' && <span className={css.caption}> · {item.section}</span>}
-              </li>
-            ))}
-          </ul>
-        </>
-      )}
+    </section>
+  )
+}
+
+function FocusCard({ cardRef, focus, t }: { readonly cardRef: Ref<HTMLElement>; readonly focus: ProjectArchive['focus']; readonly t: Translate }) {
+  const groups = useMemo(() => groupFocus(focus), [focus])
+  const [opened, setOpened] = useState<ReadonlySet<string>>(new Set())
+  const long = groups.filter(group => group.items.length > FOCUS_SHOWN)
+  const allOpen = long.every(group => opened.has(group.section))
+  const toggle = (section: string): void => {
+    setOpened((current) => {
+      const next = new Set(current)
+      if (!next.delete(section)) next.add(section)
+      return next
+    })
+  }
+  return (
+    <section ref={cardRef} className={css.card} aria-labelledby="audit-workbench-focus">
+      <div className={css.cardHead}>
+        <div className={css.sectionTitle}>
+          <h2 id="audit-workbench-focus" className={css.cardHeading}>{t('field.focus')}</h2>
+          <span className={css.caption}>{t('focus.summary', { n: focus.length, sections: groups.length })}</span>
+        </div>
+        {long.length > 0 && (
+          <Button size="sm" variant="ghost" onClick={() => { setOpened(allOpen ? new Set() : new Set(long.map(group => group.section))) }}>
+            {t(allOpen ? 'focus.collapseAll' : 'focus.expandAll')}
+          </Button>
+        )}
+      </div>
+      <div className={css.focusGrid}>
+        {groups.map((group) => {
+          const open = opened.has(group.section)
+          const rest = group.items.length - FOCUS_SHOWN
+          return (
+            <section key={group.section} className={css.focusGroup} aria-label={group.section === '' ? t('focus.noSection') : group.section}>
+              <h3 className={css.focusHeading}>
+                {group.section === '' ? t('focus.noSection') : group.section}
+                <span className={css.caption}>{t('focus.count', { n: group.items.length })}</span>
+              </h3>
+              <ol className={css.focusList}>
+                {(open ? group.items : group.items.slice(0, FOCUS_SHOWN)).map(item => (
+                  <li key={item.no}>
+                    <span className={css.focusNo}>{t('focus.no', { n: item.no })}</span>
+                    <span>{text(item.content, t)}</span>
+                  </li>
+                ))}
+              </ol>
+              {rest > 0 && (
+                <button type="button" className={css.textLink} aria-expanded={open} onClick={() => { toggle(group.section) }}>
+                  {open ? t('focus.less') : t('focus.more', { n: rest })}
+                </button>
+              )}
+            </section>
+          )
+        })}
+      </div>
     </section>
   )
 }
@@ -338,22 +450,56 @@ function TaskRow({ task, index, model, rerun, t, onOpen, onRerun }: TaskRowProps
 }
 
 function Changes({ archive, t }: { readonly archive: ProjectArchive; readonly t: Translate }) {
+  const rows = useMemo(() => newestChanges(archive.changes), [archive.changes])
+  const [all, setAll] = useState(false)
+  const [opened, setOpened] = useState<ReadonlySet<number>>(new Set())
+  const toggle = (index: number): void => {
+    setOpened((current) => {
+      const next = new Set(current)
+      if (!next.delete(index)) next.add(index)
+      return next
+    })
+  }
+  const latest = rows[0]
   return (
     <section className={css.card} aria-labelledby="audit-workbench-changes">
-      <h2 id="audit-workbench-changes" className={css.cardHeading}>{t('detail.changes')}</h2>
-      {archive.changes.length === 0
+      <div className={css.cardHead}>
+        <div className={css.sectionTitle}>
+          <h2 id="audit-workbench-changes" className={css.cardHeading}>{t('detail.changes')}</h2>
+          {latest !== undefined && <span className={css.caption}>{t('changes.summary', { n: rows.length, time: text(latest.date, t) })}</span>}
+        </div>
+        {rows.length > CHANGES_SHOWN && (
+          <Button size="sm" variant="ghost" onClick={() => { setAll(!all) }}>
+            {all ? t('changes.recent', { n: CHANGES_SHOWN }) : t('changes.all', { n: rows.length })}
+          </Button>
+        )}
+      </div>
+      {latest === undefined
         ? <p className={css.caption}>{t('detail.changesEmpty')}</p>
         : (
           <ul className={css.log}>
-            {archive.changes.map((change, index) => (
-              <li key={index}>
-                <span className={css.logTime}>{text(change.date, t)}</span>
-                <span>
-                  {text(change.what, t)}
-                  {change.basis !== '' && <span className={clsx(css.fieldLine, css.caption)}>{change.basis}</span>}
-                </span>
-              </li>
-            ))}
+            {(all ? rows : rows.slice(0, CHANGES_SHOWN)).map((change) => {
+              const open = opened.has(change.index)
+              const line = (
+                <>
+                  <span className={css.logTime}>{text(shortDate(change.date), t)}</span>
+                  <span className={clsx(css.logWhat, open && css.logOpen)}>{text(change.what, t)}</span>
+                </>
+              )
+              return (
+                <li key={change.index}>
+                  {change.basis === ''
+                    ? <div className={css.logRow}>{line}</div>
+                    : (
+                      <button type="button" className={css.logRow} aria-expanded={open} onClick={() => { toggle(change.index) }}>
+                        {line}
+                        <IconChevronRightOutlineRegular size={14} className={css.logCaret} />
+                      </button>
+                    )}
+                  {open && <p className={css.logBasis}><span className={css.logBasisLabel}>{t('changes.basis')}</span>{change.basis}</p>}
+                </li>
+              )
+            })}
           </ul>
         )}
     </section>

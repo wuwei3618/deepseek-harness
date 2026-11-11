@@ -9,7 +9,7 @@ English | [中文](README.zh.md)
 
 ## Summary
 
-The Host half of the Desktop 审计工作台 (audit workbench). The row provides `ctx.auditWorkbench`, whose Remote methods read the audit plugin pack's workbench manifest, read the Project Archive `审计方案/00_项目档案.json` of every Workspace, fill the manifest's prompt templates, check and renew System Login Status through each system's own session and login tools, and open a recorded Kickoff Task output. [`dsh-client-ui-audit-workbench`](../../client/ui-audit-workbench/README.md) shows these on the workbench page. The package reads the Project Archive only; the audit Session's main agent writes it.
+The Host half of the Desktop 审计工作台 (audit workbench). The row provides `ctx.auditWorkbench`, whose Remote methods read the audit plugin pack's workbench manifest, read the Project Archive `审计方案/00_项目档案.json` of every Workspace, fill the manifest's prompt templates, check and renew System Login Status through each system's own session and login tools, read each Auditee's Organization Scope file, and open a recorded Kickoff Task output or an Organization Scope's members table. [`dsh-client-ui-audit-workbench`](../../client/ui-audit-workbench/README.md) shows these on the workbench page. The package reads the Project Archive only; the audit Session's main agent writes it.
 
 ## Table of Contents
 
@@ -81,6 +81,17 @@ Ids use letters, digits, `_`, and `-`. Templates use `{{name}}` placeholders, an
 | `rerun` | `projectDir`, `auditType`, `auditees`, `periodFrom`, `periodTo`, `taskType`, `taskId`, `taskSummary` |
 | `models[].prompt` | `projectDir`, `auditType`, `auditees`, `periodFrom`, `periodTo`, `model` |
 
+### Organization Scope file
+
+The kickoff writes one Organization Scope file per organization Auditee under `工作区/开工/组织范围/` and records its path, relative to the Project Directory, in the archive's `被审计单位[].组织范围文件`. `orgScope` reads it for the page's organization tree; `openMembersTable` opens the members table it names. Unknown keys are ignored; a missing required key, another `格式版本`, an unknown `归属`, a first node other than `起点`, a repeated code, or a node listed before its parent makes the whole file unreadable, and the page shows why.
+
+| Field | Meaning |
+|---|---|
+| `格式版本` | Must be `1` |
+| `起点` | `编码` and `名称` of the starting node, which is the first node |
+| `导出时间`, `名下编码表` | Export time; members table path relative to the Project Directory, optional |
+| `节点[]` | The whole subtree in preorder: `编码`, `名称`, `上一级编码`, `归属` (`名下`, `别家`, `归不到`, or `不纳入`), and optional `所属二级单位`, `定归属的来源`, `来源不一致`, `利润中心` (the node's own), and `说明` |
+
 -----
 
 <a id="understand-the-implementation"></a>
@@ -91,9 +102,9 @@ Ids use letters, digits, `_`, and `-`. Templates use `{{name}}` placeholders, an
 
 The row is a loader group. It provides the service, then mounts the pack's `audit-toolkit` group again under `audit-workbench-` ids, keeping the pack's Host plugin and rewriting each stdio [`dsh-mcp-client`](../../mcp/mcp-client/README.md) row to `@deepseek-ai/dsh-audit-workbench/server` with the same launch fields. The loader therefore evaluates the pack's own `!!js` expressions, and each rewritten row records the server's command, arguments, directory, and environment on the service without starting the server or registering a tool. A session check starts the server with those values outside any Session, calls one tool, and closes the server; aborting the call, as when the page withdraws, closes the server.
 
-The manifest and the pack are read again on every overview, prompt, and check, so a newly imported pack shows on the next page open. The Project Archive reader keeps the fields it knows and reads a missing or mistyped field as empty; an archive whose `version` is newer than the known Archive Version still shows its basic information, and the page says that some fields may be missing. A file that is not JSON or not an object reads as unreadable with the cause. `openOutput` opens a recorded output only when its real path is a file inside the Project Directory.
+The manifest and the pack are read again on every overview, prompt, and check, so a newly imported pack shows on the next page open. The Project Archive reader keeps the fields it knows and reads a missing or mistyped field as empty; an archive whose `version` is newer than the known Archive Version still shows its basic information, and the page says that some fields may be missing. A file that is not JSON or not an object reads as unreadable with the cause. `openOutput` opens a recorded output only when its real path is a file inside the Project Directory, and `openMembersTable` applies the same check to a members table. An Organization Scope file is read only when its real path lies inside the Project Directory.
 
-Failures cross the Remote as `auditWorkbench/not-found` (a missing Workspace, archive, Kickoff Task, output, or Built-in Model), `auditWorkbench/no-prompt`, `auditWorkbench/output-refused`, and `auditWorkbench/open-failed`. A session check never rejects: a system missing from the manifest or without a mounted server, a deadline, a failed call, and an unreadable result each return a failed reading with the reason.
+Failures cross the Remote as `auditWorkbench/not-found` (a missing Workspace, archive, Kickoff Task, output, Auditee, members table, or Built-in Model), `auditWorkbench/no-prompt`, `auditWorkbench/output-refused`, and `auditWorkbench/open-failed`. A session check never rejects: a system missing from the manifest or without a mounted server, a deadline, a failed call, and an unreadable result each return a failed reading with the reason.
 
 </details>
 
@@ -115,6 +126,7 @@ None; this package neither assembles nor sends a provider request.
 - **Each check starts its own server** — a session check or login starts a fresh server process, so the first check after a launch waits for the server's Python environment; servers inside Sessions are separate processes.
 - **Only stdio servers are checked** — a pack MCP client row with another transport gets no launch-value row, and its system reads as unavailable.
 - **The manifest comes from the pack** — the page lists no systems, Built-in Models, or prompts until the audit-plugins release ships a manifest.
+- **Organization Scope files come from the pack** — until the audit-plugins kickoff writes them, the organization scope view says that the project has none.
 
 <a id="dev-note"></a>
 ### Dev Note

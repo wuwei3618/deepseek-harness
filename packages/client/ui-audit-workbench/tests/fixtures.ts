@@ -1,7 +1,7 @@
 /** Made-up workbench reads shared by the workbench page tests. */
 import type { WorkspaceId } from '@deepseek-ai/dsh-workspace/types'
 import type {
-  KickoffTask, ProjectArchive, ProjectEntry, SystemCheck, WorkbenchOverview,
+  KickoffTask, OrgScope, OrgScopeNode, ProjectArchive, ProjectEntry, SystemCheck, WorkbenchOverview,
 } from '@deepseek-ai/dsh-audit-workbench/types'
 
 /** The first sample Workspace, which holds a full Project Archive. */
@@ -31,7 +31,10 @@ export const ARCHIVE: ProjectArchive = {
   updatedAt: '2026-11-09 14:32',
   auditType: '离任审计',
   specialAudits: ['专项一', '专项二'],
-  auditees: [{ name: '示例公司', kind: '机构', codes: ['C001', 'C002'] }, { name: '示例项目部', kind: '', codes: [] }],
+  auditees: [
+    { name: '示例公司', kind: '机构', codes: ['C001', 'C002'], scopeFile: '工作区/开工/组织范围/组织范围_C001.json' },
+    { name: '示例项目部', kind: '', codes: [], scopeFile: '' },
+  ],
   period: { from: '2023-01', to: '2025-06' },
   tenure: { from: '2021-03', to: '' },
   focus: [{ content: '资金管理', section: '财务' }, { content: '工程结算', section: '' }],
@@ -72,3 +75,30 @@ export const OVERVIEW: WorkbenchOverview = {
 
 /** A ready reading. */
 export const READY: SystemCheck = { state: 'ready', checkedAt: '2026-11-09T07:12:00.000Z' }
+
+/**
+ * One Organization Scope node inside the scope with every other field empty.
+ * @param code - node code.
+ * @param parent - parent code; empty for the starting node.
+ * @param fields - fields to override.
+ * @returns the node.
+ */
+export function node(code: string, parent: string, fields: Partial<OrgScopeNode> = {}): OrgScopeNode {
+  return { code, name: `单位${code}`, parent, unit: '示例公司', ownership: 'in', source: '', conflict: '', profitCenters: [], note: '', ...fields }
+}
+
+/** An Organization Scope with one node of each ownership and one disagreement. */
+export const ORG_SCOPE: OrgScope = {
+  origin: { code: 'C001', name: '示例公司' },
+  exportedAt: '2026-11-09 20:40',
+  membersTable: '工作区/开工/组织范围/名下编码_C001.xlsx',
+  nodes: [
+    node('C001', '', { name: '示例公司', source: '组织架构对照表', profitCenters: ['L001', 'L002'] }),
+    node('C002', 'C001', { name: '第一分公司', profitCenters: ['L003'] }),
+    node('C003', 'C002', { name: '华东项目部', note: '项目已完工' }),
+    node('C004', 'C002', { name: '安装公司', unit: '示例安装公司', ownership: 'other', conflict: '报账树归本单位；组织主数据归示例安装公司' }),
+    node('C005', 'C001', { name: '空壳公司', ownership: 'excluded', note: '没有利润中心，不纳入' }),
+    node('C006', 'C001', { name: '停用部门', unit: '', ownership: 'unassigned' }),
+    node('C007', 'C006', { name: '', unit: '', ownership: 'other' }),
+  ],
+}

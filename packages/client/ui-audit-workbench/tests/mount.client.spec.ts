@@ -14,7 +14,7 @@ import type { RemoteResult, TypertRemoteContribution } from '@deepseek-ai/dsh-ty
 import type { WorkspaceSnapshot } from '@deepseek-ai/dsh-api-workspace-controller/client'
 import type { SessionId } from '@deepseek-ai/dsh-session/types'
 import type { WorkspaceId } from '@deepseek-ai/dsh-workspace/types'
-import type { ProjectEntry } from '@deepseek-ai/dsh-audit-workbench/types'
+import type { OrgScopeRead, ProjectEntry } from '@deepseek-ai/dsh-audit-workbench/types'
 import remote from '@deepseek-ai/dsh-audit-workbench/remote'
 import { apply } from '../src/client/index.ts'
 import { apply as applyNode } from '../src/index.ts'
@@ -22,7 +22,8 @@ import { inject, mountWorkbench, PANEL_ID } from '../src/client/mount.ts'
 import type { WorkbenchInjected } from '../src/client/WorkbenchPage.tsx'
 import { WorkbenchPage } from '../src/client/WorkbenchPage.tsx'
 import { WorkbenchIcon } from '../src/client/WorkbenchIcon.tsx'
-import { ALPHA, OVERVIEW, PROJECTS, READY } from './fixtures.ts'
+import { scopeKey } from '../src/client/source.ts'
+import { ALPHA, ORG_SCOPE, OVERVIEW, PROJECTS, READY } from './fixtures.ts'
 
 const contribution: TypertRemoteContribution = { package: '@deepseek-ai/dsh-audit-workbench', descriptors: [] }
 const ok = <T>(value: T): RemoteResult<T> => ({ ok: true, value })
@@ -50,6 +51,8 @@ async function fixture(options: { failMount?: boolean } = {}) {
     checkSystem: vi.fn(async () => ok(READY)),
     login: vi.fn(async () => ok(READY)),
     openOutput: vi.fn(async () => ok(undefined)),
+    orgScope: vi.fn(async () => ok<OrgScopeRead>({ kind: 'read', scope: ORG_SCOPE })),
+    openMembersTable: vi.fn(async () => ok(undefined)),
   }
   ctx.provide('remote.auditWorkbench', host as never)
   ctx.provide('locale', new LocaleRuntime(ctx))
@@ -117,6 +120,11 @@ describe('workbench plugin', () => {
       await vi.waitFor(() => { expect(b.host.login).toHaveBeenCalledWith('tyc', expect.any(AbortSignal)) })
       expect(await injected.preparePrompt({ kind: 'kickoff', workspaceId: ALPHA })).toEqual({ ok: true, prompt: '提示词' })
       expect(await injected.openOutput({ workspaceId: ALPHA, task: 0, output: 0 })).toBe('opened')
+      injected.readScope({ workspaceId: ALPHA, auditee: 0 })
+      await vi.waitFor(() => {
+        expect(injected.hooks.workbench.getSnapshot().scopes[scopeKey(ALPHA, 0)]).toEqual({ status: 'ready', value: { kind: 'read', scope: ORG_SCOPE } })
+      })
+      expect(await injected.openMembersTable({ workspaceId: ALPHA, auditee: 0 })).toBe('opened')
       injected.startSession(ALPHA, '提示词')
       expect(b.uiWorkspace.startSession).toHaveBeenCalledWith(ALPHA, { prompt: '提示词', whenDraftExists: 'append' })
       injected.openSession('s-1' as SessionId)

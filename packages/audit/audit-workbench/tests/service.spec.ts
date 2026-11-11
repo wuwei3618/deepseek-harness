@@ -13,6 +13,7 @@ import type { ServerLaunch, ToolCallOutcome } from '../src/call.ts'
 import type { PromptRequest } from '../src/types.ts'
 import { internals } from '../src/internals.ts'
 import { ARCHIVE } from './fixtures/archive.ts'
+import { ORG_SCOPE } from './fixtures/orgscope.ts'
 
 const roots: string[] = []
 afterEach(async () => {
@@ -265,6 +266,43 @@ describe('AuditWorkbench', () => {
       const refused = async (request: PromptRequest) => workbench.prompt(request, signal()).then(() => undefined, (error: unknown) => error)
       expect(await refused({ kind: 'backfill', workspaceId: 'w1' as WorkspaceId })).toMatchObject({ code: 'auditWorkbench/no-prompt', details: { kind: 'backfill' } })
       expect(await refused({ kind: 'rerun', workspaceId: 'w1' as WorkspaceId, task: 0 })).toMatchObject({ code: 'auditWorkbench/no-prompt', details: { kind: 'rerun' } })
+    })
+  })
+
+  it('reads the Organization Scope file each Auditee records', async () => {
+    const dir = await projectDir(ARCHIVE)
+    await mkdir(join(dir, '工作区', '开工', '组织范围'), { recursive: true })
+    await writeFile(join(dir, '工作区', '开工', '组织范围', '组织范围_C001.json'), JSON.stringify(ORG_SCOPE))
+    await withWorkbench(await pack(), [ws('w1', dir), ws('w2', await projectDir())], async (ctx) => {
+      const scope = (workspaceId: string, auditee: number) => ctx.auditWorkbench
+        .orgScope({ workspaceId: workspaceId as WorkspaceId, auditee }, signal())
+        .then(read => read, (error: unknown) => error)
+      expect(await scope('w1', 0)).toMatchObject({ kind: 'read', scope: { origin: { code: 'C001' } } })
+      expect(await scope('w1', 1)).toEqual({ kind: 'missing' })
+      expect(await scope('w1', 2)).toMatchObject({ code: 'auditWorkbench/not-found', details: { what: 'auditee' } })
+      expect(await scope('w2', 0)).toMatchObject({ code: 'auditWorkbench/not-found', details: { what: 'archive' } })
+    })
+  })
+
+  it('opens the members table of a read Organization Scope', async () => {
+    const dir = await projectDir(ARCHIVE)
+    const scopeDir = join(dir, '工作区', '开工', '组织范围')
+    await mkdir(scopeDir, { recursive: true })
+    await writeFile(join(scopeDir, '名下编码_C001.xlsx'), 'x')
+    const writeScope = (membersTable: string) => writeFile(join(scopeDir, '组织范围_C001.json'), JSON.stringify({ ...ORG_SCOPE, 名下编码表: membersTable }))
+    const opened: string[] = []
+    vi.spyOn(internals, 'openPath').mockImplementation(async (path) => { opened.push(path) })
+    await withWorkbench(await pack(), [ws('w1', dir)], async (ctx) => {
+      const open = (auditee: number) => ctx.auditWorkbench.openMembersTable({ workspaceId: 'w1' as WorkspaceId, auditee }, signal())
+        .then(() => 'opened', (error: unknown) => error)
+      await writeScope(ORG_SCOPE.名下编码表)
+      expect(await open(0)).toBe('opened')
+      expect(opened).toEqual([join(scopeDir, '名下编码_C001.xlsx')])
+      expect(await open(1)).toMatchObject({ code: 'auditWorkbench/not-found', details: { what: 'scope' } })
+      await writeScope('')
+      expect(await open(0)).toMatchObject({ code: 'auditWorkbench/not-found', details: { what: 'scope' } })
+      await writeScope('../outside.xlsx')
+      expect(await open(0)).toMatchObject({ code: 'auditWorkbench/output-refused' })
     })
   })
 
