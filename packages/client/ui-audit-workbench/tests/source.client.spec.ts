@@ -1,8 +1,8 @@
 import { describe, expect, it, vi } from 'vitest'
 import { RemoteError, type RemoteResult } from '@deepseek-ai/dsh-typert-protocol'
-import type { ProjectEntry, SystemCheck, WorkbenchOverview } from '@deepseek-ai/dsh-audit-workbench/types'
-import { createWorkbenchSource, type WorkbenchRemote } from '../src/client/source.ts'
-import { ALPHA, OVERVIEW, PROJECTS, READY } from './fixtures.ts'
+import type { OrgScopeRead, ProjectEntry, SystemCheck, WorkbenchOverview } from '@deepseek-ai/dsh-audit-workbench/types'
+import { createWorkbenchSource, scopeKey, type WorkbenchRemote } from '../src/client/source.ts'
+import { ALPHA, ORG_SCOPE, OVERVIEW, PROJECTS, READY } from './fixtures.ts'
 
 const ok = <T>(value: T): RemoteResult<T> => ({ ok: true, value })
 const fail = (code: 'auditWorkbench/no-prompt' | 'auditWorkbench/not-found' | 'auditWorkbench/output-refused' | 'gateway/internal') => ({
@@ -23,6 +23,8 @@ function remote(overrides: Partial<WorkbenchRemote> = {}): WorkbenchRemote {
     checkSystem: vi.fn(async () => ok<SystemCheck>(READY)),
     login: vi.fn(async () => ok<SystemCheck>(READY)),
     openOutput: vi.fn(async () => ok(undefined)),
+    orgScope: vi.fn(async () => ok<OrgScopeRead>({ kind: 'read', scope: ORG_SCOPE })),
+    openMembersTable: vi.fn(async () => ok(undefined)),
     ...overrides,
   }
 }
@@ -31,7 +33,7 @@ describe('workbench source', () => {
   it('reads everything on the first open, checks every system, and only re-reads projects later', async () => {
     const host = remote()
     const source = createWorkbenchSource(host)
-    expect(source.snapshot.getSnapshot()).toEqual({ overview: { status: 'loading' }, projects: { status: 'loading' }, systems: {} })
+    expect(source.snapshot.getSnapshot()).toEqual({ overview: { status: 'loading' }, projects: { status: 'loading' }, systems: {}, scopes: {} })
     await source.open()
     await vi.waitFor(() => { expect(source.snapshot.getSnapshot().systems['tyc']).toEqual({ busy: 'idle', check: READY }) })
     expect(source.snapshot.getSnapshot()).toMatchObject({
@@ -48,7 +50,7 @@ describe('workbench source', () => {
     const host = remote({ overview: vi.fn(async () => fail('gateway/internal')), projects: vi.fn(async () => { throw new Error('closed') }) })
     const source = createWorkbenchSource(host)
     await source.refresh()
-    expect(source.snapshot.getSnapshot()).toEqual({ overview: { status: 'error' }, projects: { status: 'error' }, systems: {} })
+    expect(source.snapshot.getSnapshot()).toEqual({ overview: { status: 'error' }, projects: { status: 'error' }, systems: {}, scopes: {} })
     expect(host.checkSystem).not.toHaveBeenCalled()
   })
 
@@ -103,6 +105,39 @@ describe('workbench source', () => {
     expect(await source.openOutput(output)).toBe('refused')
     expect(await source.openOutput(output)).toBe('not-found')
     expect(await source.openOutput(output)).toBe('failed')
+    const openMembersTable = vi.fn().mockResolvedValueOnce(fail('auditWorkbench/output-refused')).mockRejectedValueOnce(new Error('closed'))
+    const tables = createWorkbenchSource(remote({ openMembersTable }))
+    expect(await tables.openMembersTable({ workspaceId: ALPHA, auditee: 0 })).toBe('refused')
+    expect(await tables.openMembersTable({ workspaceId: ALPHA, auditee: 0 })).toBe('failed')
+  })
+
+  it('keeps a published Organization Scope while it is read again and only the latest read', async () => {
+    const first = deferred<RemoteResult<OrgScopeRead>>()
+    const second = deferred<RemoteResult<OrgScopeRead>>()
+    const orgScope = vi.fn()
+      .mockResolvedValueOnce(fail('gateway/internal'))
+      .mockReturnValueOnce(first.promise)
+      .mockReturnValueOnce(second.promise)
+    const source = createWorkbenchSource(remote({ orgScope }))
+    const request = { workspaceId: ALPHA, auditee: 0 }
+    const key = scopeKey(ALPHA, 0)
+    await source.readScope(request)
+    expect(source.snapshot.getSnapshot().scopes[key]).toEqual({ status: 'error' })
+    const older = source.readScope(request)
+    expect(source.snapshot.getSnapshot().scopes[key]).toEqual({ status: 'loading' })
+    const newer = source.readScope(request)
+    second.resolve(ok({ kind: 'missing' }))
+    await newer
+    first.resolve(ok({ kind: 'read', scope: ORG_SCOPE }))
+    await older
+    expect(source.snapshot.getSnapshot().scopes[key]).toEqual({ status: 'ready', value: { kind: 'missing' } })
+    orgScope.mockReturnValueOnce(new Promise(() => {}))
+    void source.readScope(request)
+    expect(source.snapshot.getSnapshot().scopes[key]).toEqual({ status: 'ready', value: { kind: 'missing' } })
+    source.dispose()
+    await source.readScope(request)
+    expect(source.snapshot.getSnapshot().scopes[key]).toEqual({ status: 'ready', value: { kind: 'missing' } })
+    expect(orgScope).toHaveBeenCalledWith(request, expect.any(AbortSignal))
   })
 
   it('cancels reads in flight and publishes nothing after dispose', async () => {
@@ -124,6 +159,6 @@ describe('workbench source', () => {
     projects.resolve(ok(PROJECTS))
     check.resolve(ok(READY))
     await Promise.all([refreshing, checking])
-    expect(source.snapshot.getSnapshot()).toEqual({ overview: { status: 'loading' }, projects: { status: 'loading' }, systems: { dac: { busy: 'checking' } } })
+    expect(source.snapshot.getSnapshot()).toEqual({ overview: { status: 'loading' }, projects: { status: 'loading' }, systems: { dac: { busy: 'checking' } }, scopes: {} })
   })
 })

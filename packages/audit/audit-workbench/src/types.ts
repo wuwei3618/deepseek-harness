@@ -112,6 +112,8 @@ export interface Auditee {
   /** Organization or business project. */
   readonly kind: string
   readonly codes: readonly string[]
+  /** Organization Scope file as recorded, relative to the Project Directory; empty when none is recorded. */
+  readonly scopeFile: string
 }
 
 /** A start and end month pair; either may be empty. */
@@ -180,13 +182,67 @@ export interface OutputRequest {
   readonly output: number
 }
 
+/** Where one organization tree node stands in the audit's scope. */
+export type OrgScopeOwnership =
+  /** Owned by the Auditee and inside the audit's scope. */
+  | 'in'
+  /** In the Auditee's subtree but owned by another second-level unit. */
+  | 'other'
+  /** No source assigns the node to a second-level unit. */
+  | 'unassigned'
+  /** Owned by the Auditee but excluded by the confirmed scope table; the node's note says why. */
+  | 'excluded'
+
+/** One node of an Organization Scope. */
+export interface OrgScopeNode {
+  readonly code: string
+  readonly name: string
+  /** Parent node code; empty for the starting node. */
+  readonly parent: string
+  /** Owning second-level unit; may be empty. */
+  readonly unit: string
+  readonly ownership: OrgScopeOwnership
+  /** Source the ownership was decided by; may be empty. */
+  readonly source: string
+  /** Sentence on disagreeing sources; empty when the sources agree. */
+  readonly conflict: string
+  /** The node's own profit centers, without its descendants'. */
+  readonly profitCenters: readonly string[]
+  /** Sentence for the person; may be empty. */
+  readonly note: string
+}
+
+/** The organization tree of one Auditee, as the kickoff wrote it. */
+export interface OrgScope {
+  readonly origin: { readonly code: string; readonly name: string }
+  readonly exportedAt: string
+  /** File name of the members table the scope was taken from, in the scope file's directory; may be empty. */
+  readonly membersTable: string
+  /** Nodes in preorder; a parent precedes its children. */
+  readonly nodes: readonly OrgScopeNode[]
+}
+
+/** The Organization Scope of one Auditee. */
+export type OrgScopeRead =
+  /** The archive records no Organization Scope file for the Auditee. */
+  | { readonly kind: 'missing' }
+  /** The recorded file lies outside the Project Directory, cannot be read, is not JSON, or does not follow the format. */
+  | { readonly kind: 'unreadable'; readonly reason: 'outside' | 'io' | 'json' | 'shape'; readonly message: string }
+  | { readonly kind: 'read'; readonly scope: OrgScope }
+
+/** One Auditee of a Workspace's Project Archive, by index. */
+export interface OrgScopeRequest {
+  readonly workspaceId: WorkspaceId
+  readonly auditee: number
+}
+
 declare module '@deepseek-ai/dsh-typert-protocol' {
   interface RemoteErrorDetailsMap {
-    /** The request names a Workspace, task, output, or Built-in Model that does not exist now. */
-    'auditWorkbench/not-found': { readonly what: 'workspace' | 'archive' | 'task' | 'output' | 'model' }
+    /** The request names a Workspace, task, output, Auditee, members table, or Built-in Model that does not exist now. */
+    'auditWorkbench/not-found': { readonly what: 'workspace' | 'archive' | 'task' | 'output' | 'model' | 'auditee' | 'scope' }
     /** The manifest is not ready or does not supply the requested prompt. */
     'auditWorkbench/no-prompt': { readonly kind: PromptRequest['kind'] }
-    /** The recorded output lies outside the Project Directory or is not a file. */
+    /** The recorded output or members table lies outside the Project Directory or does not exist. */
     'auditWorkbench/output-refused': Record<string, never>
     /** The desktop opener failed or this Host has no desktop. */
     'auditWorkbench/open-failed': Record<string, never>

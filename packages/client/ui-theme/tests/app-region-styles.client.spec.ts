@@ -113,6 +113,11 @@ const CHROME_ROWS: readonly ChromeRow[] = [
     markup: 'client/ui-plugin-manager/src/client/PluginManagerPage.tsx',
   },
   {
+    file: 'client/ui-audit-workbench/src/client/WorkbenchPage.module.css',
+    selector: '.bar',
+    markup: 'client/ui-audit-workbench/src/client/WorkbenchPage.tsx',
+  },
+  {
     file: PLATFORM_OVERLAY,
     selector: '.header',
     markup: 'client/ui-settings-account/src/client/PlatformOverlay.tsx',

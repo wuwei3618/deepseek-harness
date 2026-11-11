@@ -1,13 +1,14 @@
 /**
  * Host service of the audit workbench: reads the pack and its workbench
- * manifest, the Project Archive of every Workspace, fills prompt templates,
+ * manifest, the Project Archive of every Workspace and the Organization Scope
+ * files it records, fills prompt templates,
  * checks System Login Status by calling each system's own session tool, and
  * opens recorded outputs.
  * @module @deepseek-ai/dsh-audit-workbench/service
  */
 
 import { readFile, realpath, stat } from 'node:fs/promises'
-import { isAbsolute, relative, sep } from 'node:path'
+import { dirname, isAbsolute, resolve } from 'node:path'
 import type { Context } from '@deepseek-ai/cordis'
 import { readPluginPack, type LoadedPack } from '@deepseek-ai/dsh-audit-plugin-pack'
 import { Remote, RemoteError, TypertRemoteService } from '@deepseek-ai/dsh-typert-protocol'
@@ -17,8 +18,11 @@ import { readArchive } from './archive.ts'
 import type { ServerLaunch } from './call.ts'
 import { internals } from './internals.ts'
 import { fillTemplate, parseManifest, type ManifestSystem, type WorkbenchManifest } from './manifest.ts'
+import { readOrgScope } from './orgscope.ts'
+import { inside } from './paths.ts'
 import type {
-  ArchiveRead, OutputRequest, PackStatus, ProjectArchive, ProjectEntry, PromptRequest, SystemCheck, WorkbenchOverview,
+  ArchiveRead, OrgScopeRead, OrgScopeRequest, OutputRequest, PackStatus, ProjectArchive, ProjectEntry, PromptRequest, SystemCheck,
+  WorkbenchOverview,
 } from './types.ts'
 
 declare module '@deepseek-ai/cordis' {
@@ -68,11 +72,6 @@ function at(value: unknown, path: readonly string[]): { found: boolean; value: u
 
 function sameJson(left: unknown, right: unknown): boolean {
   return JSON.stringify(left) === JSON.stringify(right)
-}
-
-function inside(parent: string, child: string): boolean {
-  const path = relative(parent, child)
-  return path !== '' && !path.startsWith(`..${sep}`) && path !== '..' && !isAbsolute(path)
 }
 
 /** Remote reads and checks behind the workbench page. */
@@ -159,6 +158,27 @@ export class AuditWorkbenchService extends TypertRemoteService {
     const read = await readArchive(workspace.path)
     if (read.kind !== 'read') throw new RemoteError('auditWorkbench/not-found', 'The Workspace has no readable Project Archive', { what: 'archive' })
     return { path: workspace.path, archive: read.archive }
+  }
+
+  /**
+   * Read the Organization Scope file the archive records for one Auditee.
+   * @param request - Workspace and Auditee index in the Project Archive.
+   * @param signal - caller cancellation.
+   * @returns the organization tree, `missing` when none is recorded, or why it cannot be read.
+   */
+  @Remote
+  async orgScope(request: OrgScopeRequest, signal: AbortSignal): Promise<OrgScopeRead> {
+    const { read } = await this.scopeOf(request)
+    signal.throwIfAborted()
+    return read
+  }
+
+  /** Read an Auditee's Organization Scope together with where its file is recorded. */
+  private async scopeOf(request: OrgScopeRequest): Promise<{ path: string; scopeFile: string; read: OrgScopeRead }> {
+    const { path, archive } = await this.archiveOf(request.workspaceId)
+    const auditee = archive.auditees[request.auditee]
+    if (auditee === undefined) throw new RemoteError('auditWorkbench/not-found', 'The Auditee does not exist', { what: 'auditee' })
+    return { path, scopeFile: auditee.scopeFile, read: await readOrgScope(path, auditee.scopeFile) }
   }
 
   /**
@@ -258,21 +278,41 @@ export class AuditWorkbenchService extends TypertRemoteService {
     const { path, archive } = await this.archiveOf(request.workspaceId)
     const output = archive.tasks[request.task]?.outputs[request.output]
     if (output === undefined) throw new RemoteError('auditWorkbench/not-found', 'The output does not exist', { what: 'output' })
+    await this.openInside(path, output, signal)
+  }
+
+  /**
+   * Open the members table an Auditee's Organization Scope was taken from with the desktop's default application.
+   * @param request - Workspace and Auditee index in the Project Archive.
+   * @param signal - caller cancellation.
+   */
+  @Remote
+  async openMembersTable(request: OrgScopeRequest, signal: AbortSignal): Promise<void> {
+    const { path, scopeFile, read } = await this.scopeOf(request)
+    if (read.kind !== 'read' || read.scope.membersTable === '') {
+      throw new RemoteError('auditWorkbench/not-found', 'The Organization Scope names no members table', { what: 'scope' })
+    }
+    // The kickoff writes the members table beside the scope file and records its file name only.
+    await this.openInside(path, resolve(dirname(resolve(path, scopeFile)), read.scope.membersTable), signal)
+  }
+
+  /** Open a file whose absolute path must resolve inside the Project Directory. */
+  private async openInside(projectDir: string, recorded: string, signal: AbortSignal): Promise<void> {
     let target: string
     try {
-      if (!isAbsolute(output)) throw new Error('the recorded output path is relative')
-      target = await realpath(output)
-      if (!inside(await realpath(path), target)) throw new Error('the recorded output lies outside the Project Directory')
+      if (!isAbsolute(recorded)) throw new Error('the recorded path is relative')
+      target = await realpath(recorded)
+      if (!inside(await realpath(projectDir), target)) throw new Error('the recorded path lies outside the Project Directory')
       await stat(target)
     } catch (error) {
-      throw new RemoteError('auditWorkbench/output-refused', 'The output is not a file inside the Project Directory', {}, { cause: error })
+      throw new RemoteError('auditWorkbench/output-refused', 'The recorded file is not a file inside the Project Directory', {}, { cause: error })
     }
     signal.throwIfAborted()
     try {
       await internals.openPath(target, signal)
     } catch (error) {
       signal.throwIfAborted()
-      throw new RemoteError('auditWorkbench/open-failed', 'The desktop could not open the output', {}, { cause: error })
+      throw new RemoteError('auditWorkbench/open-failed', 'The desktop could not open the recorded file', {}, { cause: error })
     }
   }
 }

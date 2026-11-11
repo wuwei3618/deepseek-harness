@@ -1,13 +1,15 @@
 /**
  * Browser-side owner of the workbench reads: the overview, the Project
- * Archives, and each system's System Login Status, published as one snapshot
- * that the page reads through its injected hook.
+ * Archives, each Auditee's Organization Scope, and each system's System Login
+ * Status, published as one snapshot that the page reads through its injected
+ * hook.
  */
 import { createSnapshotStore, type SnapshotStore } from '@deepseek-ai/dsh-client-store'
 import type { RemoteResult } from '@deepseek-ai/dsh-typert-protocol'
 import type {
-  OutputRequest, ProjectEntry, PromptRequest, SystemCheck, WorkbenchOverview,
+  OrgScopeRead, OrgScopeRequest, OutputRequest, ProjectEntry, PromptRequest, SystemCheck, WorkbenchOverview,
 } from '@deepseek-ai/dsh-audit-workbench/types'
+import type { WorkspaceId } from '@deepseek-ai/dsh-workspace/types'
 
 /** A Host read that has not settled, settled with a value, or failed. */
 export type Load<T> =
@@ -28,6 +30,18 @@ export interface WorkbenchSnapshot {
   readonly overview: Load<WorkbenchOverview>
   readonly projects: Load<readonly ProjectEntry[]>
   readonly systems: Readonly<Record<string, SystemState>>
+  /** Organization Scope reads by {@link scopeKey}; absent before the first read of that Auditee. */
+  readonly scopes: Readonly<Record<string, Load<OrgScopeRead>>>
+}
+
+/**
+ * Key of one Auditee's Organization Scope in {@link WorkbenchSnapshot.scopes}.
+ * @param workspaceId - the project's Workspace.
+ * @param auditee - Auditee index in the Project Archive.
+ * @returns the key.
+ */
+export function scopeKey(workspaceId: WorkspaceId, auditee: number): string {
+  return `${workspaceId}#${auditee}`
 }
 
 /** Why a prompt could not be prepared. */
@@ -47,6 +61,8 @@ export interface WorkbenchRemote {
   readonly checkSystem: (id: string, signal?: AbortSignal) => Promise<RemoteResult<SystemCheck>>
   readonly login: (id: string, signal?: AbortSignal) => Promise<RemoteResult<SystemCheck>>
   readonly openOutput: (request: OutputRequest, signal?: AbortSignal) => Promise<RemoteResult<void>>
+  readonly orgScope: (request: OrgScopeRequest, signal?: AbortSignal) => Promise<RemoteResult<OrgScopeRead>>
+  readonly openMembersTable: (request: OrgScopeRequest, signal?: AbortSignal) => Promise<RemoteResult<void>>
 }
 
 /** The source's published snapshot and operations. */
@@ -91,11 +107,23 @@ export interface WorkbenchSource {
    * @returns `opened`, or why the Host refused.
    */
   openOutput(request: OutputRequest): Promise<'opened' | OpenFailure>
+  /**
+   * Read one Auditee's Organization Scope again; an earlier reading stays published until this one settles.
+   * @param request - Workspace and Auditee index.
+   * @returns after the reading is published.
+   */
+  readScope(request: OrgScopeRequest): Promise<void>
+  /**
+   * Open the members table an Organization Scope was taken from on the Host desktop.
+   * @param request - Workspace and Auditee index.
+   * @returns `opened`, or why the Host refused.
+   */
+  openMembersTable(request: OrgScopeRequest): Promise<'opened' | OpenFailure>
   /** Cancel reads and checks in flight; later calls publish nothing. */
   dispose(): void
 }
 
-const INITIAL: WorkbenchSnapshot = { overview: { status: 'loading' }, projects: { status: 'loading' }, systems: {} }
+const INITIAL: WorkbenchSnapshot = { overview: { status: 'loading' }, projects: { status: 'loading' }, systems: {}, scopes: {} }
 
 async function settle<T>(call: () => Promise<RemoteResult<T>>): Promise<RemoteResult<T> | undefined> {
   try {
@@ -104,6 +132,13 @@ async function settle<T>(call: () => Promise<RemoteResult<T>>): Promise<RemoteRe
     // A rejected call leaves the outcome unknown; callers show the same retry as for a Remote failure.
     return undefined
   }
+}
+
+async function openOutcome(call: Promise<RemoteResult<void> | undefined>): Promise<'opened' | OpenFailure> {
+  const result = await call
+  if (result?.ok === true) return 'opened'
+  const code = result?.error.code
+  return code === 'auditWorkbench/output-refused' ? 'refused' : code === 'auditWorkbench/not-found' ? 'not-found' : 'failed'
 }
 
 /**
@@ -115,11 +150,18 @@ export function createWorkbenchSource(remote: WorkbenchRemote): WorkbenchSource 
   const snapshot = createSnapshotStore<WorkbenchSnapshot>(INITIAL)
   const lifetime = new AbortController()
   let projectsRead = 0
+  // Each Auditee's latest Organization Scope read takes a number; an older read that settles later is dropped.
+  const scopeReads = new Map<string, number>()
   let opened = false
   const setSystem = (id: string, next: SystemState): void => {
     if (lifetime.signal.aborted) return
     const current = snapshot.getSnapshot()
     snapshot.set({ ...current, systems: { ...current.systems, [id]: next } })
+  }
+  const setScope = (key: string, next: Load<OrgScopeRead>): void => {
+    if (lifetime.signal.aborted) return
+    const current = snapshot.getSnapshot()
+    snapshot.set({ ...current, scopes: { ...current.scopes, [key]: next } })
   }
   const run = async (id: string, busy: 'checking' | 'login', call: () => Promise<RemoteResult<SystemCheck>>): Promise<void> => {
     const current = snapshot.getSnapshot().systems[id]
@@ -164,12 +206,18 @@ export function createWorkbenchSource(remote: WorkbenchRemote): WorkbenchSource 
       const code = result?.error.code
       return { ok: false, reason: code === 'auditWorkbench/no-prompt' ? 'no-prompt' : code === 'auditWorkbench/not-found' ? 'not-found' : 'failed' }
     },
-    async openOutput(request) {
-      const result = await settle(() => remote.openOutput(request, lifetime.signal))
-      if (result?.ok === true) return 'opened'
-      const code = result?.error.code
-      return code === 'auditWorkbench/output-refused' ? 'refused' : code === 'auditWorkbench/not-found' ? 'not-found' : 'failed'
+    openOutput: request => openOutcome(settle(() => remote.openOutput(request, lifetime.signal))),
+    async readScope(request) {
+      const key = scopeKey(request.workspaceId, request.auditee)
+      const read = (scopeReads.get(key) ?? 0) + 1
+      scopeReads.set(key, read)
+      const published = snapshot.getSnapshot().scopes[key]
+      if (published === undefined || published.status === 'error') setScope(key, { status: 'loading' })
+      const result = await settle(() => remote.orgScope(request, lifetime.signal))
+      if (scopeReads.get(key) !== read) return
+      setScope(key, result?.ok === true ? { status: 'ready', value: result.value } : { status: 'error' })
     },
+    openMembersTable: request => openOutcome(settle(() => remote.openMembersTable(request, lifetime.signal))),
     dispose() { lifetime.abort() },
   }
   return source

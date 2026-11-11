@@ -1,6 +1,6 @@
 /** Pure text and tally helpers over Project Archive values for the workbench page. */
 import type { TagTone } from '@deepseek-ai/dsh-client-ui-primitives'
-import type { KickoffTask, KickoffTaskStatus, MonthSpan } from '@deepseek-ai/dsh-audit-workbench/types'
+import type { Auditee, KickoffTask, KickoffTaskStatus, MonthSpan, ProjectArchive } from '@deepseek-ai/dsh-audit-workbench/types'
 import type { PropsLocale } from '@deepseek-ai/dsh-client-ui-slots'
 
 /** Translator of the workbench namespace. */
@@ -96,4 +96,59 @@ export function clockTime(iso: string): string {
 export function baseName(path: string): string {
   const parts = path.split(/[\\/]/).filter(part => part !== '')
   return parts.at(-1) ?? path
+}
+
+/**
+ * Whether an Auditee gets an organization scope view: it records a scope file or at least one code.
+ * @param auditee - recorded Auditee.
+ * @returns `true` when the detail view links to its organization scope.
+ */
+export function hasScope(auditee: Auditee): boolean {
+  return auditee.scopeFile !== '' || auditee.codes.length > 0
+}
+
+/** Audit focus items of one section, numbered by their position in the archive. */
+export interface FocusGroup {
+  /** Recorded section; empty for items without one. */
+  readonly section: string
+  readonly items: readonly { readonly no: number; readonly content: string }[]
+}
+
+/**
+ * Group audit focus items by section in the order each section first appears.
+ * @param focus - recorded focus items.
+ * @returns the groups; each item keeps its 1-based position in the archive.
+ */
+export function groupFocus(focus: ProjectArchive['focus']): FocusGroup[] {
+  const groups = new Map<string, { no: number; content: string }[]>()
+  for (const [index, item] of focus.entries()) {
+    const items = groups.get(item.section)
+    const entry = { no: index + 1, content: item.content }
+    if (items === undefined) groups.set(item.section, [entry])
+    else items.push(entry)
+  }
+  return [...groups].map(([section, items]) => ({ section, items }))
+}
+
+/** One change log entry with its position in the archive. */
+export type IndexedChange = ProjectArchive['changes'][number] & { readonly index: number }
+
+/**
+ * Order change log entries newest first; entries with the same date keep the later-written one first.
+ * @param changes - recorded entries in write order.
+ * @returns the entries, each with its position in the archive.
+ */
+export function newestChanges(changes: ProjectArchive['changes']): IndexedChange[] {
+  return changes
+    .map((change, index) => ({ ...change, index }))
+    .toSorted((left, right) => left.date < right.date ? 1 : left.date > right.date ? -1 : right.index - left.index)
+}
+
+/**
+ * A recorded date without its year when it starts with one.
+ * @param date - recorded date such as `2026-11-09 23:15`.
+ * @returns `11-09 23:15`, or `date` unchanged when it does not start with `YYYY-`.
+ */
+export function shortDate(date: string): string {
+  return /^\d{4}-/.test(date) ? date.slice(5) : date
 }

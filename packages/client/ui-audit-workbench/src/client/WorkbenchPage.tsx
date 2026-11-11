@@ -1,5 +1,8 @@
-/** Audit workbench main page: the overview, one project's detail, and the dialogs that fill a new Session's prompt. */
-import { useEffect, useRef, useState } from 'react'
+/**
+ * Audit workbench main page: the overview, one project's detail, one Auditee's organization scope, and the dialogs that
+ * fill a new Session's prompt.
+ */
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { Button, IconRefreshOutlineRegular } from '@deepseek-ai/dsh-client-ui-primitives'
 import type { HostObservable, InjectFace, PropsLocale, PropsRuntime } from '@deepseek-ai/dsh-client-ui-slots'
 import type {} from '@deepseek-ai/dsh-client-ui-layout/client'
@@ -8,10 +11,11 @@ import type {} from '@deepseek-ai/dsh-client-ui-workspace/client'
 import type { SessionId } from '@deepseek-ai/dsh-session/types'
 import { assertNever } from '@deepseek-ai/dsh-util-values'
 import type { WorkspaceId } from '@deepseek-ai/dsh-workspace/types'
-import type { OutputRequest, PackStatus, PromptRequest } from '@deepseek-ai/dsh-audit-workbench/types'
-import type { OpenFailure, PromptResult, WorkbenchSnapshot } from './source.ts'
+import type { OrgScopeRequest, OutputRequest, PackStatus, PromptRequest } from '@deepseek-ai/dsh-audit-workbench/types'
+import { scopeKey, type OpenFailure, type PromptResult, type WorkbenchSnapshot } from './source.ts'
 import { Overview } from './Overview.tsx'
-import { ProjectDetail } from './ProjectDetail.tsx'
+import { OrgScopeHead, OrgScopeView } from './OrgScope.tsx'
+import { ProjectDetail, ProjectHead } from './ProjectDetail.tsx'
 import { ModelsDialog, NewProjectDialog, PromptDialog, type NewProjectState, type PromptDialogState } from './dialogs.tsx'
 import type { Translate } from './format.ts'
 import css from './WorkbenchPage.module.css'
@@ -37,6 +41,10 @@ export interface WorkbenchInjected {
   readonly preparePrompt: (request: PromptRequest) => Promise<PromptOutcome>
   /** Open one recorded output on the Host desktop. */
   readonly openOutput: (request: OutputRequest) => Promise<'opened' | OpenFailure>
+  /** Read one Auditee's Organization Scope again. */
+  readonly readScope: (request: OrgScopeRequest) => void
+  /** Open the members table of one Auditee's Organization Scope on the Host desktop. */
+  readonly openMembersTable: (request: OrgScopeRequest) => Promise<'opened' | OpenFailure>
   /** Open a Workspace's new-Session draft with `prompt` added to it; nothing is sent. */
   readonly startSession: (workspaceId: WorkspaceId, prompt: string) => void
   /** Show one Session. */
@@ -58,21 +66,39 @@ type Dialog =
 
 const FAILURE_KEYS = { 'no-prompt': 'prompt.noPrompt', 'not-found': 'prompt.notFound', 'failed': 'prompt.failed' } as const
 
+const TABLE_FAILURE_KEYS = { refused: 'scope.openRefused', 'not-found': 'scope.openNotFound', failed: 'scope.openFailed' } as const
+
+/** The project the page shows and, inside it, the Auditee whose organization scope is open. */
+type View =
+  | { readonly kind: 'overview' }
+  | { readonly kind: 'project'; readonly workspaceId: WorkspaceId }
+  | { readonly kind: 'scope'; readonly workspaceId: WorkspaceId; readonly auditee: number }
+
 /**
  * Render the workbench over the Host reads and the Workspace and Session lists.
  * @param props - workbench reads, actions, standard Workspace and Session hooks, and copy.
  * @returns the page.
  */
 export function WorkbenchPage(props: WorkbenchPageProps) {
-  const { useWorkbench, useWorkspaces, useSessions, onOpen, t } = props
+  const { useWorkbench, useWorkspaces, useSessions, onOpen, readScope, t } = props
   const snapshot = useWorkbench(value => value)
   const workspaces = useWorkspaces(value => value)
   const sessions = useSessions(value => value.byId)
-  const [selected, setSelected] = useState<WorkspaceId | undefined>(undefined)
+  const [view, setView] = useState<View>({ kind: 'overview' })
+  const [tableNotice, setTableNotice] = useState<string | undefined>(undefined)
+  const selected = view.kind === 'overview' ? undefined : view.workspaceId
+  const show = (next: View): void => {
+    setTableNotice(undefined)
+    setView(next)
+  }
   const [dialog, setDialog] = useState<Dialog>({ kind: 'none' })
   // Each prompt request takes a number; a result that is no longer the latest request is dropped.
   const promptRequest = useRef(0)
   useEffect(() => { onOpen() }, [onOpen])
+  const scopeRequest = useMemo(() => view.kind === 'scope' ? { workspaceId: view.workspaceId, auditee: view.auditee } : undefined, [view])
+  useEffect(() => {
+    if (scopeRequest !== undefined) readScope(scopeRequest)
+  }, [scopeRequest, readScope])
 
   const title = (workspaceId: WorkspaceId, path: string): string =>
     workspaces.items.find(item => item.workspaceId === workspaceId)?.title ?? path
@@ -126,18 +152,60 @@ export function WorkbenchPage(props: WorkbenchPageProps) {
     : snapshot.projects.value.find(entry => entry.workspaceId === selected)
   const overview = snapshot.overview.status === 'ready' ? snapshot.overview.value : undefined
   const models = overview?.models ?? []
+  const prompts = overview?.prompts ?? { kickoff: false, backfill: false, rerun: false }
+  const scope = view.kind === 'scope' ? snapshot.scopes[scopeKey(view.workspaceId, view.auditee)] : undefined
+  const openTable = async (request: OrgScopeRequest): Promise<void> => {
+    setTableNotice(undefined)
+    const outcome = await props.openMembersTable(request)
+    if (outcome !== 'opened') setTableNotice(t(TABLE_FAILURE_KEYS[outcome]))
+  }
   return (
     <div className={css.page}>
-      <div className={css.body}>
-        {selected === undefined
-          ? (
+      <div className={css.bar} data-window-drag>
+        <div className={css.barColumn}>
+          {view.kind === 'overview' && (
+            <header className={css.head}>
+              <div className={css.headText}>
+                <h1 className={css.heading}>{t('title')}</h1>
+                <p className={css.subtitle}>{t('subtitle')}</p>
+              </div>
+            </header>
+          )}
+          {view.kind === 'project' && (
+            <ProjectHead
+              workspaceId={view.workspaceId}
+              project={project}
+              workspaces={workspaces}
+              models={models}
+              t={t}
+              onBack={() => { show({ kind: 'overview' }) }}
+              onRefresh={props.onRefreshProjects}
+              onRunModel={() => { setDialog({ kind: 'models', workspaceId: view.workspaceId }) }}
+            />
+          )}
+          {view.kind === 'scope' && (
+            <OrgScopeHead
+              workspaceId={view.workspaceId}
+              project={project}
+              workspaces={workspaces}
+              auditee={view.auditee}
+              scope={scope}
+              t={t}
+              onOverview={() => { show({ kind: 'overview' }) }}
+              onProject={() => { show({ kind: 'project', workspaceId: view.workspaceId }) }}
+              onRefresh={() => {
+                props.onRefreshProjects()
+                readScope({ workspaceId: view.workspaceId, auditee: view.auditee })
+              }}
+              onOpenTable={() => { void openTable({ workspaceId: view.workspaceId, auditee: view.auditee }) }}
+            />
+          )}
+        </div>
+      </div>
+      <div className={css.scroller}>
+        <div className={css.body}>
+          {view.kind === 'overview' && (
             <>
-              <header className={css.head}>
-                <div className={css.headText}>
-                  <h1 className={css.heading}>{t('title')}</h1>
-                  <p className={css.subtitle}>{t('subtitle')}</p>
-                </div>
-              </header>
               {snapshot.overview.status === 'error' && <PageNotice t={t} onRetry={props.onRefresh} />}
               {overview !== undefined && <PackNotice pack={overview.pack} t={t} onRetry={props.onRefresh} />}
               <Overview
@@ -148,33 +216,48 @@ export function WorkbenchPage(props: WorkbenchPageProps) {
                 onRefreshProjects={props.onRefreshProjects}
                 onCheck={props.onCheck}
                 onLogin={props.onLogin}
-                onOpenProject={setSelected}
+                onOpenProject={(workspaceId) => { show({ kind: 'project', workspaceId }) }}
                 onBackfill={(workspaceId) => { askPrompt({ kind: 'backfill', workspaceId }, t('prompt.backfillTitle')) }}
                 onNewProject={() => { setDialog({ kind: 'new', state: { phase: 'empty' } }) }}
               />
             </>
-          )
-          : (
+          )}
+          {view.kind === 'project' && (
             <ProjectDetail
-              workspaceId={selected}
+              workspaceId={view.workspaceId}
               project={project}
               loading={snapshot.projects.status === 'loading'}
               workspaces={workspaces}
               sessions={sessions}
               models={models}
-              prompts={overview?.prompts ?? { kickoff: false, backfill: false, rerun: false }}
+              prompts={prompts}
+              scopes={snapshot.scopes}
               t={t}
-              onBack={() => { setSelected(undefined) }}
-              onRefresh={props.onRefreshProjects}
-              onRunModel={() => { setDialog({ kind: 'models', workspaceId: selected }) }}
               onRerun={(task, index) => {
-                askPrompt({ kind: 'rerun', workspaceId: selected, task: index }, t('prompt.rerunTitle', { task }))
+                askPrompt({ kind: 'rerun', workspaceId: view.workspaceId, task: index }, t('prompt.rerunTitle', { task }))
               }}
-              onBackfill={() => { askPrompt({ kind: 'backfill', workspaceId: selected }, t('prompt.backfillTitle')) }}
+              onBackfill={() => { askPrompt({ kind: 'backfill', workspaceId: view.workspaceId }, t('prompt.backfillTitle')) }}
+              readScope={readScope}
+              onOpenScope={(auditee) => { show({ kind: 'scope', workspaceId: view.workspaceId, auditee }) }}
               openOutput={props.openOutput}
               openSession={props.openSession}
             />
           )}
+          {view.kind === 'scope' && (
+            <OrgScopeView
+              project={project}
+              loading={snapshot.projects.status === 'loading'}
+              auditee={view.auditee}
+              scope={scope}
+              notice={tableNotice}
+              backfill={prompts.backfill}
+              t={t}
+              onSelectAuditee={(auditee) => { show({ kind: 'scope', workspaceId: view.workspaceId, auditee }) }}
+              onRetry={() => { readScope({ workspaceId: view.workspaceId, auditee: view.auditee }) }}
+              onBackfill={() => { askPrompt({ kind: 'backfill', workspaceId: view.workspaceId }, t('prompt.backfillTitle')) }}
+            />
+          )}
+        </div>
       </div>
       {dialog.kind === 'prompt' && (
         <PromptDialog state={dialog.state} t={t} onClose={closeDialog} onConfirm={confirmPrompt} />

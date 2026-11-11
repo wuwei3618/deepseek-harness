@@ -25,7 +25,10 @@ describe('readArchive', () => {
       version: 1,
       createdAt: '2026-11-01 09:00', updatedAt: '2026-11-05 18:20',
       auditType: '离任审计（经济责任审计）', specialAudits: ['工程结算专项审计'],
-      auditees: [{ name: '示例建设有限公司', kind: '机构', codes: ['C001'] }, { name: '示例项目部', kind: '业务项目', codes: [] }],
+      auditees: [
+        { name: '示例建设有限公司', kind: '机构', codes: ['C001'], scopeFile: '工作区/开工/组织范围/组织范围_C001.json' },
+        { name: '示例项目部', kind: '业务项目', codes: [], scopeFile: '' },
+      ],
       period: { from: '2023-01', to: '2025-12' }, tenure: { from: '2022-06', to: '2025-12' },
       focus: [{ content: '资金管理', section: '资金' }],
       scope: { tablePath: '/p/范围表.xlsx#范围', tableVersion: 'v2', confirmedAt: '2026-11-02 10:00' },
