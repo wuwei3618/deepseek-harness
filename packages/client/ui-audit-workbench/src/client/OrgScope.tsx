@@ -7,7 +7,10 @@ import {
 } from '@deepseek-ai/dsh-client-ui-primitives'
 import type { WorkspaceSnapshot } from '@deepseek-ai/dsh-api-workspace-controller/client'
 import type { WorkspaceId } from '@deepseek-ai/dsh-workspace/types'
-import type { OrgScope, OrgScopeNode, OrgScopeOwnership, OrgScopeRead, ProjectArchive, ProjectEntry } from '@deepseek-ai/dsh-audit-workbench/types'
+import { assertNever } from '@deepseek-ai/dsh-util-values'
+import type {
+  OrgScope, OrgScopeNode, OrgScopeOwnership, OrgScopeProblem, OrgScopeRead, ProjectArchive, ProjectEntry,
+} from '@deepseek-ai/dsh-audit-workbench/types'
 import type { Load } from './source.ts'
 import { Spinner } from './dialogs.tsx'
 import { hasScope, text, type Translate } from './format.ts'
@@ -142,12 +145,7 @@ export function OrgScopeView(props: OrgScopeViewProps) {
         </section>
       )}
       {scope?.status === 'ready' && scope.value.kind === 'unreadable' && (
-        <div className={css.notice} role="alert">
-          <span className={css.fieldLine}>
-            {t(`scope.unreadable.${scope.value.reason}`)}
-            <span className={css.caption}>{scope.value.message}</span>
-          </span>
-        </div>
+        <div className={css.notice} role="alert"><Unreadable read={scope.value} t={t} /></div>
       )}
       {scope?.status === 'ready' && scope.value.kind === 'read' && <ScopeTree key={props.auditee} scope={scope.value.scope} t={t} />}
     </>
@@ -168,11 +166,42 @@ const MARKS: Readonly<Record<Exclude<OrgScopeOwnership, 'in'>, { readonly tone: 
   unassigned: { tone: 'neutral', key: 'mark.unassigned' },
 }
 
-function Marks({ node, t }: { readonly node: OrgScopeNode; readonly t: Translate }) {
+function Unreadable({ read, t }: { readonly read: Extract<OrgScopeRead, { kind: 'unreadable' }>; readonly t: Translate }) {
+  switch (read.reason) {
+    case 'shape': return <span>{read.message === '' ? t('scope.unreadable.root') : t('scope.unreadable.shape', { field: read.message })}</span>
+    case 'origin': return <span>{t('scope.unreadable.origin', { code: read.message })}</span>
+    case 'outside':
+    case 'io':
+    case 'json':
+      return (
+        <span className={css.fieldLine}>
+          {t(`scope.unreadable.${read.reason}`)}
+          <span className={css.caption}>{read.message}</span>
+        </span>
+      )
+    /* v8 ignore next -- the reason is a closed union of the five handled reasons. */
+    default: return assertNever(read.reason, 'organization scope unreadable reason')
+  }
+}
+
+function problemText(problem: OrgScopeProblem, t: Translate): string {
+  const at = problem.index + 1
+  const code = problem.code === '' ? t('scope.problem.noCode') : problem.code
+  switch (problem.kind) {
+    case 'invalid': return t('scope.problem.invalid', { at, code, field: problem.field === '' ? t('scope.problem.wholeNode') : problem.field })
+    case 'duplicate': return t('scope.problem.duplicate', { at, code })
+    case 'detached': return t('scope.problem.detached', { at, code, parent: problem.parent })
+    /* v8 ignore next -- the problem kind is a closed union of the three handled kinds. */
+    default: return assertNever(problem, 'organization scope problem')
+  }
+}
+
+function Marks({ node, detached, t }: { readonly node: OrgScopeNode; readonly detached: boolean; readonly t: Translate }) {
   return (
     <>
       {node.ownership !== 'in' && <Tag tone={MARKS[node.ownership].tone}>{t(MARKS[node.ownership].key)}</Tag>}
       {node.conflict !== '' && <Tag tone="danger">{t('mark.conflict')}</Tag>}
+      {detached && <Tag tone="danger">{t('mark.detached')}</Tag>}
     </>
   )
 }
@@ -253,6 +282,12 @@ function ScopeTree({ scope, t }: { readonly scope: OrgScope; readonly t: Transla
         <Button size="sm" variant="ghost" disabled={narrowing} onClick={expandLevel}>{t('scope.expandLevel')}</Button>
         <Button size="sm" variant="ghost" disabled={narrowing} onClick={() => { setExpanded(new Set([index.root.code])) }}>{t('scope.collapseAll')}</Button>
       </div>
+      {scope.problems.length > 0 && (
+        <details className={css.problems}>
+          <summary>{t('scope.problems', { n: count(scope.problems.length) })}</summary>
+          <ul>{scope.problems.map(problem => <li key={problem.index}>{problemText(problem, t)}</li>)}</ul>
+        </details>
+      )}
       <div className={css.scopePanes}>
         <section className={clsx(css.card, css.treeCard)} aria-label={t('scope.tree')}>
           {rows.length === 0
@@ -285,7 +320,7 @@ function ScopeTree({ scope, t }: { readonly scope: OrgScope; readonly t: Transla
                       <span className={clsx(css.treeName, row.node.ownership !== 'in' && css.treeOut)}><Runs value={text(row.node.name, t)} query={query} /></span>
                       <span className={css.treeCode}><Runs value={row.node.code} query={query} /></span>
                       {row.expandable && !row.expanded && <span className={css.caption}>{t('scope.descendants', { n: count(descendantsOf(index, row.node.code)) })}</span>}
-                      <span className={css.treeMarks}><Marks node={row.node} t={t} /></span>
+                      <span className={css.treeMarks}><Marks node={row.node} detached={index.detached.has(row.node.code)} t={t} /></span>
                     </button>
                   </li>
                 ))}
@@ -301,6 +336,7 @@ function ScopeTree({ scope, t }: { readonly scope: OrgScope; readonly t: Transla
         <span><Tag tone="neutral">{t('mark.excluded')}</Tag> {t('legend.excluded')}</span>
         <span><Tag tone="neutral">{t('mark.unassigned')}</Tag> {t('legend.unassigned')}</span>
         <span><Tag tone="danger">{t('mark.conflict')}</Tag> {t('legend.conflict')}</span>
+        {index.detached.size > 0 && <span><Tag tone="danger">{t('mark.detached')}</Tag> {t('legend.detached')}</span>}
       </div>
     </>
   )
@@ -326,6 +362,7 @@ function NodeDetail({ index, node, t, onReveal }: {
 }) {
   const children = childrenOf(index, node.code).length
   const chain = ancestors(index, node.code)
+  const recorded = index.detached.get(node.code)
   return (
     <aside className={clsx(css.card, css.nodeCard)} aria-label={t('scope.node')} aria-live="polite">
       <div>
@@ -346,6 +383,7 @@ function NodeDetail({ index, node, t, onReveal }: {
         {node.note !== '' && <span className={css.fieldLine}>{node.note}</span>}
       </div>
       {node.conflict !== '' && <div className={css.verdict} data-ownership="conflict">{t('verdict.conflict', { text: node.conflict })}</div>}
+      {recorded !== undefined && <div className={css.verdict} data-ownership="conflict">{t('verdict.detached', { parent: recorded })}</div>}
       <dl className={css.fields}>
         <dt>{t('node.code')}</dt>
         <dd className={css.treeCode}>{node.code}</dd>

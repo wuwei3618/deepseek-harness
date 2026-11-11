@@ -12,6 +12,8 @@ const codes = (view: { expanded?: string[]; filter?: ScopeFilter; query?: string
 describe('organization tree', () => {
   it('indexes children in file order and counts all descendants', () => {
     expect(index.root.code).toBe('C001')
+    expect(index.tops).toEqual(['C001'])
+    expect(index.detached.size).toBe(0)
     expect(index.children.get('C001')).toEqual(['C002', 'C005', 'C006'])
     expect(Object.fromEntries(index.descendants)).toEqual({ C001: 6, C002: 2, C003: 0, C004: 0, C005: 0, C006: 1, C007: 0 })
     expect(ancestors(index, 'C004')).toEqual(['C001', 'C002'])
@@ -40,6 +42,16 @@ describe('organization tree', () => {
     expect(codes({ query: '分公司' }).rows).toEqual(['C001-', '·C002*'])
     expect(codes({ query: '示例公司' }).rows).toEqual(['C001*'])
     expect(codes({ query: '无此单位' })).toEqual({ rows: [], truncated: false })
+  })
+
+  it('walks every top-level node in file order and keeps where a lifted node was recorded', () => {
+    const tops = indexScope({ ...ORG_SCOPE, nodes: [node('R', ''), node('A', 'R'), node('T', ''), node('U', 'T')], problems: [{ kind: 'detached', index: 2, code: 'T', parent: 'Z' }] })
+    expect(tops.tops).toEqual(['R', 'T'])
+    expect(tops.detached).toEqual(new Map([['T', 'Z']]))
+    expect(ancestors(tops, 'U')).toEqual(['T'])
+    const rows = (query: string) => visibleRows(tops, { expanded: new Set(['R']), filter: 'all', query, limit: 10 }).rows.map(row => row.node.code)
+    expect(rows('')).toEqual(['R', 'A', 'T'])
+    expect(rows('u')).toEqual(['T', 'U'])
   })
 
   it('marks each case-insensitive match of the query', () => {

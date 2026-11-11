@@ -83,14 +83,14 @@ Ids use letters, digits, `_`, and `-`. Templates use `{{name}}` placeholders, an
 
 ### Organization Scope file
 
-The kickoff writes one Organization Scope file per organization Auditee under `工作区/开工/组织范围/` and records its path, relative to the Project Directory, in the archive's `被审计单位[].组织范围文件`. `orgScope` reads it for the page's organization tree; `openMembersTable` opens the members table it names. Unknown keys are ignored; a missing required key, another `格式版本`, an unknown `归属`, a first node other than `起点`, a repeated code, or a node listed before its parent makes the whole file unreadable, and the page shows why.
+The kickoff writes one Organization Scope file per organization Auditee under `工作区/开工/组织范围/` and records its path, relative to the Project Directory, in the archive's `被审计单位[].组织范围文件`. `orgScope` reads it for the page's organization tree; `openMembersTable` opens the members table it names. Unknown keys are ignored. A header that does not follow the table below, or a first node other than `起点`, makes the whole file unreadable, and the page shows why. Each other node is read on its own: a node that does not follow the format or repeats an earlier code is left out, a node whose parent no earlier node holds is shown as a top-level node, and the page lists both cases.
 
 | Field | Meaning |
 |---|---|
 | `格式版本` | Must be `1` |
 | `起点` | `编码` and `名称` of the starting node, which is the first node |
 | `导出时间`, `名下编码表` | Export time; file name of the members table in the scope file's directory, optional |
-| `节点[]` | The whole subtree in preorder: `编码`, `名称`, `上一级编码`, `归属` (`名下`, `别家`, `归不到`, or `不纳入`), and optional `所属二级单位`, `定归属的来源`, `来源不一致`, `利润中心` (the node's own), and `说明` |
+| `节点[]` | The nodes, each after its parent: `编码`, `名称`, `上一级编码` (empty for a top-level node; nodes outside the starting node's tree are top-level), `归属` (`名下`, `别家`, `归不到`, or `不纳入`), and optional `所属二级单位`, `定归属的来源`, `来源不一致`, `利润中心` (the node's own), and `说明` |
 
 -----
 

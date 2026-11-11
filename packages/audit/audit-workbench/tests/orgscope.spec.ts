@@ -29,9 +29,12 @@ async function project(content?: string): Promise<string> {
 const withNodes = (nodes: unknown[]) => JSON.stringify({ ...ORG_SCOPE, 节点: nodes })
 const [ROOT_NODE, CHILD_NODE] = ORG_SCOPE.节点
 
+const scopeNode = (code: string, parent: string, ownership = 'in') =>
+  ({ code, name: '', parent, unit: '', ownership, source: '', conflict: '', profitCenters: [], note: '' })
+
 describe('parseOrgScope', () => {
-  it('maps the nodes in preorder and drops empty profit centers', () => {
-    expect(parseOrgScope(`﻿${JSON.stringify({ ...ORG_SCOPE, 额外: 1 })}`)).toEqual({ ok: true, scope: {
+  it('maps the nodes in file order with every top-level node and drops empty profit centers', () => {
+    expect(parseOrgScope(`\uFEFF${JSON.stringify({ ...ORG_SCOPE, 额外: 1 })}`)).toEqual({ ok: true, scope: {
       origin: { code: 'C001', name: '示例建设有限公司' },
       exportedAt: '2026-11-09 20:40',
       membersTable: '名下编码_C001.xlsx',
@@ -41,28 +44,52 @@ describe('parseOrgScope', () => {
         { code: 'C003', name: '示例安装公司', parent: 'C002', unit: '示例安装有限公司', ownership: 'other', source: '报账树', conflict: '报账树归本单位；组织主数据归示例安装有限公司', profitCenters: [], note: '' },
         { code: 'C004', name: '示例停用部门', parent: 'C001', unit: '', ownership: 'unassigned', source: '', conflict: '', profitCenters: [], note: '' },
         { code: 'C005', name: '示例空壳公司', parent: 'C001', unit: '示例建设有限公司', ownership: 'excluded', source: '', conflict: '', profitCenters: [], note: '没有利润中心，不纳入' },
+        { code: 'C006', name: '示例轨道分公司', parent: '', unit: '示例建设有限公司', ownership: 'in', source: '八局组织主数据模型', conflict: '', profitCenters: [], note: '不在起点组织树下' },
+        { code: 'C007', name: '示例封存项目', parent: '', unit: '', ownership: 'unassigned', source: '归不到，按利润中心组接回', conflict: '', profitCenters: [], note: '' },
       ],
+      problems: [],
     } })
   })
 
   it('reads the starting node parent as empty and absent optional fields as empty', () => {
     const parsed = parseOrgScope(JSON.stringify({ 格式版本: 1, 起点: { 编码: 'C001', 名称: '' }, 导出时间: '', 节点: [{ 编码: 'C001', 名称: '', 上一级编码: 'X', 归属: '名下' }] }))
-    expect(parsed).toEqual({ ok: true, scope: { origin: { code: 'C001', name: '' }, exportedAt: '', membersTable: '',
-      nodes: [{ code: 'C001', name: '', parent: '', unit: '', ownership: 'in', source: '', conflict: '', profitCenters: [], note: '' }] } })
+    expect(parsed).toEqual({ ok: true, scope: { origin: { code: 'C001', name: '' }, exportedAt: '', membersTable: '', nodes: [scopeNode('C001', '')], problems: [] } })
+  })
+
+  it('leaves out a node that is not in the format or repeats a code, and lifts a node whose parent is not before it', () => {
+    const parsed = parseOrgScope(withNodes([
+      ROOT_NODE,
+      { ...CHILD_NODE, 编码: 'B1', 归属: '外部' },
+      { 编码: 'B2', 名称: '', 上一级编码: 'B1', 归属: '名下' },
+      'not a node',
+      CHILD_NODE,
+      { ...CHILD_NODE, 名称: '重复' },
+      { 编码: 'B3', 名称: '', 上一级编码: 'B4', 归属: '别家' },
+      { 编码: 'B4', 名称: '', 上一级编码: 'B3', 归属: '名下' },
+    ]))
+    expect(parsed).toMatchObject({ ok: true, scope: {
+      nodes: [{ code: 'C001' }, scopeNode('B2', ''), { code: 'C002', parent: 'C001' }, scopeNode('B3', '', 'other'), scopeNode('B4', 'B3')],
+      problems: [
+        { kind: 'invalid', index: 1, code: 'B1', field: '归属' },
+        { kind: 'detached', index: 2, code: 'B2', parent: 'B1' },
+        { kind: 'invalid', index: 3, code: '', field: '' },
+        { kind: 'duplicate', index: 5, code: 'C002' },
+        { kind: 'detached', index: 6, code: 'B3', parent: 'B4' },
+      ],
+    } })
   })
 
   it.each([
-    ['text that is not JSON', '{', /^not valid JSON/],
-    ['a JSON array', '[]', /^expected object|Invalid input/],
-    ['another format version', JSON.stringify({ ...ORG_SCOPE, 格式版本: 2 }), /^格式版本: /],
-    ['an unknown ownership', withNodes([ROOT_NODE, { ...CHILD_NODE, 归属: '外部' }]), /^节点\.1\.归属: /],
-    ['no nodes', withNodes([]), /^节点: /],
-    ['a first node other than the starting node', withNodes([CHILD_NODE]), /^节点\.0: the first node is not the starting node/],
-    ['a node listed twice', withNodes([ROOT_NODE, CHILD_NODE, CHILD_NODE]), /^节点\.2: node C002 is listed twice/],
-    ['a parent after its child', withNodes([ROOT_NODE, { ...CHILD_NODE, 上一级编码: 'C009' }]), /^节点\.1: the parent C009 of node C002 does not precede it/],
-  ])('rejects %s', (_label, content, message) => {
+    ['text that is not JSON', '{', 'json', /JSON/],
+    ['a JSON array', '[]', 'shape', /^$/],
+    ['another format version', JSON.stringify({ ...ORG_SCOPE, 格式版本: 2 }), 'shape', /^格式版本$/],
+    ['a starting node without a code', JSON.stringify({ ...ORG_SCOPE, 起点: { 名称: '' } }), 'shape', /^起点\.编码$/],
+    ['no nodes', withNodes([]), 'shape', /^节点$/],
+    ['a first node not in the format', withNodes([{ ...ROOT_NODE, 归属: '外部' }]), 'shape', /^节点\.0\.归属$/],
+    ['a first node other than the starting node', withNodes([CHILD_NODE]), 'origin', /^C002$/],
+  ])('rejects %s', (_label, content, reason, message) => {
     const parsed = parseOrgScope(content)
-    expect(parsed.ok).toBe(false)
+    expect(parsed).toMatchObject({ ok: false, reason })
     expect(parsed.ok ? '' : parsed.message).toMatch(message)
   })
 })
@@ -93,6 +120,7 @@ describe('readOrgScope', () => {
     await mkdir(join(directory, SCOPE_PATH), { recursive: true })
     expect(await readOrgScope(directory, SCOPE_PATH)).toMatchObject({ kind: 'unreadable', reason: 'io' })
     expect(await readOrgScope(await project('{'), SCOPE_PATH)).toMatchObject({ kind: 'unreadable', reason: 'json' })
-    expect(await readOrgScope(await project('{}'), SCOPE_PATH)).toMatchObject({ kind: 'unreadable', reason: 'shape', message: expect.stringMatching(/^格式版本: /) as string })
+    expect(await readOrgScope(await project('{}'), SCOPE_PATH)).toEqual({ kind: 'unreadable', reason: 'shape', message: '格式版本' })
+    expect(await readOrgScope(await project(withNodes([CHILD_NODE])), SCOPE_PATH)).toEqual({ kind: 'unreadable', reason: 'origin', message: 'C002' })
   })
 })
