@@ -34,13 +34,19 @@ function config(rows: Map<string, EntryOptions>, id: string): Record<string, unk
   return row(rows, id).config as Record<string, unknown>
 }
 
-const READ_ONLY_PERMISSIONS = {
+const AUDIT_PERMISSIONS = {
   presets: {
     'workspace-write': {
       sandbox: 'workspace-write',
       approval: 'never',
       name: 'workspace-write',
       description: 'Run commands, read files, and write only inside the workspace; wider access is refused.',
+    },
+    'danger-full-access': {
+      sandbox: 'danger-full-access',
+      approval: 'never',
+      name: 'danger-full-access',
+      description: 'Run commands and read and write files anywhere the account can, without confirmation.',
     },
   },
   defaultPreset: 'workspace-write',
@@ -54,11 +60,11 @@ const ORG_DISABLED = [
 describe.each(['audit', 'audit-sdk', 'audit-acp', 'audit-desktop'])('the %s profile', (name) => {
   const rows = compose(name)
 
-  it('confines writes to the workspace with approvals refused', () => {
+  it('confines writes to the workspace by default, offers full access, and refuses approvals', () => {
     expect(row(rows, 'sandbox-policy').config).toMatchObject({ mode: 'workspace-write' })
     expect(config(rows, 'sandbox-policy')).not.toHaveProperty('additionalWritableRoots')
     expect(config(rows, 'approval')).toEqual({ policy: 'never' })
-    expect(config(rows, 'permission')).toEqual(READ_ONLY_PERMISSIONS)
+    expect(config(rows, 'permission')).toEqual(AUDIT_PERMISSIONS)
   })
 
   it('switches off the DeepSeek account, telemetry and session-log uploads, and plugin installation', () => {
