@@ -55,7 +55,7 @@ function declare(slots: SlotRegistry): () => void {
 
 
 /** Call a settings tab entry's `inject` factory. */
-function injectedOf(entry: { inject?: object }): PluginInventorySettingsTabInjected {
+function injectedOf(entry: { inject?: object | undefined }): PluginInventorySettingsTabInjected {
   return (entry.inject as unknown as () => PluginInventorySettingsTabInjected)()
 }
 
