@@ -34,7 +34,7 @@ describe('parseOrgScope', () => {
     expect(parseOrgScope(`﻿${JSON.stringify({ ...ORG_SCOPE, 额外: 1 })}`)).toEqual({ ok: true, scope: {
       origin: { code: 'C001', name: '示例建设有限公司' },
       exportedAt: '2026-11-09 20:40',
-      membersTable: '工作区/开工/组织范围/名下编码_C001.xlsx',
+      membersTable: '名下编码_C001.xlsx',
       nodes: [
         { code: 'C001', name: '示例建设有限公司', parent: '', unit: '示例建设有限公司', ownership: 'in', source: '组织架构对照表', conflict: '', profitCenters: ['L001'], note: '' },
         { code: 'C002', name: '示例第一分公司', parent: 'C001', unit: '示例建设有限公司', ownership: 'in', source: '', conflict: '', profitCenters: [], note: '' },

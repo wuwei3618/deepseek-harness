@@ -310,6 +310,14 @@ const VERDICTS: Readonly<Record<OrgScopeOwnership, 'verdict.in' | 'verdict.other
   in: 'verdict.in', other: 'verdict.other', excluded: 'verdict.excluded', unassigned: 'verdict.unassigned',
 }
 
+/** A node of the starting node's own second-level unit that another of its nodes manages reads differently from one owned elsewhere. */
+function verdict(index: ScopeIndex, node: OrgScopeNode, t: Translate): string {
+  if (node.ownership === 'other' && node.unit !== '' && node.unit === index.root.unit) {
+    return t('verdict.otherSameUnit', { unit: node.unit, root: text(index.root.name, t) })
+  }
+  return t(VERDICTS[node.ownership], { unit: node.unit === '' ? t('verdict.otherUnit') : node.unit })
+}
+
 function NodeDetail({ index, node, t, onReveal }: {
   readonly index: ScopeIndex
   readonly node: OrgScopeNode
@@ -334,7 +342,7 @@ function NodeDetail({ index, node, t, onReveal }: {
         <h2 className={css.nodeHeading}>{text(node.name, t)}</h2>
       </div>
       <div className={css.verdict} data-ownership={node.ownership}>
-        {t(VERDICTS[node.ownership], { unit: node.unit === '' ? t('verdict.otherUnit') : node.unit })}
+        {verdict(index, node, t)}
         {node.note !== '' && <span className={css.fieldLine}>{node.note}</span>}
       </div>
       {node.conflict !== '' && <div className={css.verdict} data-ownership="conflict">{t('verdict.conflict', { text: node.conflict })}</div>}

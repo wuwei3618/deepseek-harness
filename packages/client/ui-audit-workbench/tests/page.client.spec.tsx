@@ -690,6 +690,14 @@ describe('organization scope view', () => {
     expect(within(nodeDetail()).getByRole('heading', { name: '停用部门' })).toBeTruthy()
   })
 
+  it('names the starting node for a node of the same second-level unit that another node manages', () => {
+    const shared = { ...ORG_SCOPE, nodes: [node('R', '', { name: '总部' }), node('X', 'R', { name: '代管项目部', ownership: 'other', note: '由第二分公司管辖' })] }
+    openScope(withScope({ status: 'ready', value: { kind: 'read', scope: shared } }))
+    fireEvent.click(screen.getByRole('button', { name: /^代管项目部/ }))
+    expect(within(nodeDetail()).getByText('与总部同属示例公司，但不在其名下，不纳入本次范围')).toBeTruthy()
+    expect(within(nodeDetail()).getByText('由第二分公司管辖')).toBeTruthy()
+  })
+
   it('keeps the tree to its row limit and says how to narrow it', () => {
     const many = { ...ORG_SCOPE, nodes: [node('R', '', { name: '总部' }), ...Array.from({ length: 250 }, (_, at) => node(`N${at}`, 'R'))] }
     openScope(withScope({ status: 'ready', value: { kind: 'read', scope: many } }))

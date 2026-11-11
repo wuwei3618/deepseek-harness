@@ -216,7 +216,7 @@ export interface OrgScopeNode {
 export interface OrgScope {
   readonly origin: { readonly code: string; readonly name: string }
   readonly exportedAt: string
-  /** Members table the scope was taken from, relative to the Project Directory; may be empty. */
+  /** File name of the members table the scope was taken from, in the scope file's directory; may be empty. */
   readonly membersTable: string
   /** Nodes in preorder; a parent precedes its children. */
   readonly nodes: readonly OrgScopeNode[]

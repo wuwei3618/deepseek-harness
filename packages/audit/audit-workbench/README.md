@@ -89,7 +89,7 @@ The kickoff writes one Organization Scope file per organization Auditee under `�
 |---|---|
 | `格式版本` | Must be `1` |
 | `起点` | `编码` and `名称` of the starting node, which is the first node |
-| `导出时间`, `名下编码表` | Export time; members table path relative to the Project Directory, optional |
+| `导出时间`, `名下编码表` | Export time; file name of the members table in the scope file's directory, optional |
 | `节点[]` | The whole subtree in preorder: `编码`, `名称`, `上一级编码`, `归属` (`名下`, `别家`, `归不到`, or `不纳入`), and optional `所属二级单位`, `定归属的来源`, `来源不一致`, `利润中心` (the node's own), and `说明` |
 
 -----

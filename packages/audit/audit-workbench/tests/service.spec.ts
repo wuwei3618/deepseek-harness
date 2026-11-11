@@ -284,7 +284,7 @@ describe('AuditWorkbench', () => {
     })
   })
 
-  it('opens the members table of a read Organization Scope', async () => {
+  it('opens the members table beside the Organization Scope file', async () => {
     const dir = await projectDir(ARCHIVE)
     const scopeDir = join(dir, '工作区', '开工', '组织范围')
     await mkdir(scopeDir, { recursive: true })
@@ -301,7 +301,11 @@ describe('AuditWorkbench', () => {
       expect(await open(1)).toMatchObject({ code: 'auditWorkbench/not-found', details: { what: 'scope' } })
       await writeScope('')
       expect(await open(0)).toMatchObject({ code: 'auditWorkbench/not-found', details: { what: 'scope' } })
-      await writeScope('../outside.xlsx')
+      await writeFile(join(dir, '名下编码_C001.xlsx'), 'x')
+      await writeScope('../../../名下编码_C001.xlsx')
+      expect(await open(0)).toBe('opened')
+      expect(opened.at(-1)).toBe(join(dir, '名下编码_C001.xlsx'))
+      await writeScope('../../../../outside.xlsx')
       expect(await open(0)).toMatchObject({ code: 'auditWorkbench/output-refused' })
     })
   })

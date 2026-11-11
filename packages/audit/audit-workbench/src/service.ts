@@ -8,7 +8,7 @@
  */
 
 import { readFile, realpath, stat } from 'node:fs/promises'
-import { isAbsolute, join } from 'node:path'
+import { dirname, isAbsolute, resolve } from 'node:path'
 import type { Context } from '@deepseek-ai/cordis'
 import { readPluginPack, type LoadedPack } from '@deepseek-ai/dsh-audit-plugin-pack'
 import { Remote, RemoteError, TypertRemoteService } from '@deepseek-ai/dsh-typert-protocol'
@@ -168,12 +168,17 @@ export class AuditWorkbenchService extends TypertRemoteService {
    */
   @Remote
   async orgScope(request: OrgScopeRequest, signal: AbortSignal): Promise<OrgScopeRead> {
+    const { read } = await this.scopeOf(request)
+    signal.throwIfAborted()
+    return read
+  }
+
+  /** Read an Auditee's Organization Scope together with where its file is recorded. */
+  private async scopeOf(request: OrgScopeRequest): Promise<{ path: string; scopeFile: string; read: OrgScopeRead }> {
     const { path, archive } = await this.archiveOf(request.workspaceId)
     const auditee = archive.auditees[request.auditee]
     if (auditee === undefined) throw new RemoteError('auditWorkbench/not-found', 'The Auditee does not exist', { what: 'auditee' })
-    const read = await readOrgScope(path, auditee.scopeFile)
-    signal.throwIfAborted()
-    return read
+    return { path, scopeFile: auditee.scopeFile, read: await readOrgScope(path, auditee.scopeFile) }
   }
 
   /**
@@ -273,7 +278,7 @@ export class AuditWorkbenchService extends TypertRemoteService {
     const { path, archive } = await this.archiveOf(request.workspaceId)
     const output = archive.tasks[request.task]?.outputs[request.output]
     if (output === undefined) throw new RemoteError('auditWorkbench/not-found', 'The output does not exist', { what: 'output' })
-    await this.openInside(path, output, false, signal)
+    await this.openInside(path, output, signal)
   }
 
   /**
@@ -283,20 +288,20 @@ export class AuditWorkbenchService extends TypertRemoteService {
    */
   @Remote
   async openMembersTable(request: OrgScopeRequest, signal: AbortSignal): Promise<void> {
-    const { path } = await this.archiveOf(request.workspaceId)
-    const read = await this.orgScope(request, signal)
+    const { path, scopeFile, read } = await this.scopeOf(request)
     if (read.kind !== 'read' || read.scope.membersTable === '') {
       throw new RemoteError('auditWorkbench/not-found', 'The Organization Scope names no members table', { what: 'scope' })
     }
-    await this.openInside(path, read.scope.membersTable, true, signal)
+    // The kickoff writes the members table beside the scope file and records its file name only.
+    await this.openInside(path, resolve(dirname(resolve(path, scopeFile)), read.scope.membersTable), signal)
   }
 
-  /** Open a recorded file that must resolve inside the Project Directory; `allowRelative` accepts a path relative to it. */
-  private async openInside(projectDir: string, recorded: string, allowRelative: boolean, signal: AbortSignal): Promise<void> {
+  /** Open a file whose absolute path must resolve inside the Project Directory. */
+  private async openInside(projectDir: string, recorded: string, signal: AbortSignal): Promise<void> {
     let target: string
     try {
-      if (!allowRelative && !isAbsolute(recorded)) throw new Error('the recorded path is relative')
-      target = await realpath(isAbsolute(recorded) ? recorded : join(projectDir, recorded))
+      if (!isAbsolute(recorded)) throw new Error('the recorded path is relative')
+      target = await realpath(recorded)
       if (!inside(await realpath(projectDir), target)) throw new Error('the recorded path lies outside the Project Directory')
       await stat(target)
     } catch (error) {
