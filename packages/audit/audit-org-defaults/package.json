@@ -1,6 +1,6 @@
 {
   "name": "@deepseek-ai/dsh-audit-org-defaults",
-  "description": "Audit deployment defaults over dsh-base: writes only inside the workspace, no account, telemetry, or plugin installation",
+  "description": "Audit deployment defaults over dsh-base: writes only inside the workspace by default, no account, telemetry, or plugin installation",
   "version": "0.2.2-rc.1",
   "publishConfig": {
     "access": "public"

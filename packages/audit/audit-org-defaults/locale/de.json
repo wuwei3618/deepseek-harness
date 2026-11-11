@@ -1,6 +1,6 @@
 {
   "meta": {
     "title": "Prüfungsstandards",
-    "description": "Lässt jedes Prüfungsprofil nur in seinem Arbeitsbereich schreiben und schaltet das DeepSeek-Konto, Telemetrie- und Sitzungsprotokoll-Uploads sowie die Plugin-Installation ab."
+    "description": "Lässt jedes Prüfungsprofil standardmäßig nur in seinem Arbeitsbereich schreiben (Vollzugriff auf Wunsch verfügbar) und schaltet das DeepSeek-Konto, Telemetrie- und Sitzungsprotokoll-Uploads sowie die Plugin-Installation ab."
   }
 }
