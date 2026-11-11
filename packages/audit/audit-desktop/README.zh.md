@@ -9,7 +9,7 @@ kind: "package-bundle"
 
 ## 概述
 
-桌面端启动的 `audit-desktop` profile 的审计智能体。该层插入 `audit` agent preset，把它设为注册表的默认值，并关闭随附的四个 preset，因此新会话只能以审计模式启动。它还关闭插件和 preset 创作、DeepSeek Harness 开发上下文、DeepSeek 账号设置页和产品分析相关的 Web 行。它用八局印章替换官方品牌图形。
+桌面端启动的 `audit-desktop` profile 的审计智能体。该层插入 `audit` agent preset，把它设为注册表的默认值，并关闭除创造模式（`cordis`）以外的随附 preset，因此新会话以审计模式或创造模式启动。创造模式、插件管理和 Cordis runner 保持开启，使桌面端里的 agent 能检查和修改运行中的插件，例如审计工作台。该层关闭 DeepSeek Harness 开发上下文、DeepSeek 账号设置页和产品分析相关的 Web 行。它用八局印章替换官方品牌图形。
 
 ## 目录
 
@@ -24,14 +24,14 @@ kind: "package-bundle"
 <a id="use-this-package"></a>
 ## 使用此包
 
-桌面端为自己的保留 profile 和崩溃恢复读取 [`dsh-official-bundles`](../../util/official-bundles/src/bundles.ts) 中的 `audit-desktop` 模板，因此无需配置。模板顺序是 `dsh-base`、`dsh-web-app`、[`dsh-audit-org-defaults`](../audit-org-defaults/README.zh.md)、本 bundle，最后是可选的会话搜索和语音输入 bundle；插件管理已关闭，所以这两项始终开启。
+桌面端为自己的保留 profile 和崩溃恢复读取 [`dsh-official-bundles`](../../util/official-bundles/src/bundles.ts) 中的 `audit-desktop` 模板，因此无需配置。模板顺序是 `dsh-base`、`dsh-web-app`、[`dsh-audit-org-defaults`](../audit-org-defaults/README.zh.md)、本 bundle，最后是可选的会话搜索和语音输入 bundle，这两项默认开启，可在插件设置中切换。
 
 | 行 | 效果 |
 |---|---|
 | `preset-audit` | 插入：带审计 persona、不含编辑的文件工具、新建子代理和 workflow，以及[审计插件包](../audit-plugin-pack/README.zh.md)的「审计模式」preset |
 | `agent-preset-registry` | `default: audit` |
-| `preset-standard`、`preset-ptc`、`preset-minimal`、`preset-cordis` | 关闭；没有 `cordis` 时创作者模式入口不可用 |
-| `ui-plugin-manager`、`ui-agent-preset`、`entry-customization`、`ui-cordis`、`cordis-host-runner`、`cordis-client-runner`、`cordis-inspect-providers` | 关闭：不能创作插件或 preset |
+| `preset-standard`、`preset-ptc`、`preset-minimal` | 关闭 |
+| `plugin-manager` | [`dsh-audit-org-defaults`](../audit-org-defaults/README.zh.md) 关闭它之后在此重新开启：创造模式经它保存插件和 profile 改动 |
 | `harness-dev-context` | 关闭 |
 | `ui-settings-account`、`account-controller` | 关闭 |
 | `desktop-product-telemetry`、`product-analytics` | 关闭 |

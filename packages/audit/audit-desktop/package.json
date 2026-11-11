@@ -1,6 +1,6 @@
 {
   "name": "@deepseek-ai/dsh-audit-desktop",
-  "description": "The audit agent preset for Desktop: the only selectable preset, with Web self-modification, account, and analytics rows switched off",
+  "description": "The audit agent preset for Desktop: the default preset beside Creator mode, with account and analytics rows switched off",
   "version": "0.2.2-rc.1",
   "publishConfig": {
     "access": "public"

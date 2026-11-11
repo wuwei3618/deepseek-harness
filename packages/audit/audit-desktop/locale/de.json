@@ -1,6 +1,6 @@
 {
   "meta": {
     "title": "Prüfungsmodus für Desktop",
-    "description": "Macht den Prüfungsmodus zum einzigen Agentenmodus von Desktop und schaltet das Erstellen von Modi und Plugins, die Kontoanmeldung und die Produktanalyse ab."
+    "description": "Macht den Prüfungsmodus zum Standard-Agentenmodus von Desktop, behält den Creator-Modus bei und schaltet die Kontoanmeldung und die Produktanalyse ab."
   }
 }

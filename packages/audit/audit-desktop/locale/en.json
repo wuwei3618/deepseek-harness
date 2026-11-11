@@ -1,6 +1,6 @@
 {
   "meta": {
     "title": "Desktop audit mode",
-    "description": "Make audit mode the only Desktop agent mode and switch off preset and plugin authoring, account sign-in, and product analytics."
+    "description": "Make audit mode the default Desktop agent mode, keep Creator mode, and switch off account sign-in and product analytics."
   }
 }

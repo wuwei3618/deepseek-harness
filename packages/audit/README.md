@@ -26,7 +26,7 @@ This group turns the shipped profiles into audit profiles that write only inside
 |---|---|---|
 | [`audit-org-defaults/`](audit-org-defaults/README.md) | Workspace-only writes and no account, telemetry, or plugin installation, over `dsh-base` rows | — (patch only) |
 | [`audit-agent/`](audit-agent/README.md) | Audit persona, file tools without edit, and audit skills at the profile root of the command-line profiles | — (patch only) |
-| [`audit-desktop/`](audit-desktop/README.md) | The `audit` agent preset as the only Desktop preset, with authoring, account, and analytics rows switched off | — (patch only) |
+| [`audit-desktop/`](audit-desktop/README.md) | The `audit` agent preset as the Desktop default beside Creator mode, with account and analytics rows switched off | — (patch only) |
 | [`audit-skills/`](audit-skills/README.md) | Bundled general-purpose audit skills | registers on `ctx.skills` |
 | [`audit-plugin-pack/`](audit-plugin-pack/README.md) | The MCP servers and skills of an audit-plugins release unpacked under the Harness home, inside the Desktop audit preset | — (loader group) |
 | [`audit-workbench/`](audit-workbench/README.md) | Host reads behind the Desktop audit workbench: the pack's workbench manifest, each Workspace's Project Archive, and System Login Status | `ctx.auditWorkbench` |

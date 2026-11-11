@@ -67,8 +67,8 @@ describe.each(['audit', 'audit-sdk', 'audit-acp', 'audit-desktop'])('the %s prof
     expect(config(rows, 'permission')).toEqual(AUDIT_PERMISSIONS)
   })
 
-  it('switches off the DeepSeek account, telemetry and session-log uploads, and plugin installation', () => {
-    for (const id of ORG_DISABLED) expect(row(rows, id).disabled, id).toBe(true)
+  it('switches off the DeepSeek account, telemetry and session-log uploads, and plugin tools outside the Creator preset', () => {
+    for (const id of ORG_DISABLED) expect(row(rows, id).disabled, id).toBe(name === 'audit-desktop' && id === 'plugin-manager' ? false : true)
     expect(row(rows, 'config-editor').disabled).not.toBe(true)
   })
 
@@ -110,11 +110,11 @@ describe('the audit-desktop profile', () => {
   const preset = config(rows, 'preset-audit') as { id: string; plugins: EntryOptions[] }
   const plugins = new Map(preset.plugins.map(plugin => [plugin.id, plugin]))
 
-  it('registers the audit preset as the only preset and the default', () => {
+  it('registers the audit preset as the default beside the Creator preset', () => {
     expect(preset.id).toBe('audit')
     expect(config(rows, 'agent-preset-registry')).toEqual({ default: 'audit' })
     const presets = [...rows.values()].filter(entry => entry.name === '@deepseek-ai/dsh-agent-preset' && entry.disabled !== true)
-    expect(presets.map(entry => entry.id)).toEqual(['preset-audit'])
+    expect(presets.map(entry => entry.id).sort()).toEqual(['preset-audit', 'preset-cordis'])
   })
 
   it('gives the audit preset the root persona and the same file tools', () => {
@@ -139,16 +139,21 @@ describe('the audit-desktop profile', () => {
     expect(pruner?.config).toEqual({ thresholdChars: 40000, headChars: 20000, tailChars: 8000 })
   })
 
-  it('keeps session search and voice input on without the plugin manager', () => {
+  it('keeps session search and voice input on', () => {
     for (const id of ['optional-session-search', 'speech-to-text', 'ui-voice-input']) expect(row(rows, id).disabled, id).toBeUndefined()
   })
 
-  it('switches off authoring, account, development context, and analytics rows', () => {
+  it('keeps preset and plugin authoring for the Creator preset', () => {
     for (const id of [
-      'ui-plugin-manager', 'ui-agent-preset', 'entry-customization', 'ui-cordis', 'cordis-host-runner', 'cordis-client-runner',
-      'cordis-inspect-providers', 'harness-dev-context', 'ui-settings-account', 'account-controller', 'desktop-product-telemetry',
-      'product-analytics',
-    ]) expect(row(rows, id).disabled, id).toBe(true)
+      'preset-cordis', 'plugin-manager', 'ui-plugin-manager', 'ui-agent-preset', 'entry-customization', 'ui-cordis', 'cordis-host-runner',
+      'cordis-client-runner', 'cordis-inspect-providers',
+    ]) expect(row(rows, id).disabled, id).not.toBe(true)
+  })
+
+  it('switches off development context, account, and analytics rows', () => {
+    for (const id of ['harness-dev-context', 'ui-settings-account', 'account-controller', 'desktop-product-telemetry', 'product-analytics']) {
+      expect(row(rows, id).disabled, id).toBe(true)
+    }
   })
 
   it('mounts Playwright MCP on the Desktop Sidebar browser only when Desktop names its endpoint', () => {

@@ -26,7 +26,7 @@ kind: "package-group"
 |---|---|---|
 | [`audit-org-defaults/`](audit-org-defaults/README.zh.md) | 在 `dsh-base` 行上把写入限制在工作目录内，并关闭账号、遥测和插件安装 | —（仅补丁） |
 | [`audit-agent/`](audit-agent/README.zh.md) | 在命令行 profile 的根上提供审计 persona、不含编辑的文件工具和审计技能 | —（仅补丁） |
-| [`audit-desktop/`](audit-desktop/README.zh.md) | 让 `audit` agent preset 成为桌面端唯一的 preset，并关闭创作、账号和分析相关的行 | —（仅补丁） |
+| [`audit-desktop/`](audit-desktop/README.zh.md) | 让 `audit` agent preset 成为桌面端的默认 preset，另保留创造模式，并关闭账号和分析相关的行 | —（仅补丁） |
 | [`audit-skills/`](audit-skills/README.zh.md) | 内置的通用审计技能 | 注册到 `ctx.skills` |
 | [`audit-plugin-pack/`](audit-plugin-pack/README.zh.md) | 在桌面审计 preset 内挂载解压在 Harness 主目录下的 audit-plugins 发布包中的 MCP 服务和技能 | —（loader 分组） |
 | [`audit-workbench/`](audit-workbench/README.zh.md) | 桌面端审计工作台背后的 Host 读取：插件包的工作台清单、各工作区的项目档案和系统登录状态 | `ctx.auditWorkbench` |

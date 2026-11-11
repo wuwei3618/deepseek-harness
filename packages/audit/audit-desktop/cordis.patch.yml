@@ -1,8 +1,12 @@
 # The dsh-audit-desktop bundle patch: the audit agent of the `audit-desktop`
 # profile that Desktop boots. It sits after dsh-web-app and
-# dsh-audit-org-defaults, replaces the shipped agent presets with the single
-# `audit` preset, and switches off the Web rows that let a person create
-# presets or plugins, sign in to a DeepSeek account, or send product analytics.
+# dsh-audit-org-defaults, replaces the shipped agent presets with the `audit`
+# preset and the Creator preset, and switches off the Web rows that let a
+# person sign in to a DeepSeek account or send product analytics.
+#
+# This is the Creator debug variant: it keeps the Creator preset, the plugin
+# manager, and the Cordis runners so that an agent inside Desktop can inspect
+# and change the running plugins, such as the audit workbench.
 
 # The root persona serves agents created outside a preset; `preset-audit`
 # shadows it for every Desktop session.
@@ -23,7 +27,7 @@
       describe the action and ask the user to confirm it.
       Answer in the language of the user's request.
 
-# ── the audit preset is the only preset ─────────────────────────────────────
+# ── the audit preset and the Creator preset ─────────────────────────────────
 
 - id: preset-standard
   disabled: true
@@ -32,10 +36,6 @@
   disabled: true
 
 - id: preset-minimal
-  disabled: true
-
-# Without the `cordis` preset the Creator entry points are unavailable.
-- id: preset-cordis
   disabled: true
 
 - id: agent-preset-registry
@@ -174,35 +174,15 @@
         mode: attach
         endpoint: !!js process.env.DSH_DESKTOP_BROWSER_CDP_ENDPOINT
 
-# ── no preset or plugin authoring ───────────────────────────────────────────
+# ── preset and plugin authoring ─────────────────────────────────────────────
 
-# dsh-audit-org-defaults switches off the Host plugin manager; these are the
-# Web pages and runners that create plugins, plus the Agent presets settings
-# section, which saves edited preset plugin lists into the profile patch.
-- id: ui-plugin-manager
-  disabled: true
+# dsh-audit-org-defaults switches off the Host plugin manager; the Creator
+# preset persists plugins and profile changes through it.
+- id: plugin-manager
+  disabled: false
 
-- id: ui-agent-preset
-  disabled: true
-
-# Its More menus offer "Create your plugin", which starts a `cordis` preset session.
-- id: entry-customization
-  disabled: true
-
-- id: ui-cordis
-  disabled: true
-
-- id: cordis-host-runner
-  disabled: true
-
-- id: cordis-client-runner
-  disabled: true
-
-# The inspect providers wait for the Host runner's inspect service.
-- id: cordis-inspect-providers
-  disabled: true
-
-# Model context describing the DeepSeek Harness checkout and GUI.
+# Model context describing the DeepSeek Harness checkout and GUI; it would add
+# the checkout and GUI address to audit sessions too.
 - id: harness-dev-context
   disabled: true
 

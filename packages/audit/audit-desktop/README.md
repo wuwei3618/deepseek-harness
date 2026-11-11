@@ -9,7 +9,7 @@ English | [中文](README.zh.md)
 
 ## Summary
 
-The audit agent of the `audit-desktop` profile that Desktop boots. The layer inserts the `audit` agent preset, makes it the registry default, and switches off the four shipped presets, so new sessions can only start in audit mode. It also switches off the Web rows for plugin and preset authoring, the DeepSeek Harness development context, the DeepSeek account settings page, and product analytics. It replaces the official brand artwork with the CSCEC8B seal.
+The audit agent of the `audit-desktop` profile that Desktop boots. The layer inserts the `audit` agent preset, makes it the registry default, and switches off the shipped presets except Creator mode (`cordis`), so new sessions start in audit mode or Creator mode. Creator mode, the plugin manager, and the Cordis runners stay on so that an agent inside Desktop can inspect and change the running plugins, such as the audit workbench. The layer switches off the DeepSeek Harness development context, the DeepSeek account settings page, and product analytics. It replaces the official brand artwork with the CSCEC8B seal.
 
 ## Table of Contents
 
@@ -24,14 +24,14 @@ The audit agent of the `audit-desktop` profile that Desktop boots. The layer ins
 <a id="use-this-package"></a>
 ## Use this package
 
-Desktop reads the `audit-desktop` template from [`dsh-official-bundles`](../../util/official-bundles/src/bundles.ts) for its reserved profile and for crash recovery, so no configuration is needed. The template order is `dsh-base`, `dsh-web-app`, [`dsh-audit-org-defaults`](../audit-org-defaults/README.md), this bundle, then the optional session search and voice input bundles, which stay on because the plugin manager that would switch them is off.
+Desktop reads the `audit-desktop` template from [`dsh-official-bundles`](../../util/official-bundles/src/bundles.ts) for its reserved profile and for crash recovery, so no configuration is needed. The template order is `dsh-base`, `dsh-web-app`, [`dsh-audit-org-defaults`](../audit-org-defaults/README.md), this bundle, then the optional session search and voice input bundles, which are on by default and can be switched in the plugin settings.
 
 | Row | Effect |
 |---|---|
 | `preset-audit` | inserted: the 审计模式 preset with the audit persona, file tools without edit, spawned subagents and workflows, and the [audit plugin pack](../audit-plugin-pack/README.md) |
 | `agent-preset-registry` | `default: audit` |
-| `preset-standard`, `preset-ptc`, `preset-minimal`, `preset-cordis` | switched off; without `cordis` the Creator entry points are unavailable |
-| `ui-plugin-manager`, `ui-agent-preset`, `entry-customization`, `ui-cordis`, `cordis-host-runner`, `cordis-client-runner`, `cordis-inspect-providers` | switched off: no plugin or preset authoring |
+| `preset-standard`, `preset-ptc`, `preset-minimal` | switched off |
+| `plugin-manager` | switched on again after [`dsh-audit-org-defaults`](../audit-org-defaults/README.md) switches it off: Creator mode persists plugins and profile changes through it |
 | `harness-dev-context` | switched off |
 | `ui-settings-account`, `account-controller` | switched off |
 | `desktop-product-telemetry`, `product-analytics` | switched off |
