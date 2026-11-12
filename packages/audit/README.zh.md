@@ -37,7 +37,7 @@ kind: "package-group"
 ## 相关文档
 
 - [Profile bundle](../bundle/README.zh.md) — 这些补丁层所修改的应用 bundle。
-- [权限预设](../../docs/subsystems/permission-presets.zh.md)和[沙箱](../../docs/subsystems/sandbox.zh.md) — workspace-write 预设及其选用的隔离机制。
+- [权限预设](../../docs/subsystems/permission-presets.zh.md)和[沙箱](../../docs/subsystems/sandbox.zh.md) — workspace-write 与完全权限预设及其选用的隔离机制。
 - [技能](../../docs/subsystems/skills.zh.md) — 提供审计技能的注册表和 `skill` 工具。
 - [随附 profile 模板](../util/official-bundles/src/bundles.ts) — 每个审计 profile 的 bundle 顺序。
 

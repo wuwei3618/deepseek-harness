@@ -37,7 +37,7 @@ This group turns the shipped profiles into audit profiles that write only inside
 ## Related documentation
 
 - [Profile bundles](../bundle/README.md) — the application bundles these layers patch.
-- [Permission presets](../../docs/subsystems/permission-presets.md) and [sandbox](../../docs/subsystems/sandbox.md) — the workspace-write preset and the confinement it selects.
+- [Permission presets](../../docs/subsystems/permission-presets.md) and [sandbox](../../docs/subsystems/sandbox.md) — the workspace-write and full-access presets and the confinement they select.
 - [Skills](../../docs/subsystems/skills.md) — the registry and the `skill` tool that serve the audit skills.
 - [Shipped profile templates](../util/official-bundles/src/bundles.ts) — the bundle order of each audit profile.
 

@@ -1,0 +1,3 @@
+/* The application name macOS shows in the menu bar, the Dock, and Finder when the application language is Simplified Chinese. */
+CFBundleName = "八局审计智能体";
+CFBundleDisplayName = "八局审计智能体";
