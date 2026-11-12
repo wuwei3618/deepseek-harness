@@ -540,6 +540,12 @@ export const SERVICE_API: readonly ServiceApiEntry[] = [
         returns: 'one entry per Workspace in registry order.',
       },
       {
+        signature: '@Remote async orgScope(request: OrgScopeRequest, signal: AbortSignal): Promise<OrgScopeRead>',
+        description: 'Read the Organization Scope file the archive records for one Auditee.',
+        parameters: [{ name: 'request', description: 'Workspace and Auditee index in the Project Archive.' }, { name: 'signal', description: 'caller cancellation.' }],
+        returns: 'the organization tree, `missing` when none is recorded, or why it cannot be read.',
+      },
+      {
         signature: '@Remote async prompt(request: PromptRequest, signal: AbortSignal): Promise<string>',
         description: 'Fill the manifest\'s prompt template for one request.',
         parameters: [{ name: 'request', description: 'prompt kind and its Workspace, task, or Built-in Model.' }, { name: 'signal', description: 'caller cancellation.' }],
@@ -561,6 +567,11 @@ export const SERVICE_API: readonly ServiceApiEntry[] = [
         signature: '@Remote async openOutput(request: OutputRequest, signal: AbortSignal): Promise<void>',
         description: 'Open one recorded Kickoff Task output with the desktop\'s default application.',
         parameters: [{ name: 'request', description: 'Workspace, task index, and output index in the Project Archive.' }, { name: 'signal', description: 'caller cancellation.' }],
+      },
+      {
+        signature: '@Remote async openMembersTable(request: OrgScopeRequest, signal: AbortSignal): Promise<void>',
+        description: 'Open the members table an Auditee\'s Organization Scope was taken from with the desktop\'s default application.',
+        parameters: [{ name: 'request', description: 'Workspace and Auditee index in the Project Archive.' }, { name: 'signal', description: 'caller cancellation.' }],
       },
     ],
   },
@@ -5770,7 +5781,7 @@ export const TYPE_API: readonly TypeApiEntry[] = [
   },
   {
     name: 'Auditee',
-    declaration: 'export interface Auditee {\n    readonly name: string;\n    readonly kind: string;\n    readonly codes: readonly string[];\n}',
+    declaration: 'export interface Auditee {\n    readonly name: string;\n    readonly kind: string;\n    readonly codes: readonly string[];\n    readonly scopeFile: string;\n}',
   },
   {
     name: 'AuthorizationEntry',
@@ -7519,6 +7530,30 @@ export const TYPE_API: readonly TypeApiEntry[] = [
   {
     name: 'OptionalSessionSeq',
     declaration: 'export type OptionalSessionSeq = SessionSeq | null;',
+  },
+  {
+    name: 'OrgScope',
+    declaration: 'export interface OrgScope {\n    readonly origin: {\n        readonly code: string;\n        readonly name: string;\n    };\n    readonly exportedAt: string;\n    readonly membersTable: string;\n    readonly nodes: readonly OrgScopeNode[];\n    readonly problems: readonly OrgScopeProblem[];\n}',
+  },
+  {
+    name: 'OrgScopeNode',
+    declaration: 'export interface OrgScopeNode {\n    readonly code: string;\n    readonly name: string;\n    readonly parent: string;\n    readonly unit: string;\n    readonly ownership: OrgScopeOwnership;\n    readonly source: string;\n    readonly conflict: string;\n    readonly profitCenters: readonly string[];\n    readonly note: string;\n}',
+  },
+  {
+    name: 'OrgScopeOwnership',
+    declaration: 'export type OrgScopeOwnership = \'in\' | \'other\' | \'unassigned\' | \'excluded\';',
+  },
+  {
+    name: 'OrgScopeProblem',
+    declaration: 'export type OrgScopeProblem = {\n    readonly kind: \'invalid\';\n    readonly index: number;\n    readonly code: string;\n    readonly field: string;\n} | {\n    readonly kind: \'duplicate\';\n    readonly index: number;\n    readonly code: string;\n} | {\n    readonly kind: \'detached\';\n    readonly index: number;\n    readonly code: string;\n    readonly parent: string;\n};',
+  },
+  {
+    name: 'OrgScopeRead',
+    declaration: 'export type OrgScopeRead = {\n    readonly kind: \'missing\';\n} | {\n    readonly kind: \'unreadable\';\n    readonly reason: \'outside\' | \'io\' | \'json\' | \'shape\' | \'origin\';\n    readonly message: string;\n} | {\n    readonly kind: \'read\';\n    readonly scope: OrgScope;\n};',
+  },
+  {
+    name: 'OrgScopeRequest',
+    declaration: 'export interface OrgScopeRequest {\n    readonly workspaceId: WorkspaceId;\n    readonly auditee: number;\n}',
   },
   {
     name: 'OTelEventRecord',

@@ -1,0 +1,6 @@
+{
+  "meta": {
+    "title": "System notifications",
+    "description": "Shows a Desktop system notification when the agent needs your attention or finishes a task."
+  }
+}

@@ -993,6 +993,8 @@ export const TYPE_LINK_EXEMPTIONS: Readonly<Record<string, string>> = {
   ActionCardResult: 'packages/experimental/action-cards/README.md',
   ActionCardView: 'packages/experimental/action-cards/README.md',
   RecommendationDetails: 'packages/experimental/plugin-recommendations/README.md',
+  OrgScopeRead: 'packages/audit/audit-workbench/README.md',
+  OrgScopeRequest: 'packages/audit/audit-workbench/README.md',
   OutputRequest: 'packages/audit/audit-workbench/README.md',
   ProjectEntry: 'packages/audit/audit-workbench/README.md',
   PromptRequest: 'packages/audit/audit-workbench/README.md',

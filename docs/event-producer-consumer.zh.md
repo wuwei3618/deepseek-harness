@@ -110,14 +110,18 @@
 | Event string | Dispatchers | Listeners |
 | --- | --- | --- |
 | `agent/request` | [`agent-loop`](../packages/core/agent-loop) (`waterfall`) | [`compaction-basic`](../packages/compaction/compaction-basic) |
-| `connection/reset` | `gateway` (`emit`) | `terminal-controller`, `ui-settings` |
+| `connection/reset` | `gateway` (`emit`) | `terminal-controller`, `ui-settings`, `ui-sidebar-documentpreview`, `ui-workspace` |
 | `internal/config` | - | [`llm-pi-ai`](../packages/llm/llm-pi-ai), [`mcp-manager`](../packages/mcp/mcp-manager) |
 | `internal/dispatch` | - | [`terminal-bash`](../packages/terminal/terminal-bash) |
 | `internal/plugin` | - | `computer-use-cua-driver-native`, `inspector`, `loader`, [`lsp-stdio`](../packages/lsp/lsp-stdio), [`mcp-client`](../packages/mcp/mcp-client), [`mcp-manager`](../packages/mcp/mcp-manager), `modules` |
 | `internal/service` | - | `client-ui-forge`, `gateway` |
 | `internal/status` | - | [`agent`](../packages/core/agent), `claude-code-mods`, `inspector`, `translator`, [`web`](../packages/web/web) |
 | `loader/volatile-update` | - | [`llm-deepseek`](../packages/llm/llm-deepseek), [`llm-deepseek-api-key`](../packages/llm/llm-deepseek-api-key), [`llm-pi-ai`](../packages/llm/llm-pi-ai), [`mcp-manager`](../packages/mcp/mcp-manager), [`plugin-market`](../packages/boot/plugin-market), `product-analytics`, `speech-to-text` |
-| `locale/change` | `locale` (`emit`) | `locale` |
+| `locale/change` | `locale` (`emit`) | `locale`, `ui-input-trigger` |
+| `slash/input-begin-command` | - | `ui-conversation` |
+| `slash/input-consume-token` | - | `ui-conversation` |
+| `slash/input-insert-reference` | - | `ui-conversation` |
+| `slash/input-insert-text` | - | `ui-conversation` |
 | `slots/changed` | `ui-renderer` (`emit`) | - |
 | `theme/change` | `ui-theme` (`emit`) | `ui-layout`, `ui-theme` |
 <!-- END GENERATED event-producer-consumer:undeclared -->

@@ -49,6 +49,12 @@
     },
     {
       "path": "../../packages/client/ui-file-actions"
+    },
+    {
+      "path": "../../packages/client/ui-session-attention"
+    },
+    {
+      "path": "../../packages/core/session"
     }
   ],
   "exclude": [

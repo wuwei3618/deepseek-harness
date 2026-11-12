@@ -12,6 +12,7 @@ import { syncWindowsAppearance } from './preload-windows.ts'
 import { installMandatoryUpdateOverlay } from './preload-mandatory-overlay.ts'
 import { createDesktopBrowserBridge } from './preload-browser.ts'
 import type { FileDragHandle } from '@deepseek-ai/dsh-util-file-drag'
+import type { SessionId } from '@deepseek-ai/dsh-session/types'
 
 function createProductApi(): DshDesktopProductApi {
   return {
@@ -34,6 +35,19 @@ function createProductApi(): DshDesktopProductApi {
       }) },
     },
     deviceInfo: () => ipcRenderer.invoke(DESKTOP_IPC.deviceInfo) as Promise<string>,
+    sessionAttention: {
+      notify: (notice) => { void ipcRenderer.invoke(DESKTOP_IPC.sessionAttentionNotify, notice).catch((error: unknown) => {
+        console.warn('dsh desktop: session notification was not shown', error)
+      }) },
+      withdraw: (sessionId) => { void ipcRenderer.invoke(DESKTOP_IPC.sessionAttentionWithdraw, sessionId).catch((error: unknown) => {
+        console.warn('dsh desktop: session notification was not withdrawn', error)
+      }) },
+      subscribe: (listener) => {
+        const handle = (_event: Electron.IpcRendererEvent, sessionId: SessionId): void => { listener(sessionId) }
+        ipcRenderer.on(DESKTOP_IPC.sessionAttentionActivate, handle)
+        return () => { ipcRenderer.off(DESKTOP_IPC.sessionAttentionActivate, handle) }
+      },
+    },
     keyboard: {
       closeWindow: revision => ipcRenderer.invoke(DESKTOP_IPC.shortcutsCloseWindow, revision) as Promise<void>,
       subscribe: (listener) => {

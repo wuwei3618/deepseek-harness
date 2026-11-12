@@ -246,3 +246,12 @@
       name: '@deepseek-ai/dsh-audit-workbench'
     - id: ui-audit-workbench
       name: '@deepseek-ai/dsh-client-ui-audit-workbench'
+
+# ── system notifications ────────────────────────────────────────────────────
+
+# Desktop posts a system notification when a Session asks a question, requests
+# approval, or awaits plan confirmation, and when it finishes a turn; General
+# settings switch each kind off.
+- insert:
+    - id: ui-session-attention
+      name: '@deepseek-ai/dsh-client-ui-session-attention'
