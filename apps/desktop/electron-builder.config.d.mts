@@ -24,8 +24,11 @@ export interface DesktopElectronBuilderConfig {
   readonly mac: {
     readonly extendInfo: {
       readonly CFBundleLocalizations: readonly string[]
+      readonly CFBundleDisplayName: string
+      readonly LSHasLocalizedDisplayName: true
       readonly NSMicrophoneUsageDescription: string
     }
+    readonly extraResources: readonly [{ readonly from: string, readonly to: 'zh_CN.lproj' }]
     readonly entitlements: string
     readonly entitlementsInherit: string
     readonly identity: string | undefined

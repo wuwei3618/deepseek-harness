@@ -9,7 +9,7 @@ kind: "package-bundle"
 
 ## 概述
 
-所有审计 profile 共用的部署默认设置。该层把写入限制在会话工作目录内并拒绝所有审批，只提供 `workspace-write` 一个权限预设，并关闭 DeepSeek 账号平台及其模型路由、会话遥测上报、会话日志和插件清单这两个请求扩展，以及插件安装。它只修改 [`dsh-base`](../../bundle/base/README.zh.md) 的行，因此在每个应用 bundle 之上都能原样生效。
+所有审计 profile 共用的部署默认设置。该层默认把写入限制在会话工作目录内并拒绝所有审批，提供 `workspace-write` 和 `danger-full-access` 两个权限预设，并关闭 DeepSeek 账号平台及其模型路由、会话遥测上报、会话日志和插件清单这两个请求扩展，以及插件安装。它只修改 [`dsh-base`](../../bundle/base/README.zh.md) 的行，因此在每个应用 bundle 之上都能原样生效。
 
 ## 目录
 
@@ -28,9 +28,9 @@ kind: "package-bundle"
 
 | 行 | 效果 |
 |---|---|
-| `sandbox-policy` | `mode: workspace-write`：只能写工作目录和私有临时目录；`DSH_PERMISSION_MODE` 和 `--add-dir` 不再放宽它 |
+| `sandbox-policy` | `mode: workspace-write`：默认只能写工作目录和私有临时目录；`DSH_PERMISSION_MODE` 和 `--add-dir` 不再放宽它 |
 | `approval` | `policy: never`，被拒绝的命令不能通过审批在更宽的沙箱中重试 |
-| `permission` | 只有一个 `workspace-write` 预设，`--permission-mode` 和权限菜单只能选它 |
+| `permission` | `workspace-write`（新会话的默认值）和 `danger-full-access`，`--permission-mode` 和权限菜单可以选择；桌面端选择完全权限前要求确认风险 |
 | `deepseek-account`、`llm-deepseek-account` | 关闭：没有账号登录，也没有账号模型路由 |
 | `session-telemetry-otel` | 关闭 |
 | `session-log-deepseek`、`plugin-package-inventory-deepseek` | 关闭：官方 DeepSeek API 请求既不附带会话日志，也不附带插件包列表 |
@@ -53,7 +53,7 @@ kind: "package-bundle"
 <a id="model-experience"></a>
 ## 模型体验
 
-间接影响：[沙箱策略](../../sandbox/sandbox-policy/README.zh.md)和[用户审批](../../interaction/user-approval/README.zh.md)的运行时上下文段落说明 workspace-write 沙箱模式和 `never` 审批策略，工作目录之外被拒绝的写入以工具结果的形式到达模型。
+间接影响：[沙箱策略](../../sandbox/sandbox-policy/README.zh.md)和[用户审批](../../interaction/user-approval/README.zh.md)的运行时上下文段落说明当前沙箱模式和 `never` 审批策略，工作目录之外被拒绝的写入以工具结果的形式到达模型。
 
 #### KV Cache 影响
 

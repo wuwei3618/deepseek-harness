@@ -9,7 +9,7 @@ English | [中文](README.zh.md)
 
 ## Summary
 
-The deployment defaults every audit profile shares. The layer confines writes to the session workspace with approvals refused, offers `workspace-write` as the only permission preset, and switches off the DeepSeek account platform and its model route, session telemetry export, the session-log and plugin-inventory request extensions, and plugin installation. It addresses only [`dsh-base`](../../bundle/base/README.md) rows, so it applies unchanged over each application bundle.
+The deployment defaults every audit profile shares. The layer confines writes to the session workspace by default with approvals refused, offers the `workspace-write` and `danger-full-access` permission presets, and switches off the DeepSeek account platform and its model route, session telemetry export, the session-log and plugin-inventory request extensions, and plugin installation. It addresses only [`dsh-base`](../../bundle/base/README.md) rows, so it applies unchanged over each application bundle.
 
 ## Table of Contents
 
@@ -28,9 +28,9 @@ The `audit`, `audit-sdk`, `audit-acp`, and `audit-desktop` profile templates in 
 
 | Row | Effect |
 |---|---|
-| `sandbox-policy` | `mode: workspace-write`: writes only inside the workspace and the private temporary directory; `DSH_PERMISSION_MODE` and `--add-dir` no longer widen it |
+| `sandbox-policy` | `mode: workspace-write`: by default, writes only inside the workspace and the private temporary directory; `DSH_PERMISSION_MODE` and `--add-dir` no longer widen it |
 | `approval` | `policy: never`, so a denied command cannot be retried in a wider sandbox through approval |
-| `permission` | the single `workspace-write` preset, which `--permission-mode` and the permission menu can select |
+| `permission` | `workspace-write` (the default for fresh sessions) and `danger-full-access`, which `--permission-mode` and the permission menu can select; Desktop asks for a risk confirmation before full access |
 | `deepseek-account`, `llm-deepseek-account` | switched off: no account sign-in and no account model route |
 | `session-telemetry-otel` | switched off |
 | `session-log-deepseek`, `plugin-package-inventory-deepseek` | switched off: official DeepSeek API requests carry neither the session log nor the plugin package list |
@@ -53,7 +53,7 @@ The `audit`, `audit-sdk`, `audit-acp`, and `audit-desktop` profile templates in 
 <a id="model-experience"></a>
 ## Model Experience
 
-Indirectly, through the [sandbox policy](../../sandbox/sandbox-policy/README.md) and [user approval](../../interaction/user-approval/README.md) runtime-context sections, which state the workspace-write sandbox mode and the `never` approval policy, and through the tool result of a write refused outside the workspace.
+Indirectly, through the [sandbox policy](../../sandbox/sandbox-policy/README.md) and [user approval](../../interaction/user-approval/README.md) runtime-context sections, which state the current sandbox mode and the `never` approval policy, and through the tool result of a write refused outside the workspace.
 
 #### KV Cache effect
 

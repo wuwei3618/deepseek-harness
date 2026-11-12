@@ -53,6 +53,11 @@ describe('desktop macOS release signature', () => {
     expect(portablePath(config.directories.output)).toContain('/.desktop-build/targets/mac-arm64/artifacts')
     expect(config.mac.extendInfo.NSMicrophoneUsageDescription).toContain('microphone')
     expect(config.mac.extendInfo.CFBundleLocalizations).toEqual(SHIPPED_LOCALE_IDS.map(id => id === 'zh' ? 'zh_CN' : id))
+    expect(config.mac.extendInfo).toMatchObject({ CFBundleDisplayName: 'CSCEC8B Audit Agent', LSHasLocalizedDisplayName: true })
+    const [localizedName] = config.mac.extraResources
+    expect(localizedName.to).toBe('zh_CN.lproj')
+    expect(readFileSync(`${localizedName.from}/InfoPlist.strings`, 'utf8'))
+      .toContain('CFBundleName = "八局审计智能体";\nCFBundleDisplayName = "八局审计智能体";\n')
     expect(config.mac.entitlementsInherit).toBe(config.mac.entitlements)
     const entitlements = readFileSync(config.mac.entitlements, 'utf8')
     for (const key of ['com.apple.security.cs.allow-jit', 'com.apple.security.cs.allow-unsigned-executable-memory',

@@ -37,10 +37,10 @@
 - id: tool-plugin-manager
   disabled: true
 
-# ── writes only inside the workspace ────────────────────────────────────────
+# ── writes only inside the workspace by default ─────────────────────────────
 
-# Confined processes may write only inside the session workspace and their
-# private temporary directory. The literal mode replaces the
+# By default, confined processes may write only inside the session workspace
+# and their private temporary directory. The literal mode replaces the
 # DSH_PERMISSION_MODE lookup in dsh-base and dsh-headless, and dropping
 # additionalWritableRoots makes `--add-dir` grant nothing.
 - id: sandbox-policy
@@ -48,13 +48,16 @@
     mode: workspace-write
     workspaceRoot: !!js process.cwd()
 
-# `never` rejects every approval request without asking, so a denied command
-# cannot be retried in a wider sandbox mode through a human approval.
+# `never` rejects every approval request without asking: a command denied in
+# the workspace-write preset is not retried in a wider sandbox through an
+# approval; the person switches to full access instead.
 - id: approval
   config:
     policy: never
 
-# The only preset a session, `--permission-mode`, or the permission menu can select.
+# The presets a session, `--permission-mode`, or the permission menu can
+# select. Fresh sessions start in workspace-write; the Desktop client asks for
+# an explicit risk confirmation before it selects full access.
 - id: permission
   config:
     presets:
@@ -63,4 +66,9 @@
         approval: never
         name: workspace-write
         description: Run commands, read files, and write only inside the workspace; wider access is refused.
+      danger-full-access:
+        sandbox: danger-full-access
+        approval: never
+        name: danger-full-access
+        description: Run commands and read and write files anywhere the account can, without confirmation.
     defaultPreset: workspace-write

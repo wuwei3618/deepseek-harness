@@ -1,6 +1,6 @@
 {
   "meta": {
     "title": "Padrões de auditoria",
-    "description": "Faz cada perfil de auditoria gravar apenas dentro do seu espaço de trabalho e desativa a conta DeepSeek, o envio de telemetria e de registros de sessão e a instalação de plugins."
+    "description": "Faz cada perfil de auditoria gravar, por padrão, apenas dentro do seu espaço de trabalho (com acesso completo disponível a pedido) e desativa a conta DeepSeek, o envio de telemetria e de registros de sessão e a instalação de plugins."
   }
 }

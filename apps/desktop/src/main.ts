@@ -23,6 +23,7 @@ import {
   protocol,
   session,
   shell,
+  systemPreferences,
   type IpcMainInvokeEvent,
   type MenuItemConstructorOptions,
 } from 'electron'
@@ -37,7 +38,8 @@ import { DesktopBackendController } from './backend-controller.ts'
 import { DESKTOP_IPC, SCHEME, assertDesktopSender, type DesktopUpdateState } from './ipc.ts'
 import { readDeviceInfo } from './device-info.ts'
 import { desktopUpdateReadyConfirmation, formatDesktopMessage, resolveDesktopLocale, resolveDesktopStartupLocale } from './locale.ts'
-import type { DesktopMessages } from './locale.ts'
+import type { DesktopLocale, DesktopMessages } from './locale.ts'
+import { syncBundleLanguage } from './bundle-language.ts'
 import { claimDesktopSingleInstance } from './single-instance.ts'
 import { desktopUpdateChannel } from './update-channel.ts'
 import { DesktopUpdateCoordinator } from './update-coordinator.ts'
@@ -453,6 +455,19 @@ async function main(): Promise<void> {
   const updatePresentation = (state: DesktopUpdateState) => ({ ...presentDesktopUpdate(state),
     ...(channelState?.error === undefined ? {} : { configurationError: channelState.error }) })
   const systemLanguages = app.getPreferredSystemLanguages()
+  /** Name the application in the macOS menu bar and Dock in the chosen language; `preference` is null when Desktop follows the system. */
+  const syncMacBundleLanguage = (preference: string | null, chosen: DesktopLocale['id']): void => {
+    if (process.platform !== 'darwin') return
+    try {
+      syncBundleLanguage(join(app.getPath('userData'), 'desktop', 'bundle-language'), preference === null ? undefined : chosen, {
+        set: (languages) => { systemPreferences.setUserDefault('AppleLanguages', 'array', languages) },
+        remove: () => { systemPreferences.removeUserDefault('AppleLanguages') },
+      })
+    } catch (error) {
+      // The application name keeps its previous language; the window itself already shows the chosen one.
+      console.warn('desktop bundle language: the macOS application name keeps its previous language', error)
+    }
+  }
   let locale = windowsLanguage === undefined
     ? resolveDesktopStartupLocale(null, systemLanguages) : resolveDesktopLocale(windowsLanguage)
   windowsLanguage = locale.id
@@ -927,6 +942,11 @@ async function main(): Promise<void> {
       || typeof next !== 'string') return
     const current = resolveDesktopStartupLocale(next, systemLanguages)
     writeDesktopLocaleCache(app.getPath('userData'), current.id)
+    // The renderer sends the active language; the stored preference says whether the person chose it.
+    void welcomeBackend?.readLocalePreference().then(
+      (preference) => { syncMacBundleLanguage(preference, current.id) },
+      (error: unknown) => { console.warn('desktop bundle language: the language preference could not be read', error) },
+    )
     if (current.id === locale.id) return
     locale = current
     platformView.notifyLocaleChanged()
@@ -1498,6 +1518,7 @@ async function main(): Promise<void> {
     writeDesktopLocaleCache(app.getPath('userData'), locale.id)
     windowsLanguage = locale.id
     refreshApplicationMenu()
+    syncMacBundleLanguage(state.localePreference, locale.id)
     if (!enteredWorkspace && needsWelcome({ loggedIn: state.loggedIn, hasApiKey: state.hasApiKey })) {
       // A later login must retain its own activation policy instead of replaying startup focus.
       raiseAfterUpdate = false

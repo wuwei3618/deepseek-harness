@@ -1,6 +1,6 @@
 {
   "meta": {
     "title": "Paramètres d’audit par défaut",
-    "description": "Limite l’écriture de chaque profil d’audit à son espace de travail et désactive le compte DeepSeek, l’envoi de télémétrie et des journaux de session, et l’installation de plugins."
+    "description": "Limite par défaut l’écriture de chaque profil d’audit à son espace de travail (l’accès complet reste disponible sur demande) et désactive le compte DeepSeek, l’envoi de télémétrie et des journaux de session, et l’installation de plugins."
   }
 }

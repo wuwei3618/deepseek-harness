@@ -173,8 +173,14 @@ export function createElectronBuilderConfig(
       // macOS matches the application locale against this bundle, not Electron Framework resources.
       extendInfo: {
         CFBundleLocalizations: ['en', 'zh_CN', 'ja', 'es', 'fr', 'de', 'ru', 'pt'],
+        // The menu bar, the Dock, and Finder show the localized name from zh_CN.lproj/InfoPlist.strings.
+        CFBundleDisplayName: DESKTOP_PRODUCT_NAME,
+        LSHasLocalizedDisplayName: true,
         NSMicrophoneUsageDescription: `${DESKTOP_PRODUCT_NAME} uses your microphone to transcribe speech into message drafts.`,
       },
+      extraResources: [
+        { from: fileURLToPath(new URL('../resources/macos-localized/zh_CN.lproj', import.meta.url)), to: 'zh_CN.lproj' },
+      ],
       // Ad-hoc signing keeps the modified Electron executable runnable without a Developer ID.
       identity: unsigned ? '-' : macOSSigning?.signingIdentity,
       forceCodeSigning: !unsigned,
