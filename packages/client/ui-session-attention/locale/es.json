@@ -1,0 +1,6 @@
+{
+  "meta": {
+    "title": "Notificaciones del sistema",
+    "description": "Muestra una notificación del sistema en Desktop cuando el agente necesita su atención o termina una tarea."
+  }
+}

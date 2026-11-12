@@ -77,6 +77,7 @@ import { DesktopBackgroundNotice } from './background-notice.ts'
 import { DSH_HOME_ENV } from '@deepseek-ai/dsh-home-paths'
 import { selectAuditDshHome } from './audit-home.ts'
 import { DesktopAuditPluginPack } from './audit-plugin-pack.ts'
+import { DesktopSessionAttention, parseSessionAttentionId, parseSessionAttentionNotice } from './session-attention.ts'
 
 // Before any path resolves: the Host and agent processes inherit this, so DeepSeek Harness data in ~/.dsh stays unread.
 process.env[DSH_HOME_ENV] = selectAuditDshHome(process.env)
@@ -989,6 +990,25 @@ async function main(): Promise<void> {
   ipcMain.handle(DESKTOP_IPC.deviceInfo, (event) => {
     assertProductSender(event)
     return readDeviceInfo()
+  })
+  // A click shows and focuses the window before the renderer opens the Session.
+  const sessionAttention = new DesktopSessionAttention((sessionId) => {
+    focusPrimaryWindow()
+    const window = mainWindow
+    if (window !== undefined && !window.isDestroyed()) window.webContents.send(DESKTOP_IPC.sessionAttentionActivate, sessionId)
+  })
+  app.on('will-quit', () => { sessionAttention.dispose() })
+  ipcMain.handle(DESKTOP_IPC.sessionAttentionNotify, (event, value: unknown) => {
+    const window = assertProductSender(event)
+    const notice = parseSessionAttentionNotice(value)
+    if (notice === undefined) throw new Error('desktop session attention: invalid notice')
+    sessionAttention.notify(window, notice)
+  })
+  ipcMain.handle(DESKTOP_IPC.sessionAttentionWithdraw, (event, value: unknown) => {
+    assertProductSender(event)
+    const sessionId = parseSessionAttentionId(value)
+    if (sessionId === undefined) throw new Error('desktop session attention: invalid Session')
+    sessionAttention.withdraw(sessionId)
   })
   ipcMain.handle(DESKTOP_IPC.onboardingApiKey, async (event) => {
     assertProductSender(event)

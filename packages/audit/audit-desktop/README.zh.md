@@ -40,6 +40,7 @@ kind: "package-bundle"
 | `ui-brand-official` → `ui-brand-cscec8b` | 关闭官方品牌图形；由 [`dsh-client-ui-brand-cscec8b`](../../client/ui-brand-cscec8b/README.zh.md) 显示印章和八局审计智能体 |
 | `ui-settings-plugin-inventory` | `showModuleName: false`：设置里的插件列表不显示 `@deepseek-ai/dsh-*` 包名 |
 | `audit-workbench`、`ui-audit-workbench` | 插入：左侧栏的审计工作台页面，显示系统登录状态和每个审计项目的项目档案（[Host](../audit-workbench/README.zh.md)、[页面](../../client/ui-audit-workbench/README.zh.md)） |
+| `ui-session-attention` | 插入：会话需要用户处理或完成一轮任务时，桌面端发送系统通知，常规设置中有两个开关（[`dsh-client-ui-session-attention`](../../client/ui-session-attention/README.zh.md)） |
 
 -----
 

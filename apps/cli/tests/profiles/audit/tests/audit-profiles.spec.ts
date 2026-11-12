@@ -174,6 +174,10 @@ describe('the audit-desktop profile', () => {
     expect(row(rows, 'audit-workbench')).toEqual({ id: 'audit-workbench', name: '@deepseek-ai/dsh-audit-workbench' })
     expect(row(rows, 'ui-audit-workbench')).toEqual({ id: 'ui-audit-workbench', name: '@deepseek-ai/dsh-client-ui-audit-workbench' })
   })
+
+  it('mounts the Session system notifications', () => {
+    expect(row(rows, 'ui-session-attention')).toEqual({ id: 'ui-session-attention', name: '@deepseek-ai/dsh-client-ui-session-attention' })
+  })
 })
 
 describe('the audit agent persona', () => {

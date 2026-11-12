@@ -208,6 +208,14 @@ registerServer(launch: ServerLaunch): () => void
 @Remote async projects(signal: AbortSignal): Promise<ProjectEntry[]>
 
 /**
+ * Read the Organization Scope file the archive records for one Auditee.
+ * @param request - Workspace and Auditee index in the Project Archive.
+ * @param signal - caller cancellation.
+ * @returns the organization tree, `missing` when none is recorded, or why it cannot be read.
+ */
+@Remote async orgScope(request: OrgScopeRequest, signal: AbortSignal): Promise<OrgScopeRead>
+
+/**
  * Fill the manifest's prompt template for one request.
  * @param request - prompt kind and its Workspace, task, or Built-in Model.
  * @param signal - caller cancellation.
@@ -237,6 +245,13 @@ registerServer(launch: ServerLaunch): () => void
  * @param signal - caller cancellation.
  */
 @Remote async openOutput(request: OutputRequest, signal: AbortSignal): Promise<void>
+
+/**
+ * Open the members table an Auditee's Organization Scope was taken from with the desktop's default application.
+ * @param request - Workspace and Auditee index in the Project Archive.
+ * @param signal - caller cancellation.
+ */
+@Remote async openMembersTable(request: OrgScopeRequest, signal: AbortSignal): Promise<void>
 ```
 
 Source: [`packages/audit/audit-workbench/src/service.ts`](../../packages/audit/audit-workbench/src/service.ts)
