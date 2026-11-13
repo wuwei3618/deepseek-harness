@@ -33,7 +33,7 @@ kind: "package-bundle"
 | `preset-standard`、`preset-ptc`、`preset-minimal`、`preset-cordis` | 关闭；没有 `cordis` 时创作者模式入口不可用 |
 | `ui-plugin-manager`、`ui-agent-preset`、`entry-customization`、`ui-cordis`、`cordis-host-runner`、`cordis-client-runner`、`cordis-inspect-providers` | 关闭：不能创作插件或 preset |
 | `harness-dev-context` | 关闭 |
-| `ui-settings-account`、`account-controller` | 关闭 |
+| `ui-settings-account`、`ui-account-notifications` | 关闭 |
 | `desktop-product-telemetry`、`product-analytics` | 关闭 |
 | `system-prompt` | 根上设置 `includeHarnessIdentity: false` 和审计 persona |
 | `browser-use`、`browser-use-playwright-mcp` | 插入：以 `attach` 模式连接桌面端按 Session 区分的侧栏浏览器端点的 [Playwright MCP](../../experimental/browser-use-playwright-mcp/README.zh.md)；未设置 `DSH_DESKTOP_BROWSER_CDP_ENDPOINT` 时（即不在桌面端时）两行都关闭 |
@@ -50,7 +50,7 @@ kind: "package-bundle"
 <details>
 <summary>实现细节 — 点击展开</summary>
 
-[`cordis.patch.yml`](cordis.patch.yml) 按 id 修改 [`dsh-web-app`](../../bundle/web-app/README.zh.md) 和 `dsh-base` 的行，并插入 preset 行。该 preset 挂载 persona、工作区指令、时间上下文、shell、`read`、`read_image` 和 `write`、搜索、后台任务、[`dsh-audit-skills`](../audit-skills/README.zh.md) 及 `skill` 工具、上下文压缩、新建子代理和 workflow、ask-user、todo、联网和 present 工具，最后挂载 [`dsh-audit-plugin-pack`](../audit-plugin-pack/README.zh.md)，由它加入解压在 `$DSH_HOME/audit-plugins` 的 audit-plugins 发布包中的 MCP 服务和技能。插件包的技能把具名角色交给新建的子代理并运行 workflow，最长的 `SKILL.md` 约 33,000 个字符，因此该 preset 挂载新建子代理和 workflow 工具，并把工具结果裁剪阈值提高到 40,000 个字符，保留开头 20,000 个和结尾 8,000 个。子代理继承该 preset 和只能写工作目录的沙箱。它不挂载编辑、分叉或选择模型的子代理、计划、定时或插件工具。
+[`cordis.patch.yml`](cordis.patch.yml) 按 id 修改 [`dsh-web-app`](../../bundle/web-app/README.zh.md) 和 `dsh-base` 的行，并插入 preset 行。该 preset 挂载 persona、工作区指令、时间上下文、shell、`read`、`read_image` 和 `write`、搜索、后台任务、[`dsh-audit-skills`](../audit-skills/README.zh.md) 及 `skill` 工具、上下文压缩、新建子代理和 workflow、ask-user、todo、联网和 present 工具、由内置 Office 技能激活的 [Office 工具](../../document/tool-office/README.zh.md)，最后挂载 [`dsh-audit-plugin-pack`](../audit-plugin-pack/README.zh.md)，由它加入解压在 `$DSH_HOME/audit-plugins` 的 audit-plugins 发布包中的 MCP 服务和技能。插件包的技能把具名角色交给新建的子代理并运行 workflow，最长的 `SKILL.md` 约 33,000 个字符，因此该 preset 挂载新建子代理和 workflow 工具，并把工具结果裁剪阈值提高到 40,000 个字符，保留开头 20,000 个和结尾 8,000 个。子代理继承该 preset 和只能写工作目录的沙箱。它不挂载编辑、分叉或选择模型的子代理、计划、定时或插件工具。
 
 </details>
 

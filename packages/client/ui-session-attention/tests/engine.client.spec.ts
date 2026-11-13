@@ -1,7 +1,8 @@
 /** Which Session changes notify, and when shown notifications are withdrawn. */
 import { describe, expect, it } from 'vitest'
 import type { SessionListState, SessionSummary } from '@deepseek-ai/dsh-api-session-controller/client'
-import type { SessionPendingInteraction, SessionStatus } from '@deepseek-ai/dsh-client-ui-session/client'
+import type { SessionPendingInteraction } from '@deepseek-ai/dsh-client-ui-session/client'
+import type { SessionStatus } from '@deepseek-ai/dsh-client-ui-session-status/client'
 import type { SessionId } from '@deepseek-ai/dsh-session/types'
 import { AttentionEngine } from '../src/client/engine.ts'
 import type { SessionAttentionSettings } from '../src/settings.ts'
@@ -18,7 +19,7 @@ function list(...rows: SessionSummary[]): SessionListState {
 }
 
 function status(running: boolean | undefined, pending?: { key: string; kind: string; sessionId: SessionId }): SessionStatus {
-  return { running, pendingInteraction: pending as SessionPendingInteraction | undefined, completionUnread: false }
+  return { running, pendingInteraction: pending as SessionPendingInteraction | undefined, completionUnread: false, completionFailed: false }
 }
 
 function setup(focused = false, settings: SessionAttentionSettings = { attention: true, completion: true }) {

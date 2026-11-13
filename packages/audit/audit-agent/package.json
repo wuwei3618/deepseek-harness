@@ -1,7 +1,7 @@
 {
   "name": "@deepseek-ai/dsh-audit-agent",
   "description": "The audit agent for the command-line audit profiles: audit persona, file tools without edit, and bundled audit skills at the profile root",
-  "version": "0.2.2-rc.1",
+  "version": "0.2.2-rc.3",
   "publishConfig": {
     "access": "public"
   },
@@ -27,7 +27,10 @@
     "locale/*.json",
     "lib/index.js",
     "cordis.patch.yml",
-    "lib/types/**/*.d.ts"
+    "lib/types/**/*.d.ts",
+    "lib/types/**/*.d.ts.map",
+    "lib/**/*.js.map",
+    "src"
   ],
   "license": "MIT",
   "dsh": {

@@ -7,9 +7,8 @@
 import { readFile, stat } from 'node:fs/promises'
 import { join, resolve } from 'node:path'
 import { pathToFileURL } from 'node:url'
-import { entryListSchema } from '@deepseek-ai/cordis-plugin-include'
+import { parseEntryYaml } from '@deepseek-ai/cordis-plugin-include'
 import type { EntryOptions } from '@deepseek-ai/cordis-plugin-loader'
-import * as yaml from 'js-yaml'
 
 /** Directory name of the pack under the Harness home. */
 export const PACK_DIR_NAME = 'audit-plugins'
@@ -160,7 +159,7 @@ export async function readPackDirectory(root: string): Promise<LoadedPack> {
   const patchPath = resolve(root, manifest.patch)
   let patches: unknown
   try {
-    patches = yaml.load(await readFile(patchPath, 'utf8'), { schema: entryListSchema })
+    patches = parseEntryYaml(await readFile(patchPath, 'utf8'))
   } catch (error) {
     throw new PluginPackError(root, `cannot read the bundle patch ${patchPath}`, { cause: error })
   }

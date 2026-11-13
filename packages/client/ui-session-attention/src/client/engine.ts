@@ -1,7 +1,7 @@
 /** Notification decisions derived from Session status, the Session list, and window focus. */
 import type { SessionId } from '@deepseek-ai/dsh-session/types'
 import type { SessionListState } from '@deepseek-ai/dsh-api-session-controller/client'
-import type { SessionStatusSnapshot } from '@deepseek-ai/dsh-client-ui-session/client'
+import type { SessionStatusSnapshot } from '@deepseek-ai/dsh-client-ui-session-status/client'
 import type { SessionAttentionSettings } from '../settings.ts'
 
 /** Why a Session needs the user, from its pending-interaction kind. */

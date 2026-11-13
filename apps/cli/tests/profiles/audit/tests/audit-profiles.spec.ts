@@ -121,6 +121,7 @@ describe('the audit-desktop profile', () => {
     expect((plugins.get('persona')!.config as { prefix: string }).prefix).toBe(config(rows, 'system-prompt')['personaPrefix'])
     expect(plugins.get('tool-fs')!.config).toEqual(config(compose('audit'), 'tool-fs'))
     expect([...plugins.keys()]).toContain('audit-skills')
+    expect(plugins.get('tool-office')).toEqual({ id: 'tool-office', name: '@deepseek-ai/dsh-tool-office' })
     for (const id of ['skill-filesystem', 'planning', 'tool-schedule', 'tool-plugin-manager', 'tool-plugin-market']) {
       expect(plugins.has(id), id).toBe(false)
     }
@@ -146,7 +147,7 @@ describe('the audit-desktop profile', () => {
   it('switches off authoring, account, development context, and analytics rows', () => {
     for (const id of [
       'ui-plugin-manager', 'ui-agent-preset', 'entry-customization', 'ui-cordis', 'cordis-host-runner', 'cordis-client-runner',
-      'cordis-inspect-providers', 'harness-dev-context', 'ui-settings-account', 'account-controller', 'desktop-product-telemetry',
+      'cordis-inspect-providers', 'harness-dev-context', 'ui-settings-account', 'ui-account-notifications', 'desktop-product-telemetry',
       'product-analytics',
     ]) expect(row(rows, id).disabled, id).toBe(true)
   })

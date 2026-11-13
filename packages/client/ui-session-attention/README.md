@@ -44,7 +44,7 @@ A Session does not notify while it is on screen and the window has focus. An att
 <details>
 <summary>Implementation details — click to expand</summary>
 
-The browser entry reads the `ui-session` status snapshot for pending interactions and running state, the Session list for titles, subagent origins, and main-view retention, and window focus events. [`AttentionEngine`](src/client/engine.ts) turns those inputs into notify and withdraw actions: a pending interaction with a new key notifies, and a running-to-stopped edge without a pending interaction reports a finished turn. The entry localizes each action and passes it to `dshDesktop.sessionAttention`, which the Desktop preload exposes only to the application frame.
+The browser entry reads the `ui-session-status` snapshot (`uiSession.sessionStatus`) for pending interactions and running state, the Session list for titles, subagent origins, and main-view retention, and window focus events. [`AttentionEngine`](src/client/engine.ts) turns those inputs into notify and withdraw actions: a pending interaction with a new key notifies, and a running-to-stopped edge without a pending interaction reports a finished turn. The entry localizes each action and passes it to `dshDesktop.sessionAttention`, which the Desktop preload exposes only to the application frame.
 
 The Desktop main process validates every notice, keeps at most one Electron `Notification` per Session, and plays the system notification sound. A click focuses the window and sends the Session back to the page, which opens it through `uiWorkspace.openSession`. The types of the bridge live in [`src/types.ts`](src/types.ts) and are exported as `./types`.
 
@@ -55,7 +55,7 @@ The Desktop main process validates every notice, keeps at most one Electron `Not
 <a id="further-exploration"></a>
 ## Further Exploration
 
-- [Session UI status](../ui-session/README.md) — pending interactions and running state.
+- [Session UI status](../ui-session-status/README.md) — pending interactions and running state.
 - [Settings forms](../ui-settings/README.md) — accepted Host values and ordered writes.
 - [Desktop application](../../../apps/desktop/README.md) — the Electron shell and its preload bridge.
 

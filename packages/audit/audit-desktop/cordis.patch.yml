@@ -34,7 +34,7 @@
 - id: preset-minimal
   disabled: true
 
-# Without the `cordis` preset the Creator entry points are unavailable.
+# Without the Creator preset the Creator entry points are unavailable.
 - id: preset-cordis
   disabled: true
 
@@ -152,6 +152,10 @@
               searchTimeoutMs: 60000
           - id: present
             name: '@deepseek-ai/dsh-tool-present'
+          # Rendering, conversion, and recalculation for the bundled Office
+          # skills; the tools return temporary files and never write the workspace.
+          - id: tool-office
+            name: '@deepseek-ai/dsh-tool-office'
           # The MCP servers and skills of the audit-plugins release unpacked at
           # $DSH_HOME/audit-plugins; without that directory the row mounts nothing.
           - id: audit-plugin-pack
@@ -185,7 +189,7 @@
 - id: ui-agent-preset
   disabled: true
 
-# Its More menus offer "Create your plugin", which starts a `cordis` preset session.
+# Its More menus offer "Create your plugin", which starts a Creator preset session.
 - id: entry-customization
   disabled: true
 
@@ -211,7 +215,7 @@
 - id: ui-settings-account
   disabled: true
 
-- id: account-controller
+- id: ui-account-notifications
   disabled: true
 
 - id: desktop-product-telemetry

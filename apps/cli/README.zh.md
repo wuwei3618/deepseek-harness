@@ -58,6 +58,12 @@ profile 目录包含一个 `package.json`，其中记录树外插件依赖，以
 
 在 `pnpm run build` 或 `build:artifacts` 的环境里设置 `DSH_AUDIT_RELEASE_LOCK=1`，构建出锁定的审计发行版；不设置或设为 `0` 构建未锁定的启动器，其他值会让构建失败。源码启动和测试始终不锁定。锁定的启动器只启动 `audit`、`audit-sdk` 和 `audit-acp` 模板，并把 `headless`、`sdk` 和 `acp` 映射到它们，使 SDK 和 ACP 客户端进入审计 agent。它拒绝其他 profile、`--patch`、`--from-default-profile` 和 `dsh plugin`，并在加载前把所启动 profile 的 bundle 列表改写为其模板。锁定构建的 Desktop host 以同样方式恢复其保留 profile 的 `audit-desktop` bundle。profile 和 home 下的 `cordis.patch.yml` 层仍然生效。
 
+## 安装包内容
+
+发布 tarball 在 `lib/` 下携带打包后的运行时，在 `src/` 下携带 TypeScript 源码，在各自描述的文件旁携带声明映射与 JavaScript map，并在 `docs/` 下携带文档。只有 `prepack` 会暂存 `docs/`，`postpack` 又会删除这份副本，因此工作树里的读者看到的始终是检出当前的内容。
+
+`docs/` 包含文档网站的页面与全部升级指南，以及这些页面引用的资产。`docs/upgrade-guide/README.md` 在暂存时生成：它按每个 `v<T>` 目录升级前的版本对指南分组，列出每份指南的标题、中英文描述与相对路径。桌面应用在其 `app.asar` 内携带同样的 `docs/` 与 `src/`。生成的 `persistence-changes/` 记录、`i18n/` 规范与 `*.i18n.yaml` 一致性记录不发布。其中的页面保留仓库的相对链接，因此指向 `../packages/**` 或指向被排除的 `persistence-changes/` 记录的链接只在检出中可解析。
+
 ## 开发
 
 生产运行需要已构建的包与前端产物。请在仓库根目录单独运行 `pnpm run build`，然后使用 `pnpm dsh <args...>` 运行 TypeScript 入口并转发所有参数；模块解析约定以[源码执行参考](reference/README.zh.md#source-execution)为准。

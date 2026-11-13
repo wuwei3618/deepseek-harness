@@ -65,6 +65,7 @@
   position: absolute;
   inset: 4px;
   border-radius: 50%;
+  corner-shape: round;
   background: currentColor;
   opacity: 0;
   animation: seal-stamp-shadow var(--seal-stamp-duration) linear forwards;

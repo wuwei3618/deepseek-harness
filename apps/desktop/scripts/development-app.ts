@@ -3,7 +3,7 @@ import { execFileSync } from 'node:child_process'
 import { createHash } from 'node:crypto'
 import { existsSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { dirname, join } from 'node:path'
-import { DESKTOP_LOCAL_APP_ID, DESKTOP_PRODUCT_NAME } from './desktop-product.mjs'
+import { DESKTOP_LOCAL_APP_ID, DESKTOP_PRODUCT_NAME } from '@deepseek-ai/dsh-desktop-publisher/desktop-product.mjs'
 
 /** Workspace and runtime settings captured for Launch Services cold starts. */
 export interface DevelopmentAppOptions {

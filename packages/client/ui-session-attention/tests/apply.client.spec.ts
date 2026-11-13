@@ -8,7 +8,8 @@ import { TestRemote } from '@deepseek-ai/dsh-client-test-runtime'
 import { LocaleRuntime } from '@deepseek-ai/dsh-client-locale/client'
 import { apply as settingsApply, inject as settingsInject } from '@deepseek-ai/dsh-client-ui-settings/client'
 import type { SessionListState } from '@deepseek-ai/dsh-api-session-controller/client'
-import type { SessionPendingInteraction, SessionStatus, SessionStatusSnapshot } from '@deepseek-ai/dsh-client-ui-session/client'
+import type { SessionPendingInteraction } from '@deepseek-ai/dsh-client-ui-session/client'
+import type { SessionStatus, SessionStatusSnapshot } from '@deepseek-ai/dsh-client-ui-session-status/client'
 import type { SessionId } from '@deepseek-ai/dsh-session/types'
 import { apply, inject } from '../src/client/index.ts'
 import { apply as hostApply, Config } from '../src/index.ts'
@@ -19,7 +20,8 @@ const A = 'session-a' as SessionId
 
 function snapshot(running: boolean, pending?: { key: string; kind: string }): SessionStatusSnapshot {
   const interaction = pending === undefined ? undefined : { ...pending, sessionId: A } as SessionPendingInteraction
-  return new Map<SessionId, SessionStatus>([[A, { running, pendingInteraction: interaction, completionUnread: false }]])
+  const status: SessionStatus = { running, pendingInteraction: interaction, completionUnread: false, completionFailed: false }
+  return new Map<SessionId, SessionStatus>([[A, status]])
 }
 
 afterEach(() => { delete (globalThis as { dshDesktop?: unknown }).dshDesktop })
@@ -56,7 +58,8 @@ async function boot({ workspace = true, served = true } = {}) {
   })
   const status = createSnapshotStore<SessionStatusSnapshot>(snapshot(true))
   ctx.provide('sessions', { list })
-  ctx.provide('uiSession', { sessionStatus: status })
+  ctx.provide('uiSession', { sessionStatus: status } as never)
+  ctx.provide('uiSession.sessionStatus', status as never)
   const openSession = vi.fn()
   if (workspace) ctx.provide('uiWorkspace', { openSession })
   const slots = ctx.get('slots') as SlotRegistry

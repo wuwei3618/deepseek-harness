@@ -3,10 +3,10 @@ import { execFileSync } from 'node:child_process'
 import { mkdtemp, rm } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
-import type { DesktopRetainedManifest } from './desktop-release-store.ts'
-import type { DesktopPublishConfig } from './desktop-publish-config.ts'
+import type { DesktopRetainedManifest } from '@deepseek-ai/dsh-desktop-publisher/desktop-release-store.ts'
+import type { DesktopPublishConfig } from '@deepseek-ai/dsh-desktop-publisher/desktop-publish-config.ts'
 import { verifyMacOSDiskImage, verifyMacOSNotarizedApplication } from './verify-macos-signature.mjs'
-import { DESKTOP_PRODUCT_NAME } from './desktop-product.mjs'
+import { DESKTOP_PRODUCT_NAME } from '@deepseek-ai/dsh-desktop-publisher/desktop-product.mjs'
 
 /**
  * Verify Windows Authenticode or macOS DMG and archived app notarization on the original platform.
