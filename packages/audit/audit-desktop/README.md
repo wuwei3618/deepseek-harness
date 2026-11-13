@@ -33,7 +33,7 @@ Desktop reads the `audit-desktop` template from [`dsh-official-bundles`](../../u
 | `preset-standard`, `preset-ptc`, `preset-minimal`, `preset-cordis` | switched off; without `cordis` the Creator entry points are unavailable |
 | `ui-plugin-manager`, `ui-agent-preset`, `entry-customization`, `ui-cordis`, `cordis-host-runner`, `cordis-client-runner`, `cordis-inspect-providers` | switched off: no plugin or preset authoring |
 | `harness-dev-context` | switched off |
-| `ui-settings-account`, `account-controller` | switched off |
+| `ui-settings-account`, `ui-account-notifications` | switched off |
 | `desktop-product-telemetry`, `product-analytics` | switched off |
 | `system-prompt` | `includeHarnessIdentity: false` and the audit persona at the root |
 | `browser-use`, `browser-use-playwright-mcp` | inserted: [Playwright MCP](../../experimental/browser-use-playwright-mcp/README.md) in `attach` mode on Desktop's per-Session Sidebar browser endpoint; both rows stay off when `DSH_DESKTOP_BROWSER_CDP_ENDPOINT` is unset, as outside Desktop |
@@ -50,7 +50,7 @@ Desktop reads the `audit-desktop` template from [`dsh-official-bundles`](../../u
 <details>
 <summary>Implementation details — click to expand</summary>
 
-[`cordis.patch.yml`](cordis.patch.yml) patches [`dsh-web-app`](../../bundle/web-app/README.md) and `dsh-base` rows by id and inserts the preset row. The preset mounts the persona, workspace instructions, time context, the shell, `read`, `read_image`, and `write`, search, jobs, [`dsh-audit-skills`](../audit-skills/README.md) with the `skill` tool, compaction, spawned subagents and workflows, ask-user, todo, web, and present tools, then [`dsh-audit-plugin-pack`](../audit-plugin-pack/README.md), which adds the MCP servers and skills of the audit-plugins release unpacked at `$DSH_HOME/audit-plugins`. The pack skills hand their named roles to spawned subagents and run workflows, and their longest `SKILL.md` is about 33,000 characters, so the preset mounts the spawn subagent and workflow tools and raises the tool result pruner threshold to 40,000 characters, keeping the first 20,000 and the last 8,000. Subagents inherit the preset and its workspace-only sandbox. It mounts no edit, forked or model-selecting subagent, plan, schedule, or plugin tools.
+[`cordis.patch.yml`](cordis.patch.yml) patches [`dsh-web-app`](../../bundle/web-app/README.md) and `dsh-base` rows by id and inserts the preset row. The preset mounts the persona, workspace instructions, time context, the shell, `read`, `read_image`, and `write`, search, jobs, [`dsh-audit-skills`](../audit-skills/README.md) with the `skill` tool, compaction, spawned subagents and workflows, ask-user, todo, web, and present tools, the [Office tools](../../document/tool-office/README.md) that the bundled Office skills activate, then [`dsh-audit-plugin-pack`](../audit-plugin-pack/README.md), which adds the MCP servers and skills of the audit-plugins release unpacked at `$DSH_HOME/audit-plugins`. The pack skills hand their named roles to spawned subagents and run workflows, and their longest `SKILL.md` is about 33,000 characters, so the preset mounts the spawn subagent and workflow tools and raises the tool result pruner threshold to 40,000 characters, keeping the first 20,000 and the last 8,000. Subagents inherit the preset and its workspace-only sandbox. It mounts no edit, forked or model-selecting subagent, plan, schedule, or plugin tools.
 
 </details>
 

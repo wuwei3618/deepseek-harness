@@ -7,7 +7,7 @@ import { join, resolve } from 'node:path'
 import {
   desktopBuildRecordFilename,
   resolveDesktopAutoUpdateConfig,
-} from './desktop-auto-update-environment.mjs'
+} from '@deepseek-ai/dsh-desktop-publisher/desktop-auto-update-environment.mjs'
 import { desktopArtifactOutput, desktopTargetBuildPaths } from './desktop-build-paths.mjs'
 import { packageMacOSArtifacts, type DesktopPrepackagedArtifact } from './package-macos.ts'
 import { loadDesktopPackageEnvironment, localUnsignedPackageEnvironment, validateDesktopPackageEnvironment } from './desktop-package-environment.mjs'
@@ -25,7 +25,7 @@ import { suggestDesktopBuildVersion } from './desktop-build-version-discovery.ts
 import { desktopBuildCommitEnvironment, readDesktopBuildCommit, resolveDesktopBuildCommit } from './desktop-build-commit.mjs'
 import { requireDesktopToolchain } from './desktop-toolchain-preflight.ts'
 import { withMacOSNotarizationProxy } from './macos-notarization-proxy.ts'
-import { DESKTOP_ARTIFACT_PREFIX, DESKTOP_PRODUCT_NAME } from './desktop-product.mjs'
+import { DESKTOP_ARTIFACT_PREFIX, DESKTOP_PRODUCT_NAME } from '@deepseek-ai/dsh-desktop-publisher/desktop-product.mjs'
 
 const APP_ROOT = resolve(import.meta.dirname, '..')
 const REPOSITORY_ROOT = resolve(APP_ROOT, '..', '..')

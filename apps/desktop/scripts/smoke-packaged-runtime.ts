@@ -6,7 +6,7 @@ import { readDesktopRuntime, verifyDesktopRuntime } from '../src/runtime-tree.ts
 import { verifyWindowsCode } from './windows-runtime-signature.mjs'
 import { smokePreparedRuntime } from './smoke-prepared-runtime.ts'
 import { resolveDesktopPackageTarget } from './package-target.ts'
-import { DESKTOP_PRODUCT_NAME } from './desktop-product.mjs'
+import { DESKTOP_PRODUCT_NAME } from '@deepseek-ai/dsh-desktop-publisher/desktop-product.mjs'
 
 const paths = resolveDesktopTargetBuildPaths()
 const { values } = parseArgs({ options: { unsigned: { type: 'boolean', default: false }, 'skip-notarization': { type: 'boolean', default: false } }, allowPositionals: false })

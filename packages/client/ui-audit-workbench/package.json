@@ -1,7 +1,7 @@
 {
   "name": "@deepseek-ai/dsh-client-ui-audit-workbench",
   "description": "Desktop audit workbench: system login status and the project archive of every audit project",
-  "version": "0.2.2-rc.1",
+  "version": "0.2.2-rc.3",
   "publishConfig": {
     "access": "public"
   },
@@ -30,7 +30,10 @@
     "locale/*.json",
     "lib/index.js",
     "lib/client.js",
-    "lib/types/**/*.d.ts"
+    "lib/types/**/*.d.ts",
+    "lib/types/**/*.d.ts.map",
+    "lib/**/*.js.map",
+    "src"
   ],
   "dsh": {
     "client": {

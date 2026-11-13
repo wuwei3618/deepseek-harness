@@ -44,7 +44,7 @@ kind: "package-reference"
 <details>
 <summary>实现细节——点击展开</summary>
 
-浏览器条目读取 `ui-session` 状态快照中的待处理交互与运行状态，读取会话列表中的标题、子代理来源与主视图持有计数，并监听窗口焦点事件。[`AttentionEngine`](src/client/engine.ts) 把这些输入转换为发送与撤回动作：出现新键的待处理交互发送通知；从运行变为停止且没有待处理交互时，报告一轮任务结束。条目把每个动作本地化后交给 `dshDesktop.sessionAttention`，桌面端 preload 只向应用页面提供这一接口。
+浏览器条目读取 `ui-session-status` 快照（`uiSession.sessionStatus`）中的待处理交互与运行状态，读取会话列表中的标题、子代理来源与主视图持有计数，并监听窗口焦点事件。[`AttentionEngine`](src/client/engine.ts) 把这些输入转换为发送与撤回动作：出现新键的待处理交互发送通知；从运行变为停止且没有待处理交互时，报告一轮任务结束。条目把每个动作本地化后交给 `dshDesktop.sessionAttention`，桌面端 preload 只向应用页面提供这一接口。
 
 桌面端主进程校验每条通知，每个会话最多保留一个 Electron `Notification`，并播放系统通知音。点击通知会聚焦窗口，并把会话发回页面，页面通过 `uiWorkspace.openSession` 打开它。接口类型位于 [`src/types.ts`](src/types.ts)，以 `./types` 导出。
 
@@ -55,7 +55,7 @@ kind: "package-reference"
 <a id="further-exploration"></a>
 ## 进一步探索
 
-- [会话 UI 状态](../ui-session/README.zh.md)——待处理交互与运行状态。
+- [会话 UI 状态](../ui-session-status/README.zh.md)——待处理交互与运行状态。
 - [设置表单](../ui-settings/README.zh.md)——Host 已接受的值与有序写入。
 - [桌面端应用](../../../apps/desktop/README.zh.md)——Electron 外壳及其 preload 接口。
 

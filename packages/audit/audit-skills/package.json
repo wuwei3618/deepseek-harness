@@ -1,7 +1,7 @@
 {
   "name": "@deepseek-ai/dsh-audit-skills",
   "description": "Bundled general-purpose audit skills registered as one skill provider",
-  "version": "0.2.2-rc.1",
+  "version": "0.2.2-rc.3",
   "publishConfig": {
     "access": "public"
   },
@@ -26,7 +26,10 @@
     "locale/*.json",
     "lib/index.js",
     "assets",
-    "lib/types/**/*.d.ts"
+    "lib/types/**/*.d.ts",
+    "lib/types/**/*.d.ts.map",
+    "lib/**/*.js.map",
+    "src"
   ],
   "license": "MIT",
   "peerDependencies": {

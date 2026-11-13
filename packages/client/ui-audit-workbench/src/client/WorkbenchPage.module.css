@@ -413,7 +413,7 @@
 }
 
 .outputLink:focus-visible {
-  outline: 2px solid var(--dsw-alias-state-business-primary);
+  outline: 2px solid var(--dsw-focus-ring-color);
   outline-offset: 2px;
   border-radius: var(--dsw-radius-xs);
 }
@@ -468,7 +468,7 @@ button.logRow {
 }
 
 button.logRow:focus-visible {
-  outline: 2px solid var(--dsw-alias-state-business-primary);
+  outline: 2px solid var(--dsw-focus-ring-color);
   outline-offset: -2px;
 }
 
@@ -570,7 +570,7 @@ button.logRow[aria-expanded='true'] .logCaret {
 
 .sessionRow:focus-visible,
 .modelRow:focus-visible {
-  outline: 2px solid var(--dsw-alias-state-business-primary);
+  outline: 2px solid var(--dsw-focus-ring-color);
   outline-offset: -2px;
 }
 
@@ -672,7 +672,7 @@ button.logRow[aria-expanded='true'] .logCaret {
 .nodePathLink:focus-visible,
 .treeItem:focus-visible,
 .twisty:focus-visible {
-  outline: 2px solid var(--dsw-alias-state-business-primary);
+  outline: 2px solid var(--dsw-focus-ring-color);
   outline-offset: 1px;
   border-radius: var(--dsw-radius-xs);
 }

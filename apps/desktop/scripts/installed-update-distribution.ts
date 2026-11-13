@@ -5,7 +5,7 @@ import { readFile, stat } from 'node:fs/promises'
 import { join } from 'node:path'
 import { dump, load } from 'js-yaml'
 import { readInstalledUpdateRun } from './installed-update-qualification.ts'
-import { DESKTOP_ARTIFACT_PREFIX } from './desktop-product.mjs'
+import { DESKTOP_ARTIFACT_PREFIX } from '@deepseek-ai/dsh-desktop-publisher/desktop-product.mjs'
 
 /** A local immutable object, with its final test-only destination and digest. */
 export interface InstalledUpdateBinary {

@@ -166,7 +166,7 @@ describe('AuditPluginPack', () => {
       ctx.loader.builtins['audit-plugin-pack'] = AuditPluginPack
       ctx.loader.builtins['reader'] = {
         name: 'reader',
-        apply: (child: Context, config: { uv: string }) => { child.root.provide('readerUv', config.uv) },
+        apply: (child: Context, config: { uv: string }) => { child[Context.root].provide('readerUv', config.uv) },
       }
       await body(ctx)
     } finally {

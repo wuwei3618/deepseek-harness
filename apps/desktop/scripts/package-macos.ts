@@ -13,10 +13,10 @@ import {
 import {
   desktopUpdateMetadataFilename,
   resolveDesktopAutoUpdateConfig,
-} from './desktop-auto-update-environment.mjs'
+} from '@deepseek-ai/dsh-desktop-publisher/desktop-auto-update-environment.mjs'
 import { verifyMacOSAppUpdateConfig } from './macos-app-update-config.mjs'
 import { verifyMacOSNotarizedApplication, verifyMacOSSignature } from './verify-macos-signature.mjs'
-import { DESKTOP_ARTIFACT_PREFIX, DESKTOP_PRODUCT_NAME } from './desktop-product.mjs'
+import { DESKTOP_ARTIFACT_PREFIX, DESKTOP_PRODUCT_NAME } from '@deepseek-ai/dsh-desktop-publisher/desktop-product.mjs'
 
 const execute = promisify(execFile)
 
