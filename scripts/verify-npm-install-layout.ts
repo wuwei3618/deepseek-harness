@@ -26,12 +26,14 @@ const DEPENDENCY_FIELDS = ['dependencies', 'optionalDependencies', 'peerDependen
  * with this product and not with the package count alone. Measured on an idle
  * M5 Pro with Node 24.17.0 and npm 11.13.0: 320 package(s) x 2836 internal
  * edge(s) = 907,520 unit(s) cost 71.03–97.73 s of npm time; the 315-package,
- * 2782-edge graph took 75.27 s on the same host. The budget adds 25% headroom
- * for ordinary product growth, so a graph that grows here fails with its own
- * measured counts instead of failing on whichever runner happens to be slow.
+ * 2782-edge graph took 75.27 s on the same host. The CSCEC8B audit fork's
+ * 346-package, 3310-edge graph = 1,145,260 unit(s) took about 108 s on a
+ * GitHub-hosted ubuntu-latest runner. The budget adds 25% headroom to that
+ * graph for ordinary product growth, so a graph that grows here fails with its
+ * own measured counts instead of failing on whichever runner happens to be slow.
  * Raising it requires re-measuring the resolution and recording the new counts.
  */
-export const MAX_RESOLUTION_WORK_UNITS = 1_134_400
+export const MAX_RESOLUTION_WORK_UNITS = 1_431_600
 
 /**
  * Measured npm seconds per resolution work unit on the reference host: 180.66 s
